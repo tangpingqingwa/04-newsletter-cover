@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { AppDb, Listing } from "./db.js";
+import { canonicalizeSponsorUrl, isNsfwBlurb } from "./url.js";
 
 const BLURB_MAX = 120;
 const URL_IN_BLURB = /https?:\/\/|www\./i;
@@ -67,25 +68,19 @@ export function openIssueDate(db: AppDb, now: Date = new Date()): string | null 
   return row?.issue_date ?? null;
 }
 
-/** http(s) only. Tracking strip / chat / NSFW are PR 6. */
+/** Canonical http(s) sponsor URL. Chat / NSFW → `rejected_content` (SPEC §6). */
 export function parseSponsorUrl(raw: unknown): string {
-  const text = asTrimmedString(raw);
-  if (text === undefined || text.length < 1) {
+  const result = canonicalizeSponsorUrl(raw);
+  if (!result.ok) {
+    if (result.error === "rejected_content") {
+      throw new ListingError(
+        "rejected_content",
+        "chat and NSFW sponsor URLs are not allowed",
+      );
+    }
     throw new ListingError("invalid_url", "sponsor URL must be http or https");
   }
-  let parsed: URL;
-  try {
-    parsed = new URL(text);
-  } catch {
-    throw new ListingError("invalid_url", "sponsor URL must be http or https");
-  }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new ListingError("invalid_url", "sponsor URL must be http or https");
-  }
-  if (!parsed.hostname) {
-    throw new ListingError("invalid_url", "sponsor URL must be http or https");
-  }
-  return text;
+  return result.url;
 }
 
 /** 1–120 characters, single line, no URLs, trimmed (SPEC §3). */
@@ -102,6 +97,9 @@ export function parseBlurb(raw: unknown): string {
   }
   if (URL_IN_BLURB.test(text)) {
     throw new ListingError("invalid_blurb", "blurb must not contain a URL");
+  }
+  if (isNsfwBlurb(text)) {
+    throw new ListingError("rejected_content", "NSFW blurbs are not allowed");
   }
   return text;
 }

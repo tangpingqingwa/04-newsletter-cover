@@ -137,6 +137,26 @@ grep -q 'bid_not_higher' tests/raise.test.ts || fail "tests/raise.test.ts missin
 grep -q 'createdAt' tests/raise.test.ts || fail "tests/raise.test.ts missing createdAt"
 grep -q 'amountUsd, 3' tests/raise.test.ts || fail "tests/raise.test.ts missing \$5 → \$8 charges \$3"
 
+echo "== url hygiene =="
+for f in src/url.ts tests/url.test.ts; do
+  [[ -f "$f" ]] || fail "missing $f"
+  [[ -s "$f" ]] || fail "empty $f"
+done
+grep -q 'canonicalizeSponsorUrl' src/url.ts || fail "src/url.ts missing canonicalizeSponsorUrl"
+grep -q 'rejected_content' src/url.ts || fail "src/url.ts missing rejected_content"
+grep -q 'utm_' src/url.ts || fail "src/url.ts missing utm_ tracking strip"
+grep -q 'fbclid' src/url.ts || fail "src/url.ts missing fbclid"
+grep -q 't.me' src/url.ts || fail "src/url.ts missing t.me chat host"
+grep -q 'redirectTarget' src/url.ts || fail "src/url.ts missing redirectTarget"
+grep -q 'canonicalizeSponsorUrl' src/listings.ts || fail "src/listings.ts must use canonicalizeSponsorUrl"
+grep -q 'rejected_content' src/listings.ts || fail "src/listings.ts missing rejected_content"
+grep -q 'utm_source' tests/url.test.ts || fail "tests/url.test.ts missing tracking strip"
+grep -q 'fbclid' tests/url.test.ts || fail "tests/url.test.ts missing fbclid strip"
+grep -q 't.me' tests/url.test.ts || fail "tests/url.test.ts missing t.me chat reject"
+grep -q 'rejected_content' tests/url.test.ts || fail "tests/url.test.ts missing rejected_content"
+grep -q 'redirectTarget' tests/url.test.ts || fail "tests/url.test.ts missing redirect target"
+grep -q 'pornhub' tests/url.test.ts || fail "tests/url.test.ts missing NSFW host"
+
 if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests >/dev/null 2>&1; then
   fail "src/tests must not hard-code polar.sh HTTP"
 fi
