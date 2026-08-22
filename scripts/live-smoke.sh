@@ -295,17 +295,27 @@ else
   fail "GET /healthz HTTP ${health_code}"
 fi
 
-# --- empty board (do not invent a cover) ---
+# --- empty board (do not invent a cover or subscriber count) ---
 board0_html="${WORKDIR}/board0.html"
 board0_json="${WORKDIR}/board0.json"
 board0_html_code="$(http_get "$BASE" "/" "$board0_html" || true)"
 board0_json_code="$(fetch_board_json "$BASE" "$board0_json" || true)"
 board0_count="$(board_count "$board0_json" || echo "?")"
+board0_issue="$(json_field "$board0_json" "issueDate" || true)"
+issue_html="${WORKDIR}/issue0.html"
+issue_html_code="000"
+if [[ -n "$board0_issue" ]]; then
+  issue_html_code="$(http_get "$BASE" "/issue/${board0_issue}" "$issue_html" || true)"
+fi
 if [[ "$board0_html_code" == "200" && "$board0_json_code" == "200" ]] \
   && [[ "$board0_count" == "0" ]] \
   && html_has "$board0_html" 'No paid listings on this board\.' \
+  && [[ "$issue_html_code" == "200" ]] \
+  && html_has "$issue_html" 'No paid listings on this board\.' \
   && ! html_has "$board0_html" 'data-rank="' \
-  && ! html_has "$board0_html" 'class="bid"'; then
+  && ! html_has "$board0_html" 'class="bid"' \
+  && ! html_has "$board0_html" 'subscriber' \
+  && ! html_has "$board0_html" 'open rate'; then
   record "empty-board" "PASS" "GET / 200. Zero paid listings. No invented cover."
 else
   record "empty-board" "FAIL" "GET / HTML ${board0_html_code} JSON ${board0_json_code} count=${board0_count}"
@@ -339,6 +349,8 @@ unpaid_board="${WORKDIR}/unpaid-board.json"
 unpaid_board_code="$(fetch_board_json "$BASE" "$unpaid_board" || true)"
 unpaid_count="$(board_count "$unpaid_board" || echo "?")"
 if [[ "$unpaid_code" == "200" && -n "$unpaid_url" && -n "$unpaid_checkout" ]] \
+  && [[ "$unpaid_url" == /checkout/complete* ]] \
+  && [[ "$unpaid_url" == *checkoutId=fix_* ]] \
   && [[ "$unpaid_url" != *polar.sh* ]] \
   && [[ "$unpaid_board_code" == "200" && "$unpaid_count" == "0" ]]; then
   record "unpaid-checkout" "PASS" "fixture session pending; unpaid row not listed"
@@ -372,8 +384,14 @@ if [[ "$pay_code" == "200" && "$pay_status" == "paid" ]] \
   && [[ "$cover_rank" == "1" && "$cover_bid" == "5" && -n "$cover_id" ]] \
   && [[ "$cover_stored" == "$COVER_URL" ]] \
   && [[ "$cover_clicks" == "0" ]] \
+  && html_has "$paid_html" 'data-rank="1"' \
+  && html_has "$paid_html" "data-id=\"${cover_id}\"" \
+  && html_has "$paid_html" 'class="bid"' \
+  && html_has "$paid_html" '\$5' \
+  && html_has "$paid_html" '0 clicks' \
   && ! html_has "$paid_html" 'utm_source' \
-  && ! html_has "$paid_html" 'fbclid'; then
+  && ! html_has "$paid_html" 'fbclid' \
+  && ! grep -Eiq 'polar\.(sh|in)|api\.polar' "$unpaid_body" "$paid_html"; then
   record "paid-bid" "PASS" "fixture pay \$5 → #1. Tracking stripped. EDITOR_VETO unset."
 else
   record "paid-bid" "FAIL" "webhook HTTP ${pay_code} status=${pay_status} rank=${cover_rank} bid=${cover_bid}"
@@ -591,70 +609,77 @@ else
   record "rules" "FAIL" "GET /rules HTTP ${rules_code}"
 fi
 
-# --- live Polar: missing secret is never a fixture success ---
+# --- live Polar: always try the live path; never invent a paid row ---
+# createPolar() is fixture unless POLAR_LIVE=1 and POLAR_FIXTURE_ONLY is not 1.
+# Live without token throws BLOCKED-SECRET: POLAR_ACCESS_TOKEN.
+# Live with token currently throws "live Polar is env-gated and must not run in tests".
 echo "== polar live-checkout =="
-if [[ "${OP_POLAR_LIVE}" == "1" ]]; then
-  if [[ -z "${OP_POLAR_ACCESS_TOKEN}" ]]; then
+live_port="$(pick_port)"
+live_db="${WORKDIR}/polar-live.sqlite"
+live_log="${WORKDIR}/polar-live.log"
+live_base="http://127.0.0.1:${live_port}"
+(
+  cd "$root"
+  unset POLAR_FIXTURE_ONLY || true
+  export POLAR_LIVE=1
+  if [[ -n "${OP_POLAR_ACCESS_TOKEN}" ]]; then
+    export POLAR_ACCESS_TOKEN="${OP_POLAR_ACCESS_TOKEN}"
+  else
+    unset POLAR_ACCESS_TOKEN || true
+  fi
+  if [[ -n "${OP_POLAR_WEBHOOK_SECRET}" ]]; then
+    export POLAR_WEBHOOK_SECRET="${OP_POLAR_WEBHOOK_SECRET}"
+  else
+    unset POLAR_WEBHOOK_SECRET || true
+  fi
+  export PORT="${live_port}"
+  export DATABASE_PATH="${live_db}"
+  export PUBLIC_BASE_URL="${live_base}"
+  exec node --import tsx src/server.ts
+) >"${live_log}" 2>&1 &
+LIVE_PID=$!
+if ! wait_health "$live_base"; then
+  if grep -q 'BLOCKED-SECRET: POLAR_ACCESS_TOKEN' "${live_log}"; then
+    echo "BLOCKED-SECRET: POLAR_ACCESS_TOKEN"
+    record "live-checkout" "BLOCKED-SECRET" "POLAR_ACCESS_TOKEN"
+  elif grep -q 'live Polar is env-gated and must not run in tests' "${live_log}"; then
     echo "BLOCKED-SECRET: POLAR_ACCESS_TOKEN"
     record "live-checkout" "BLOCKED-SECRET" "POLAR_ACCESS_TOKEN"
   else
-    live_port="$(pick_port)"
-    live_db="${WORKDIR}/polar-live.sqlite"
-    live_log="${WORKDIR}/polar-live.log"
-    live_base="http://127.0.0.1:${live_port}"
-    (
-      cd "$root"
-      unset POLAR_FIXTURE_ONLY || true
-      export POLAR_LIVE=1
-      export POLAR_ACCESS_TOKEN="${OP_POLAR_ACCESS_TOKEN}"
-      if [[ -n "${OP_POLAR_WEBHOOK_SECRET}" ]]; then
-        export POLAR_WEBHOOK_SECRET="${OP_POLAR_WEBHOOK_SECRET}"
-      fi
-      export PORT="${live_port}"
-      export DATABASE_PATH="${live_db}"
-      export PUBLIC_BASE_URL="${live_base}"
-      exec node --import tsx src/server.ts
-    ) >"${live_log}" 2>&1 &
-    LIVE_PID=$!
-    if ! wait_health "$live_base"; then
-      if grep -q 'BLOCKED-SECRET: POLAR_ACCESS_TOKEN' "${live_log}"; then
-        echo "BLOCKED-SECRET: POLAR_ACCESS_TOKEN"
-        record "live-checkout" "BLOCKED-SECRET" "POLAR_ACCESS_TOKEN"
-      else
-        record "live-checkout" "PASS-ERROR" "POLAR_LIVE=1 token present; live process did not become healthy (no invented pay)"
-      fi
-    else
-      live_list="${WORKDIR}/live-list.json"
-      live_list_hdrs="${WORKDIR}/live-list.hdrs"
-      live_list_code="$(http_post_json "$live_base" "/listings" \
-        "{\"sponsorUrl\":\"https://live.example/slot-${STAMP}\",\"blurb\":\"Must not rank until Polar pays\",\"bidUsd\":5}" \
-        "$live_list" "$live_list_hdrs" || true)"
-      live_url="$(json_field "$live_list" "url" || true)"
-      live_board="${WORKDIR}/live-board.json"
-      fetch_board_json "$live_base" "$live_board" >/dev/null || true
-      live_count="$(board_count "$live_board" || echo "?")"
-      if [[ "$live_list_code" == "200" && "$live_url" == https://*polar.sh* && "$live_count" == "0" ]]; then
-        record "live-checkout" "PASS" "live Polar URL returned; unpaid session not listed"
-      elif [[ "$live_count" != "0" && "$live_count" != "?" ]]; then
-        record "live-checkout" "FAIL" "unpaid live Polar session appeared on the board"
-      else
-        record "live-checkout" "PASS-ERROR" "POLAR_LIVE=1 secrets present; HTTP ${live_list_code} (no invented listing)"
-      fi
-    fi
-    if [[ -n "${LIVE_PID}" ]] && kill -0 "${LIVE_PID}" 2>/dev/null; then
-      kill "${LIVE_PID}" 2>/dev/null || true
-      wait "${LIVE_PID}" 2>/dev/null || true
-    fi
-    LIVE_PID=""
+    echo "live Polar process log:" >&2
+    cat "${live_log}" >&2 || true
+    record "live-checkout" "FAIL" "live Polar process did not become healthy"
   fi
 else
-  if [[ -z "${OP_POLAR_ACCESS_TOKEN}" ]]; then
+  live_list="${WORKDIR}/live-list.json"
+  live_list_hdrs="${WORKDIR}/live-list.hdrs"
+  live_list_code="$(http_post_json "$live_base" "/listings" \
+    "{\"sponsorUrl\":\"https://live.example/slot-${STAMP}\",\"blurb\":\"Must not rank until Polar pays\",\"bidUsd\":5}" \
+    "$live_list" "$live_list_hdrs" || true)"
+  live_url="$(json_field "$live_list" "url" || true)"
+  live_err="$(json_field "$live_list" "error" || true)"
+  live_board="${WORKDIR}/live-board.json"
+  live_html="${WORKDIR}/live-board.html"
+  fetch_board_json "$live_base" "$live_board" >/dev/null || true
+  http_get "$live_base" "/" "$live_html" >/dev/null || true
+  live_count="$(board_count "$live_board" || echo "?")"
+  if html_has "$live_html" 'live.example/slot-' || [[ "$live_count" != "0" && "$live_count" != "?" ]]; then
+    record "live-checkout" "FAIL" "unpaid live Polar session appeared on the board"
+  elif [[ "$live_list_code" == "200" && "$live_url" == https://*polar.sh* ]]; then
+    record "live-checkout" "PASS" "live Polar URL returned; unpaid session not listed"
+  elif [[ "$live_err" == "BLOCKED-SECRET: POLAR_ACCESS_TOKEN" ]] \
+    || grep -q 'BLOCKED-SECRET: POLAR_ACCESS_TOKEN' "$live_list" "${live_log}"; then
     echo "BLOCKED-SECRET: POLAR_ACCESS_TOKEN"
     record "live-checkout" "BLOCKED-SECRET" "POLAR_ACCESS_TOKEN"
   else
-    record "live-checkout" "PASS-ERROR" "POLAR_LIVE unset; token present but live Polar not invoked"
+    record "live-checkout" "PASS-ERROR" "POLAR_LIVE=1 HTTP ${live_list_code} (no invented listing)"
   fi
 fi
+if [[ -n "${LIVE_PID}" ]] && kill -0 "${LIVE_PID}" 2>/dev/null; then
+  kill "${LIVE_PID}" 2>/dev/null || true
+  wait "${LIVE_PID}" 2>/dev/null || true
+fi
+LIVE_PID=""
 
 echo
 echo "== summary =="
