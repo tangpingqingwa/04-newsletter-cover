@@ -43,6 +43,10 @@ export function rankListings(
     if (listing.paid === false) {
       return false;
     }
+    // Unpaid creates persist bidUsd 0; only paid bids rank.
+    if (listing.bidUsd <= 0) {
+      return false;
+    }
     if (listing.status !== "active") {
       return false;
     }
