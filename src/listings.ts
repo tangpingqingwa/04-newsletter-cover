@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { AppDb, Listing } from "./db.js";
+import { catchUpIssues, issueIsOpenForBids, loadIssue } from "./issues.js";
 import { canonicalizeSponsorUrl, isNsfwBlurb } from "./url.js";
 
 const BLURB_MAX = 120;
@@ -54,8 +55,9 @@ function utcCalendarDate(now: Date): string {
   return now.toISOString().slice(0, 10);
 }
 
-/** Next open issueDate strictly after now (SPEC §5). */
+/** Next open issueDate strictly after now (SPEC §5). Frozen issues never stamp. */
 export function openIssueDate(db: AppDb, now: Date = new Date()): string | null {
+  catchUpIssues(db, now);
   const row = db
     .prepare<[string], { issue_date: string }>(
       `SELECT issue_date
@@ -287,6 +289,14 @@ export function applyPaidBid(
   const listing = findListingById(db, listingId);
   if (!listing) {
     throw new ListingError("unknown_listing", "listing not found", 404);
+  }
+
+  if (!issueIsOpenForBids(loadIssue(db, listing.issueDate), now)) {
+    throw new ListingError(
+      "issue_closed",
+      "do not accept bids or raises after close",
+      409,
+    );
   }
 
   const quote = quoteListingBid(listing.bidUsd, targetBidUsd);

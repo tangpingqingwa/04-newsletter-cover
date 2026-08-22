@@ -2,6 +2,7 @@ import { pathToFileURL } from "node:url";
 import Fastify, { type FastifyInstance } from "fastify";
 import { createPolar } from "./billing/create.js";
 import type { PolarPort } from "./billing/port.js";
+import { catchUpIssues, ensureOpenIssue } from "./close.js";
 import { openDatabase, type AppDb } from "./db.js";
 import { registerBoardRoutes } from "./http/routes/board.js";
 import { registerClickRoutes } from "./http/routes/click.js";
@@ -21,6 +22,8 @@ export type BuildAppOptions = {
   db?: AppDb;
   databasePath?: string;
   polar?: PolarPort;
+  /** Frozen clock for boot catch-up. Production uses wall UTC. */
+  now?: Date;
 };
 
 export const HEALTHZ_PATH = "/healthz" as const;
@@ -36,6 +39,8 @@ export async function buildApp(
   const ownsDb = options.db === undefined;
   const db = options.db ?? openDatabase(options.databasePath ?? ":memory:");
   const polar = options.polar ?? createPolar();
+  const clock = (): Date => options.now ?? new Date();
+  catchUpIssues(db, clock());
   app.decorate("db", db);
   app.decorate("polar", polar);
   if (ownsDb) {
@@ -43,6 +48,9 @@ export async function buildApp(
       db.close();
     });
   }
+  app.addHook("onRequest", async () => {
+    catchUpIssues(db, clock());
+  });
   app.get(HEALTHZ_PATH, async (): Promise<HealthzOk> => ({ ok: true }));
   registerBoardRoutes(app);
   registerListingRoutes(app);
@@ -67,5 +75,6 @@ if (isExecutedDirectly()) {
   }
   const databasePath = process.env.DATABASE_PATH ?? "data/newsletter-cover.sqlite";
   const app = await buildApp({ logger: true, databasePath });
+  ensureOpenIssue(app.db);
   await app.listen({ host: "0.0.0.0", port: parsedPort });
 }
