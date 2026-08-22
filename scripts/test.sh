@@ -95,6 +95,19 @@ grep -q 'registerBoardRoutes' src/server.ts || fail "src/server.ts missing board
 grep -q 'older' tests/rank.test.ts || fail "tests/rank.test.ts missing older-wins-ties"
 grep -q 'No paid listings' tests/rank.test.ts || fail "tests/rank.test.ts missing empty board"
 
+echo "== listing create =="
+for f in src/listings.ts src/http/routes/listings.ts tests/listings.test.ts; do
+  [[ -f "$f" ]] || fail "missing $f"
+  [[ -s "$f" ]] || fail "empty $f"
+done
+grep -q 'sponsorUrl' src/listings.ts || fail "src/listings.ts missing sponsorUrl"
+grep -q 'blurb' src/listings.ts || fail "src/listings.ts missing blurb"
+grep -q 'issueDate' src/listings.ts || fail "src/listings.ts missing issueDate stamp"
+grep -q 'registerListingRoutes' src/server.ts || fail "src/server.ts missing listing routes"
+grep -q '/listings' src/http/routes/listings.ts || fail "listing route missing POST /listings"
+grep -q 'open issue' tests/listings.test.ts || fail "tests/listings.test.ts missing open-issue stamp"
+grep -q 'unique' tests/listings.test.ts || fail "tests/listings.test.ts missing unique (url, issue)"
+
 if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests >/dev/null 2>&1; then
   fail "src/tests must not hard-code polar.sh HTTP"
 fi
