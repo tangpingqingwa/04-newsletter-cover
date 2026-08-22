@@ -124,6 +124,19 @@ grep -q 'unpaid' tests/billing.test.ts || fail "tests/billing.test.ts missing un
 grep -q 'below_minimum' tests/billing.test.ts || fail "tests/billing.test.ts missing \$4 below_minimum"
 grep -q 'POLAR_FIXTURE_ONLY' tests/billing.test.ts || fail "tests/billing.test.ts missing fixture-wins"
 
+echo "== raise pays the difference =="
+for f in src/listings.ts tests/raise.test.ts; do
+  [[ -f "$f" ]] || fail "missing $f"
+  [[ -s "$f" ]] || fail "empty $f"
+done
+grep -q 'quoteListingBid' src/listings.ts || fail "src/listings.ts missing quoteListingBid"
+grep -q 'targetBidUsd - current' src/listings.ts || fail "src/listings.ts missing raise difference"
+grep -q 'bid_not_higher' src/listings.ts || fail "src/listings.ts missing non-increasing reject"
+grep -q 'createdAt' src/listings.ts || fail "src/listings.ts missing createdAt stability"
+grep -q 'bid_not_higher' tests/raise.test.ts || fail "tests/raise.test.ts missing non-increasing reject"
+grep -q 'createdAt' tests/raise.test.ts || fail "tests/raise.test.ts missing createdAt"
+grep -q 'amountUsd, 3' tests/raise.test.ts || fail "tests/raise.test.ts missing \$5 → \$8 charges \$3"
+
 if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests >/dev/null 2>&1; then
   fail "src/tests must not hard-code polar.sh HTTP"
 fi

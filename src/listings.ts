@@ -4,6 +4,9 @@ import type { AppDb, Listing } from "./db.js";
 const BLURB_MAX = 120;
 const URL_IN_BLURB = /https?:\/\/|www\./i;
 
+export const MIN_BID_USD = 5;
+export const MAX_BID_USD = 10_000;
+
 export class ListingError extends Error {
   readonly code: string;
   readonly statusCode: number;
@@ -19,6 +22,13 @@ export class ListingError extends Error {
 export type CreateListingInput = {
   sponsorUrl: string;
   blurb: string;
+};
+
+export type BidQuote = {
+  raise: boolean;
+  currentBidUsd: number;
+  targetBidUsd: number;
+  amountUsd: number;
 };
 
 type ListingRow = {
@@ -107,6 +117,84 @@ export function parseCreateListingBody(body: unknown): CreateListingInput {
   };
 }
 
+export function parseBidUsd(raw: unknown): number {
+  if (typeof raw === "boolean") {
+    throw new ListingError("invalid_bid", "bid must be a whole USD amount");
+  }
+  if (typeof raw === "number") {
+    if (!Number.isInteger(raw)) {
+      throw new ListingError("invalid_bid", "bid must be a whole USD amount");
+    }
+    return assertBidCeiling(raw);
+  }
+  if (typeof raw !== "string" || raw.trim() === "") {
+    throw new ListingError("invalid_bid", "bid must be a whole USD amount");
+  }
+  const trimmed = raw.trim().replace(/^\$/, "");
+  if (!/^[0-9]+$/.test(trimmed)) {
+    throw new ListingError("invalid_bid", "bid must be a whole USD amount");
+  }
+  return assertBidCeiling(Number(trimmed));
+}
+
+function assertBidCeiling(value: number): number {
+  if (value > MAX_BID_USD) {
+    throw new ListingError(
+      "above_maximum",
+      `bid must be at most $${MAX_BID_USD}`,
+    );
+  }
+  return value;
+}
+
+/**
+ * First bid charges the full amount (≥ $5). A raise charges only
+ * `targetBidUsd - currentBidUsd` and rejects a non-increasing bid.
+ */
+export function quoteListingBid(
+  currentBidUsd: number,
+  targetBidUsd: number,
+): BidQuote {
+  if (!Number.isInteger(targetBidUsd) || targetBidUsd < 0) {
+    throw new ListingError("invalid_bid", "bid must be a whole USD amount");
+  }
+  if (targetBidUsd > MAX_BID_USD) {
+    throw new ListingError(
+      "above_maximum",
+      `bid must be at most $${MAX_BID_USD}`,
+    );
+  }
+
+  const current = Number.isInteger(currentBidUsd) ? currentBidUsd : 0;
+  if (current <= 0) {
+    if (targetBidUsd < MIN_BID_USD) {
+      throw new ListingError(
+        "below_minimum",
+        `first bid must be at least $${MIN_BID_USD}`,
+      );
+    }
+    return {
+      raise: false,
+      currentBidUsd: 0,
+      targetBidUsd,
+      amountUsd: targetBidUsd,
+    };
+  }
+
+  if (targetBidUsd <= current) {
+    throw new ListingError(
+      "bid_not_higher",
+      "raise must be greater than the current bid",
+    );
+  }
+  return {
+    raise: true,
+    currentBidUsd: current,
+    targetBidUsd,
+    amountUsd: targetBidUsd - current,
+  };
+}
+
 function listingFromRow(row: ListingRow): Listing {
   return {
     id: row.id,
@@ -186,4 +274,48 @@ export function createListing(
   );
 
   return listing;
+}
+
+/**
+ * Apply a paid bid. First pay stamps `createdAt`. A raise updates `bidUsd`
+ * only — `createdAt` stays the first paid time (SPEC §4).
+ */
+export function applyPaidBid(
+  db: AppDb,
+  listingId: string,
+  targetBidUsd: number,
+  now: Date = new Date(),
+): Listing {
+  const listing = findListingById(db, listingId);
+  if (!listing) {
+    throw new ListingError("unknown_listing", "listing not found", 404);
+  }
+
+  const quote = quoteListingBid(listing.bidUsd, targetBidUsd);
+  if (quote.raise) {
+    db.prepare("UPDATE listings SET bid_usd = ? WHERE id = ?").run(
+      quote.targetBidUsd,
+      listing.id,
+    );
+    return { ...listing, bidUsd: quote.targetBidUsd };
+  }
+
+  const paidAt = now.toISOString();
+  db.prepare("UPDATE listings SET bid_usd = ?, created_at = ? WHERE id = ?").run(
+    quote.targetBidUsd,
+    paidAt,
+    listing.id,
+  );
+  return { ...listing, bidUsd: quote.targetBidUsd, createdAt: paidAt };
+}
+
+export function findListingById(db: AppDb, listingId: string): Listing | null {
+  const row = db
+    .prepare<[string], ListingRow>(
+      `SELECT id, issue_date, sponsor_url, blurb, bid_usd, created_at, clicks, status
+       FROM listings
+       WHERE id = ?`,
+    )
+    .get(listingId);
+  return row ? listingFromRow(row) : null;
 }
