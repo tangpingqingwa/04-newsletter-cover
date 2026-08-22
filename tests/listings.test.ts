@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { AppDb, Listing } from "../src/db.js";
+import type { AppDb } from "../src/db.js";
 import {
   createListing,
   findListingByUrlAndIssue,
@@ -67,16 +67,24 @@ test("POST /listings stamps the open issue and ignores a client issueDate", asyn
       sponsorUrl: "http://news.example/slot",
       blurb: "First slot on the next issue",
       issueDate: OTHER_FUTURE,
+      bidUsd: 5,
     },
   });
 
   assert.equal(created.statusCode, 200);
-  const body = created.json() as Listing;
-  assert.equal(body.sponsorUrl, "http://news.example/slot");
-  assert.equal(body.blurb, "First slot on the next issue");
-  assert.equal(body.issueDate, OPEN_ISSUE);
-  assert.notEqual(body.issueDate, OTHER_FUTURE);
-  assert.notEqual(body.issueDate, CLOSED_ISSUE);
+  assert.ok(typeof created.json().url === "string");
+  const stored = findListingByUrlAndIssue(
+    app.db,
+    "http://news.example/slot",
+    OPEN_ISSUE,
+  );
+  assert.ok(stored);
+  assert.equal(stored.sponsorUrl, "http://news.example/slot");
+  assert.equal(stored.blurb, "First slot on the next issue");
+  assert.equal(stored.issueDate, OPEN_ISSUE);
+  assert.notEqual(stored.issueDate, OTHER_FUTURE);
+  assert.notEqual(stored.issueDate, CLOSED_ISSUE);
+  assert.equal(stored.bidUsd, 0);
 });
 
 test("same sponsor URL on the same issue is unique — not a second row", async (t) => {
@@ -90,6 +98,7 @@ test("same sponsor URL on the same issue is unique — not a second row", async 
     payload: {
       sponsorUrl: "https://same.example/path",
       blurb: "Original blurb",
+      bidUsd: 5,
     },
   });
   const second = await app.inject({
@@ -98,19 +107,14 @@ test("same sponsor URL on the same issue is unique — not a second row", async 
     payload: {
       sponsorUrl: "https://same.example/path",
       blurb: "A different blurb that must not fork a row",
+      bidUsd: 5,
     },
   });
 
   assert.equal(first.statusCode, 200);
   assert.equal(second.statusCode, 200);
-  const a = first.json() as Listing;
-  const b = second.json() as Listing;
-  assert.equal(a.id, b.id);
-  assert.equal(a.issueDate, OPEN_ISSUE);
-  assert.equal(b.issueDate, OPEN_ISSUE);
-  assert.equal(a.sponsorUrl, b.sponsorUrl);
-  assert.equal(a.blurb, "Original blurb");
-  assert.equal(b.blurb, "Original blurb");
+  assert.ok(typeof first.json().url === "string");
+  assert.ok(typeof second.json().url === "string");
   assert.equal(listingCount(app.db), 1);
   const stored = findListingByUrlAndIssue(
     app.db,
@@ -118,7 +122,8 @@ test("same sponsor URL on the same issue is unique — not a second row", async 
     OPEN_ISSUE,
   );
   assert.ok(stored);
-  assert.equal(stored.id, a.id);
+  assert.equal(stored.issueDate, OPEN_ISSUE);
+  assert.equal(stored.blurb, "Original blurb");
 });
 
 test("different URLs on the open issue are separate rows", async (t) => {
@@ -129,20 +134,24 @@ test("different URLs on the open issue are separate rows", async (t) => {
   const one = await app.inject({
     method: "POST",
     url: "/listings",
-    payload: { sponsorUrl: "https://one.example", blurb: "One" },
+    payload: { sponsorUrl: "https://one.example", blurb: "One", bidUsd: 5 },
   });
   const two = await app.inject({
     method: "POST",
     url: "/listings",
-    payload: { sponsorUrl: "https://two.example", blurb: "Two" },
+    payload: { sponsorUrl: "https://two.example", blurb: "Two", bidUsd: 5 },
   });
 
   assert.equal(one.statusCode, 200);
   assert.equal(two.statusCode, 200);
-  assert.notEqual(one.json().id, two.json().id);
-  assert.equal(one.json().issueDate, OPEN_ISSUE);
-  assert.equal(two.json().issueDate, OPEN_ISSUE);
   assert.equal(listingCount(app.db), 2);
+  const a = findListingByUrlAndIssue(app.db, "https://one.example", OPEN_ISSUE);
+  const b = findListingByUrlAndIssue(app.db, "https://two.example", OPEN_ISSUE);
+  assert.ok(a);
+  assert.ok(b);
+  assert.notEqual(a.id, b.id);
+  assert.equal(a.issueDate, OPEN_ISSUE);
+  assert.equal(b.issueDate, OPEN_ISSUE);
 });
 
 test("unpaid create does not appear on the public board", async (t) => {
@@ -156,10 +165,17 @@ test("unpaid create does not appear on the public board", async (t) => {
     payload: {
       sponsorUrl: "https://unpaid.example",
       blurb: "Waiting on Polar",
+      bidUsd: 5,
     },
   });
   assert.equal(created.statusCode, 200);
-  assert.equal(created.json().bidUsd, 0);
+  const stored = findListingByUrlAndIssue(
+    app.db,
+    "https://unpaid.example",
+    OPEN_ISSUE,
+  );
+  assert.ok(stored);
+  assert.equal(stored.bidUsd, 0);
 
   const board = await app.inject({
     method: "GET",
@@ -181,6 +197,7 @@ test("POST /listings without an open issue is rejected", async (t) => {
     payload: {
       sponsorUrl: "https://nobody.example",
       blurb: "No window",
+      bidUsd: 5,
     },
   });
   assert.equal(created.statusCode, 409);
@@ -199,15 +216,22 @@ test("blurb is trimmed, 1–120, single line, and must not contain a URL", async
     payload: {
       sponsorUrl: "https://trim.example",
       blurb: "  Padded blurb  ",
+      bidUsd: 5,
     },
   });
   assert.equal(trimmed.statusCode, 200);
-  assert.equal(trimmed.json().blurb, "Padded blurb");
+  const stored = findListingByUrlAndIssue(
+    app.db,
+    "https://trim.example",
+    OPEN_ISSUE,
+  );
+  assert.ok(stored);
+  assert.equal(stored.blurb, "Padded blurb");
 
   const empty = await app.inject({
     method: "POST",
     url: "/listings",
-    payload: { sponsorUrl: "https://ok.example", blurb: "   " },
+    payload: { sponsorUrl: "https://ok.example", blurb: "   ", bidUsd: 5 },
   });
   assert.equal(empty.statusCode, 400);
   assert.equal(empty.json().error, "invalid_blurb");
@@ -215,7 +239,7 @@ test("blurb is trimmed, 1–120, single line, and must not contain a URL", async
   const tooLong = await app.inject({
     method: "POST",
     url: "/listings",
-    payload: { sponsorUrl: "https://ok.example", blurb: "x".repeat(121) },
+    payload: { sponsorUrl: "https://ok.example", blurb: "x".repeat(121), bidUsd: 5 },
   });
   assert.equal(tooLong.statusCode, 400);
   assert.equal(tooLong.json().error, "invalid_blurb");
@@ -223,7 +247,7 @@ test("blurb is trimmed, 1–120, single line, and must not contain a URL", async
   const multiline = await app.inject({
     method: "POST",
     url: "/listings",
-    payload: { sponsorUrl: "https://ok.example", blurb: "line one\nline two" },
+    payload: { sponsorUrl: "https://ok.example", blurb: "line one\nline two", bidUsd: 5 },
   });
   assert.equal(multiline.statusCode, 400);
   assert.equal(multiline.json().error, "invalid_blurb");
@@ -234,6 +258,7 @@ test("blurb is trimmed, 1–120, single line, and must not contain a URL", async
     payload: {
       sponsorUrl: "https://ok.example",
       blurb: "See https://spam.example",
+      bidUsd: 5,
     },
   });
   assert.equal(withUrl.statusCode, 400);
@@ -248,7 +273,7 @@ test("sponsor URL must be http or https", async (t) => {
   const missing = await app.inject({
     method: "POST",
     url: "/listings",
-    payload: { blurb: "No url" },
+    payload: { blurb: "No url", bidUsd: 5 },
   });
   assert.equal(missing.statusCode, 400);
   assert.equal(missing.json().error, "invalid_url");
@@ -256,7 +281,7 @@ test("sponsor URL must be http or https", async (t) => {
   const javascript = await app.inject({
     method: "POST",
     url: "/listings",
-    payload: { sponsorUrl: "javascript:alert(1)", blurb: "Nope" },
+    payload: { sponsorUrl: "javascript:alert(1)", blurb: "Nope", bidUsd: 5 },
   });
   assert.equal(javascript.statusCode, 400);
   assert.equal(javascript.json().error, "invalid_url");
@@ -264,7 +289,7 @@ test("sponsor URL must be http or https", async (t) => {
   const mailto = await app.inject({
     method: "POST",
     url: "/listings",
-    payload: { sponsorUrl: "mailto:hi@example.com", blurb: "Nope" },
+    payload: { sponsorUrl: "mailto:hi@example.com", blurb: "Nope", bidUsd: 5 },
   });
   assert.equal(mailto.statusCode, 400);
   assert.equal(mailto.json().error, "invalid_url");

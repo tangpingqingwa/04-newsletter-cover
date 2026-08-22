@@ -138,7 +138,7 @@ export function findListingByUrlAndIssue(
 /**
  * Create a listing on the open issue. Sponsors do not pick issueDate (SPEC §3).
  * Same (sponsorUrl, issueDate) is unique — a second submit is not a second row.
- * Polar checkout / paid bid land in a later PR; bidUsd stays 0 here.
+ * Unpaid rows stay bidUsd 0 until a Polar checkout completes.
  */
 export function createListing(
   db: AppDb,
