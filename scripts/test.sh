@@ -66,6 +66,28 @@ echo "== markdown is UTF-8 text =="
 file -b --mime-encoding README.md SPEC.md BUILD.md CONTRIBUTING.md | grep -qiE 'utf-8|us-ascii' \
   || fail "docs are not UTF-8/ASCII"
 
+echo "== skeleton files =="
+for f in package.json tsconfig.json src/server.ts src/db.ts \
+  src/migrations/001_issues.sql src/migrations/002_listings.sql \
+  src/migrations/003_checkouts.sql tests/health.test.ts; do
+  [[ -f "$f" ]] || fail "missing $f"
+  [[ -s "$f" ]] || fail "empty $f"
+done
+grep -q 'app.get' src/server.ts || fail "src/server.ts missing GET /healthz route"
+grep -q '/healthz' src/server.ts || fail "src/server.ts missing /healthz"
+grep -q 'CREATE TABLE issues' src/migrations/001_issues.sql || fail "issues migration missing"
+grep -q 'issue_date' src/migrations/001_issues.sql || fail "issues schema missing issue_date"
+grep -q 'CREATE TABLE listings' src/migrations/002_listings.sql || fail "listings migration missing"
+grep -q 'sponsor_url' src/migrations/002_listings.sql || fail "listings schema missing sponsor_url"
+grep -q 'bid_usd' src/migrations/002_listings.sql || fail "listings schema missing bid_usd"
+grep -q 'CREATE TABLE checkouts' src/migrations/003_checkouts.sql || fail "checkouts migration missing"
+grep -q 'polar_checkout_id' src/migrations/003_checkouts.sql || fail "checkouts schema missing polar_checkout_id"
+grep -q 'target_bid_usd' src/migrations/003_checkouts.sql || fail "checkouts schema missing target_bid_usd"
+
+if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests >/dev/null 2>&1; then
+  fail "src/tests must not hard-code polar.sh HTTP"
+fi
+
 if [[ -f package.json ]]; then
   echo "== install =="
   if [[ ! -d node_modules ]]; then
