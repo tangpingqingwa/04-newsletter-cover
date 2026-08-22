@@ -5,6 +5,7 @@ import type { PolarPort } from "./billing/port.js";
 import { openDatabase, type AppDb } from "./db.js";
 import { registerBoardRoutes } from "./http/routes/board.js";
 import { registerListingRoutes } from "./http/routes/listings.js";
+import { registerPageRoutes } from "./http/routes/pages.js";
 import { registerPolarWebhookRoutes } from "./http/routes/polar-webhook.js";
 
 declare module "fastify" {
@@ -44,6 +45,7 @@ export async function buildApp(
   app.get(HEALTHZ_PATH, async (): Promise<HealthzOk> => ({ ok: true }));
   registerBoardRoutes(app);
   registerListingRoutes(app);
+  registerPageRoutes(app);
   registerPolarWebhookRoutes(app);
   return app;
 }

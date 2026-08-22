@@ -157,6 +157,25 @@ grep -q 'rejected_content' tests/url.test.ts || fail "tests/url.test.ts missing 
 grep -q 'redirectTarget' tests/url.test.ts || fail "tests/url.test.ts missing redirect target"
 grep -q 'pornhub' tests/url.test.ts || fail "tests/url.test.ts missing NSFW host"
 
+echo "== about and rules =="
+for f in src/http/routes/pages.ts tests/pages.test.ts; do
+  [[ -f "$f" ]] || fail "missing $f"
+  [[ -s "$f" ]] || fail "empty $f"
+done
+grep -q 'registerPageRoutes' src/server.ts || fail "src/server.ts missing page routes"
+grep -q '/about' src/http/routes/pages.ts || fail "pages route missing /about"
+grep -q '/rules' src/http/routes/pages.ts || fail "pages route missing /rules"
+grep -q '\$5' src/http/routes/pages.ts || fail "rules page missing min \$5"
+grep -q 'older' src/http/routes/pages.ts || fail "rules page missing older wins"
+grep -q 'difference' src/http/routes/pages.ts || fail "rules page missing raise difference"
+grep -q 'veto is off' src/http/routes/pages.ts || fail "rules page missing veto off"
+grep -q '/about' tests/pages.test.ts || fail "tests/pages.test.ts missing /about"
+grep -q '/rules' tests/pages.test.ts || fail "tests/pages.test.ts missing /rules"
+grep -q '\$5' tests/pages.test.ts || fail "tests/pages.test.ts missing min \$5"
+grep -q 'older' tests/pages.test.ts || fail "tests/pages.test.ts missing older wins"
+grep -q 'difference' tests/pages.test.ts || fail "tests/pages.test.ts missing raise difference"
+grep -q 'veto is off' tests/pages.test.ts || fail "tests/pages.test.ts missing veto off"
+
 if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests >/dev/null 2>&1; then
   fail "src/tests must not hard-code polar.sh HTTP"
 fi
