@@ -1,12 +1,16 @@
 import { pathToFileURL } from "node:url";
 import Fastify, { type FastifyInstance } from "fastify";
+import { createPolar } from "./billing/create.js";
+import type { PolarPort } from "./billing/port.js";
 import { openDatabase, type AppDb } from "./db.js";
 import { registerBoardRoutes } from "./http/routes/board.js";
 import { registerListingRoutes } from "./http/routes/listings.js";
+import { registerPolarWebhookRoutes } from "./http/routes/polar-webhook.js";
 
 declare module "fastify" {
   interface FastifyInstance {
     db: AppDb;
+    polar: PolarPort;
   }
 }
 
@@ -14,6 +18,7 @@ export type BuildAppOptions = {
   logger?: boolean;
   db?: AppDb;
   databasePath?: string;
+  polar?: PolarPort;
 };
 
 export const HEALTHZ_PATH = "/healthz" as const;
@@ -28,7 +33,9 @@ export async function buildApp(
   const app = Fastify({ logger: options.logger ?? false });
   const ownsDb = options.db === undefined;
   const db = options.db ?? openDatabase(options.databasePath ?? ":memory:");
+  const polar = options.polar ?? createPolar();
   app.decorate("db", db);
+  app.decorate("polar", polar);
   if (ownsDb) {
     app.addHook("onClose", async () => {
       db.close();
@@ -37,6 +44,7 @@ export async function buildApp(
   app.get(HEALTHZ_PATH, async (): Promise<HealthzOk> => ({ ok: true }));
   registerBoardRoutes(app);
   registerListingRoutes(app);
+  registerPolarWebhookRoutes(app);
   return app;
 }
 

@@ -108,6 +108,22 @@ grep -q '/listings' src/http/routes/listings.ts || fail "listing route missing P
 grep -q 'open issue' tests/listings.test.ts || fail "tests/listings.test.ts missing open-issue stamp"
 grep -q 'unique' tests/listings.test.ts || fail "tests/listings.test.ts missing unique (url, issue)"
 
+echo "== polar fixture checkout =="
+for f in src/billing/port.ts src/billing/fixture.ts src/billing/create.ts \
+  src/http/routes/polar-webhook.ts tests/billing.test.ts; do
+  [[ -f "$f" ]] || fail "missing $f"
+  [[ -s "$f" ]] || fail "empty $f"
+done
+grep -q 'createCheckout' src/billing/port.ts || fail "src/billing/port.ts missing createCheckout"
+grep -q 'complete' src/billing/fixture.ts || fail "src/billing/fixture.ts missing complete"
+grep -q 'createPolar' src/billing/create.ts || fail "src/billing/create.ts missing createPolar"
+grep -q 'POLAR_FIXTURE_ONLY' src/billing/create.ts || fail "src/billing/create.ts missing POLAR_FIXTURE_ONLY"
+grep -q 'below_minimum' src/billing/create.ts || fail "src/billing/create.ts missing below_minimum"
+grep -q 'registerPolarWebhookRoutes' src/server.ts || fail "src/server.ts missing polar webhook routes"
+grep -q 'unpaid' tests/billing.test.ts || fail "tests/billing.test.ts missing unpaid checkout"
+grep -q 'below_minimum' tests/billing.test.ts || fail "tests/billing.test.ts missing \$4 below_minimum"
+grep -q 'POLAR_FIXTURE_ONLY' tests/billing.test.ts || fail "tests/billing.test.ts missing fixture-wins"
+
 if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests >/dev/null 2>&1; then
   fail "src/tests must not hard-code polar.sh HTTP"
 fi
