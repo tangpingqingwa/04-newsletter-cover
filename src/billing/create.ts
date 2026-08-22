@@ -1,15 +1,22 @@
 import { randomUUID } from "node:crypto";
-import type { AppDb, Checkout, Listing } from "../db.js";
+import type { AppDb, Checkout } from "../db.js";
 import {
+  applyPaidBid,
   createListing,
+  findListingById,
+  findListingByUrlAndIssue,
   ListingError,
+  MAX_BID_USD,
+  MIN_BID_USD,
+  openIssueDate,
+  parseBidUsd,
   parseCreateListingBody,
+  quoteListingBid,
 } from "../listings.js";
 import { FixturePolar } from "./fixture.js";
 import type { PolarPort } from "./port.js";
 
-export const MIN_BID_USD = 5;
-export const MAX_BID_USD = 10_000;
+export { findListingById, MAX_BID_USD, MIN_BID_USD, parseBidUsd };
 
 export type StartedCheckout = {
   url: string;
@@ -27,17 +34,6 @@ type CheckoutRow = {
   target_bid_usd: number;
   polar_checkout_id: string;
   status: Checkout["status"];
-};
-
-type ListingRow = {
-  id: string;
-  issue_date: string;
-  sponsor_url: string;
-  blurb: string;
-  bid_usd: number;
-  created_at: string;
-  clicks: number;
-  status: Listing["status"];
 };
 
 export function polarFixtureOnly(env: NodeJS.ProcessEnv = process.env): boolean {
@@ -70,42 +66,6 @@ export function publicBaseUrl(env: NodeJS.ProcessEnv = process.env): string {
   return "http://localhost:3000";
 }
 
-export function parseBidUsd(raw: unknown): number {
-  if (typeof raw === "boolean") {
-    throw new ListingError("invalid_bid", "bid must be a whole USD amount");
-  }
-  if (typeof raw === "number") {
-    if (!Number.isInteger(raw)) {
-      throw new ListingError("invalid_bid", "bid must be a whole USD amount");
-    }
-    return assertBidRange(raw);
-  }
-  if (typeof raw !== "string" || raw.trim() === "") {
-    throw new ListingError("invalid_bid", "bid must be a whole USD amount");
-  }
-  const trimmed = raw.trim().replace(/^\$/, "");
-  if (!/^[0-9]+$/.test(trimmed)) {
-    throw new ListingError("invalid_bid", "bid must be a whole USD amount");
-  }
-  return assertBidRange(Number(trimmed));
-}
-
-function assertBidRange(value: number): number {
-  if (value < MIN_BID_USD) {
-    throw new ListingError(
-      "below_minimum",
-      `first bid must be at least $${MIN_BID_USD}`,
-    );
-  }
-  if (value > MAX_BID_USD) {
-    throw new ListingError(
-      "above_maximum",
-      `bid must be at most $${MAX_BID_USD}`,
-    );
-  }
-  return value;
-}
-
 function checkoutFromRow(row: CheckoutRow): Checkout {
   return {
     id: row.id,
@@ -113,19 +73,6 @@ function checkoutFromRow(row: CheckoutRow): Checkout {
     amountUsd: row.amount_usd,
     targetBidUsd: row.target_bid_usd,
     polarCheckoutId: row.polar_checkout_id,
-    status: row.status,
-  };
-}
-
-function listingFromRow(row: ListingRow): Listing {
-  return {
-    id: row.id,
-    issueDate: row.issue_date,
-    sponsorUrl: row.sponsor_url,
-    blurb: row.blurb,
-    bidUsd: row.bid_usd,
-    createdAt: row.created_at,
-    clicks: row.clicks,
     status: row.status,
   };
 }
@@ -144,17 +91,6 @@ export function findCheckout(
   return row ? checkoutFromRow(row) : null;
 }
 
-export function findListingById(db: AppDb, listingId: string): Listing | null {
-  const row = db
-    .prepare<[string], ListingRow>(
-      `SELECT id, issue_date, sponsor_url, blurb, bid_usd, created_at, clicks, status
-       FROM listings
-       WHERE id = ?`,
-    )
-    .get(listingId);
-  return row ? listingFromRow(row) : null;
-}
-
 export function paidCheckoutCount(db: AppDb): number {
   const row = db
     .prepare<[], { n: number }>(
@@ -165,8 +101,8 @@ export function paidCheckoutCount(db: AppDb): number {
 }
 
 /**
- * Validate listing + min $5, insert unpaid listing + pending checkout,
- * then start Polar (fixture in tests). Does not apply the bid.
+ * Validate listing + min $5, insert unpaid listing or raise, then start Polar.
+ * Charge is the full first bid or the raise difference. Does not apply the bid.
  */
 export async function startListingCheckout(
   db: AppDb,
@@ -179,21 +115,24 @@ export async function startListingCheckout(
     throw new ListingError("invalid_listing", "listing body must be an object");
   }
   const input = body as Record<string, unknown>;
-  parseCreateListingBody(body);
+  const parsed = parseCreateListingBody(body);
   const targetBidUsd = parseBidUsd(input.bidUsd);
-
-  const listing = createListing(db, body, now);
-  if (listing.bidUsd > 0) {
+  const issueDate = openIssueDate(db, now);
+  if (!issueDate) {
     throw new ListingError(
-      "already_listed",
-      "listing already paid for this issue",
+      "no_open_issue",
+      "only the open issue accepts listings",
       409,
     );
   }
+  const existing = findListingByUrlAndIssue(db, parsed.sponsorUrl, issueDate);
+  const quote = quoteListingBid(existing?.bidUsd ?? 0, targetBidUsd);
+
+  const listing = createListing(db, body, now);
 
   const base = publicBaseUrl(env);
   const created = await polar.createCheckout({
-    amountUsd: targetBidUsd,
+    amountUsd: quote.amountUsd,
     listingId: listing.id,
     successUrl: `${base}/`,
     cancelUrl: `${base}/`,
@@ -203,15 +142,21 @@ export async function startListingCheckout(
   db.prepare(
     `INSERT INTO checkouts (id, listing_id, amount_usd, target_bid_usd, polar_checkout_id, status)
      VALUES (?, ?, ?, ?, ?, 'pending')`,
-  ).run(checkoutId, listing.id, targetBidUsd, targetBidUsd, created.checkoutId);
+  ).run(
+    checkoutId,
+    listing.id,
+    quote.amountUsd,
+    quote.targetBidUsd,
+    created.checkoutId,
+  );
 
   return {
     url: created.url,
     checkoutId,
     polarCheckoutId: created.checkoutId,
     listingId: listing.id,
-    amountUsd: targetBidUsd,
-    targetBidUsd,
+    amountUsd: quote.amountUsd,
+    targetBidUsd: quote.targetBidUsd,
   };
 }
 
@@ -231,33 +176,25 @@ export function applyPaidCheckout(
   if (checkout.status === "paid") {
     return checkout;
   }
-  if (checkout.targetBidUsd < MIN_BID_USD || checkout.amountUsd < MIN_BID_USD) {
-    throw new ListingError(
-      "below_minimum",
-      `first bid must be at least $${MIN_BID_USD}`,
-    );
-  }
 
   const listing = findListingById(db, checkout.listingId);
   if (!listing) {
     throw new ListingError("unknown_checkout", "checkout listing not found", 404);
   }
 
-  const paidAt = now.toISOString();
+  const quote = quoteListingBid(listing.bidUsd, checkout.targetBidUsd);
+  if (checkout.amountUsd !== quote.amountUsd) {
+    throw new ListingError(
+      quote.raise ? "raise_not_difference" : "below_minimum",
+      quote.raise
+        ? `raise pays the difference only (expected $${quote.amountUsd})`
+        : `first bid must be at least $${MIN_BID_USD}`,
+    );
+  }
+
   const apply = db.transaction(() => {
     db.prepare("UPDATE checkouts SET status = 'paid' WHERE id = ?").run(checkout.id);
-    if (listing.bidUsd <= 0) {
-      db.prepare("UPDATE listings SET bid_usd = ?, created_at = ? WHERE id = ?").run(
-        checkout.targetBidUsd,
-        paidAt,
-        listing.id,
-      );
-    } else {
-      db.prepare("UPDATE listings SET bid_usd = ? WHERE id = ?").run(
-        checkout.targetBidUsd,
-        listing.id,
-      );
-    }
+    applyPaidBid(db, listing.id, checkout.targetBidUsd, now);
   });
   apply();
 
