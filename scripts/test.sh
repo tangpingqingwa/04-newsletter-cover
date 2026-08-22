@@ -176,6 +176,22 @@ grep -q 'older' tests/pages.test.ts || fail "tests/pages.test.ts missing older w
 grep -q 'difference' tests/pages.test.ts || fail "tests/pages.test.ts missing raise difference"
 grep -q 'veto is off' tests/pages.test.ts || fail "tests/pages.test.ts missing veto off"
 
+echo "== public clicks =="
+for f in src/http/routes/click.ts tests/click.test.ts; do
+  [[ -f "$f" ]] || fail "missing $f"
+  [[ -s "$f" ]] || fail "empty $f"
+done
+grep -q 'registerClickRoutes' src/server.ts || fail "src/server.ts missing click routes"
+grep -q '/l/' src/http/routes/click.ts || fail "click route missing GET /l/:id"
+grep -q 'redirectTarget' src/http/routes/click.ts || fail "click route missing redirectTarget"
+grep -q 'clicks = clicks + 1' src/http/routes/click.ts || fail "click route missing click increment"
+grep -q '302' tests/click.test.ts || fail "tests/click.test.ts missing 302"
+grep -q 'utm_source' tests/click.test.ts || fail "tests/click.test.ts missing cleaned-URL strip"
+grep -q 'fbclid' tests/click.test.ts || fail "tests/click.test.ts missing fbclid strip"
+grep -q 'rank' tests/click.test.ts || fail "tests/click.test.ts missing rank-unchanged"
+grep -q '404' tests/click.test.ts || fail "tests/click.test.ts missing unknown id 404"
+grep -q 'unknown_listing' tests/click.test.ts || fail "tests/click.test.ts missing unknown listing"
+
 if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests >/dev/null 2>&1; then
   fail "src/tests must not hard-code polar.sh HTTP"
 fi
