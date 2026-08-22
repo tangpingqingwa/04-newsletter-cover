@@ -210,6 +210,26 @@ grep -q 'invents no cover' tests/issues.test.ts || fail "tests/issues.test.ts mi
 grep -q 'boot catch-up' tests/issues.test.ts || fail "tests/issues.test.ts missing boot catch-up"
 grep -q 'frozen' tests/issues.test.ts || fail "tests/issues.test.ts missing archive frozen"
 
+echo "== live-smoke stays operator-only =="
+[[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
+[[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
+[[ -f docs/live-smoke.md ]] || fail "missing docs/live-smoke.md"
+[[ -s docs/live-smoke.md ]] || fail "empty docs/live-smoke.md"
+if grep -Eq '^\s*(bash )?(\./)?scripts/live-smoke\.sh' scripts/test.sh; then
+  fail "test.sh must not invoke live-smoke.sh"
+fi
+if grep -E '^[[:space:]]*(export[[:space:]]+)?POLAR_LIVE=1' scripts/test.sh >/dev/null; then
+  fail "test.sh must not set POLAR_LIVE=1"
+fi
+grep -q 'BLOCKED-SECRET: POLAR_ACCESS_TOKEN' scripts/live-smoke.sh \
+  || fail "live-smoke.sh must name BLOCKED-SECRET: POLAR_ACCESS_TOKEN"
+grep -q 'POLAR_LIVE' scripts/live-smoke.sh \
+  || fail "live-smoke.sh must gate live Polar on POLAR_LIVE"
+grep -q 'live-smoke refuses CI=true' scripts/live-smoke.sh \
+  || fail "live-smoke.sh must refuse CI=true"
+grep -q 'PASS-ERROR' docs/live-smoke.md || fail "docs/live-smoke.md missing PASS-ERROR"
+grep -q 'BLOCKED-SECRET' docs/live-smoke.md || fail "docs/live-smoke.md missing BLOCKED-SECRET"
+
 if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests >/dev/null 2>&1; then
   fail "src/tests must not hard-code polar.sh HTTP"
 fi
