@@ -1,6 +1,7 @@
 import { pathToFileURL } from "node:url";
 import Fastify, { type FastifyInstance } from "fastify";
 import { openDatabase, type AppDb } from "./db.js";
+import { registerBoardRoutes } from "./http/routes/board.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -33,6 +34,7 @@ export async function buildApp(
     });
   }
   app.get(HEALTHZ_PATH, async (): Promise<HealthzOk> => ({ ok: true }));
+  registerBoardRoutes(app);
   return app;
 }
 

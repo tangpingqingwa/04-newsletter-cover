@@ -84,6 +84,17 @@ grep -q 'CREATE TABLE checkouts' src/migrations/003_checkouts.sql || fail "check
 grep -q 'polar_checkout_id' src/migrations/003_checkouts.sql || fail "checkouts schema missing polar_checkout_id"
 grep -q 'target_bid_usd' src/migrations/003_checkouts.sql || fail "checkouts schema missing target_bid_usd"
 
+echo "== public board + ranking =="
+for f in src/rank.ts src/http/routes/board.ts tests/rank.test.ts; do
+  [[ -f "$f" ]] || fail "missing $f"
+  [[ -s "$f" ]] || fail "empty $f"
+done
+grep -q 'bidUsd' src/rank.ts || fail "src/rank.ts missing bidUsd sort"
+grep -q 'createdAt' src/rank.ts || fail "src/rank.ts missing createdAt older-wins-ties"
+grep -q 'registerBoardRoutes' src/server.ts || fail "src/server.ts missing board routes"
+grep -q 'older' tests/rank.test.ts || fail "tests/rank.test.ts missing older-wins-ties"
+grep -q 'No paid listings' tests/rank.test.ts || fail "tests/rank.test.ts missing empty board"
+
 if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests >/dev/null 2>&1; then
   fail "src/tests must not hard-code polar.sh HTTP"
 fi
