@@ -192,6 +192,24 @@ grep -q 'rank' tests/click.test.ts || fail "tests/click.test.ts missing rank-unc
 grep -q '404' tests/click.test.ts || fail "tests/click.test.ts missing unknown id 404"
 grep -q 'unknown_listing' tests/click.test.ts || fail "tests/click.test.ts missing unknown listing"
 
+echo "== weekly issue cadence =="
+for f in src/issues.ts src/close.ts tests/issues.test.ts; do
+  [[ -f "$f" ]] || fail "missing $f"
+  [[ -s "$f" ]] || fail "empty $f"
+done
+grep -q 'issueDate 00:00:00 UTC' src/issues.ts || fail "src/issues.ts missing weekly UTC close instant"
+grep -q 'nextWeeklyIssueDate' src/issues.ts || fail "src/issues.ts missing nextWeeklyIssueDate"
+grep -q 'catchUpIssues' src/close.ts || fail "src/close.ts missing catchUpIssues"
+grep -q 'closeIssue' src/close.ts || fail "src/close.ts missing closeIssue"
+grep -q 'winner' src/close.ts || fail "src/close.ts missing winner lock"
+grep -q 'invented cover' src/close.ts || fail "src/close.ts missing empty-close no-invent"
+grep -q 'catchUpIssues' src/server.ts || fail "src/server.ts missing boot catch-up"
+grep -q 'weekly UTC close' tests/issues.test.ts || fail "tests/issues.test.ts missing weekly UTC close"
+grep -q 'issue #1' tests/issues.test.ts || fail "tests/issues.test.ts missing winner as #1"
+grep -q 'invents no cover' tests/issues.test.ts || fail "tests/issues.test.ts missing empty close"
+grep -q 'boot catch-up' tests/issues.test.ts || fail "tests/issues.test.ts missing boot catch-up"
+grep -q 'frozen' tests/issues.test.ts || fail "tests/issues.test.ts missing archive frozen"
+
 if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests >/dev/null 2>&1; then
   fail "src/tests must not hard-code polar.sh HTTP"
 fi

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { AppDb, Checkout } from "../db.js";
+import { catchUpIssues } from "../issues.js";
 import {
   applyPaidBid,
   createListing,
@@ -169,6 +170,7 @@ export function applyPaidCheckout(
   checkoutId: string,
   now: Date = new Date(),
 ): Checkout {
+  catchUpIssues(db, now);
   const checkout = findCheckout(db, checkoutId);
   if (!checkout) {
     throw new ListingError("unknown_checkout", "checkout not found", 404);
