@@ -388,6 +388,13 @@ grep -q 'empty-kicker">This issue’s cover' src/views/skin.ts \
   || fail "empty open stand must kick with This issue’s cover"
 grep -q 'data-cover-prize="true"' src/views/skin.ts || fail "empty open claim prize mark must stay"
 grep -q 'this issue’s cover' src/views/skin.ts || fail "empty open claim must still name this issue’s cover"
+if ! awk '
+  /function renderClaim/ { in_fn = 1 }
+  in_fn && /data-cover-prize="true"/ && /No cover sold/ && /No paid listings on this board/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "empty open claim must keep honest empty copy with the named prize"
+fi
 grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
 grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
 if ! awk '

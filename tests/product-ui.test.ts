@@ -611,7 +611,7 @@ test("empty open / lets a first-time reader hit the stand before Claim #1", () =
   assert.match(emptyOpen, /This issue’s cover is still open/);
   assert.match(emptyOpen, /No cover sold/);
   assert.match(emptyOpen, /No paid listings on this board/);
-  assert.match(emptyOpen, /class="claim-note" data-empty-issue="true" data-cover-prize="true"/);
+  assert.match(emptyOpen, /class="claim-note" data-empty-issue="true" data-cover-prize="true">No cover sold. No paid listings on this board. \$5 takes #1 — this issue’s cover/);
   assert.match(emptyOpen, /\$5 takes #1 — this issue’s cover/);
   assert.match(emptyOpen, /Claim #1 for/);
   assert.match(emptyOpen, /class="outbid"/);
