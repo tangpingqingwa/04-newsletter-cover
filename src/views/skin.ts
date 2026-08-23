@@ -147,11 +147,10 @@ function renderFlag(board: BoardView): string {
   if (board.status === "closed") {
     return `<p class="flag">This issue is closed. It is not the next issue’s cover. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
   }
-  const claimHop =
-    board.listings.length > 0
-      ? ` <a href="#claim" data-claim-cover="true">Claim the next cover.</a>`
-      : "";
-  return `<p class="flag">The next issue’s cover goes to whoever pays the most. Rank is the bid.${claimHop}</p>`;
+  if (board.listings.length > 0) {
+    return `<p class="flag"><span data-sold-cover="true">This issue’s cover is sold.</span> Rank is the bid. <a href="#claim" data-claim-cover="true">Claim the next cover.</a></p>`;
+  }
+  return `<p class="flag">The next issue’s cover goes to whoever pays the most. Rank is the bid.</p>`;
 }
 
 function renderClaim(board: BoardView): string {
