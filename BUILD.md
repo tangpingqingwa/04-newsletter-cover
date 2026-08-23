@@ -174,6 +174,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 18
 - **Acceptance:** Occupied boards have one `data-cover-prize-line="true"` on `Cover · #1` with `white-space: nowrap`. Empty open `/` and closed empty archives have no prize-line mark. `data-read-cover` and `data-claim-cover` stay. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 20: first-time sponsor — $5 takes this issue’s cover
+- **Description:** On an empty open `/`, the claim note names the prize. `$5 takes #1` is this issue’s cover, not a subscriber pitch or a nameless rank. Occupied boards keep sold-cover-first, **Claim the next cover**, and the Cover · #1 prize line. Closed empty archives stay honest and do not get the cover-prize mark. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 19
+- **Acceptance:** Empty open `/` has `data-cover-prize="true"` and `$5 takes #1 — this issue’s cover`. Occupied open `/` keeps `data-claim-cover` and `data-cover-prize-line` and has no `data-cover-prize="true"`. Closed empty archives stay honest and do not show Claim #1. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)

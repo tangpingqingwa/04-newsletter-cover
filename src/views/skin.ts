@@ -164,7 +164,7 @@ function renderClaim(board: BoardView): string {
   const top = board.listings[0]?.bidUsd ?? 0;
   const defaultBid = top > 0 ? top + 1 : MIN_BID_USD;
   const note = empty
-    ? `<p class="claim-note" data-empty-issue="true">No cover sold. No paid listings on this board. $${MIN_BID_USD} takes #1.</p>`
+    ? `<p class="claim-note" data-empty-issue="true" data-cover-prize="true">No cover sold. No paid listings on this board. $${MIN_BID_USD} takes #1 — this issue’s cover.</p>`
     : `<p class="claim-note">New spots start at $${MIN_BID_USD}. One prize: the cover. Paying less than #1 still lists at the rank that bid can take.</p>`;
   const raiseHint = empty
     ? ""

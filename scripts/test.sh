@@ -357,6 +357,27 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "cover prize-line UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time sponsor: empty open / names this issue’s cover =="
+grep -qE '^### PR 20: first-time sponsor' BUILD.md || fail "BUILD.md missing ### PR 20: first-time sponsor"
+grep -q 'data-cover-prize="true"' src/views/skin.ts || fail "empty open claim must mark data-cover-prize"
+grep -q 'this issue’s cover' src/views/skin.ts || fail "empty open claim must name this issue’s cover"
+grep -q 'takes #1' src/views/skin.ts || fail "empty open claim must still say \$5 takes #1"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 prize line must stay"
+grep -q 'data-cover-prize="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-cover-prize"
+grep -q 'this issue’s cover' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must name this issue’s cover"
+grep -q 'empty open / names this issue' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing empty-cover prize case"
+grep -q 'doesNotMatch(occupiedOpen, /data-cover-prize="true"/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not stamp data-cover-prize"
+grep -q 'doesNotMatch(closedEmpty, /data-cover-prize="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-cover-prize"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "empty-cover claim must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
