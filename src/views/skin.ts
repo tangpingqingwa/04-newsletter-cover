@@ -211,10 +211,12 @@ function renderClaim(board: BoardView): string {
 
 function renderPitch(listing: BoardViewListing): string {
   const href = `/l/${encodeURIComponent(listing.id)}`;
-  const coverClass = listing.rank === 1 ? " cover" : "";
-  const kicker = listing.rank === 1 ? "Cover · #1" : `#${listing.rank}`;
+  const isCover = listing.rank === 1;
+  const coverClass = isCover ? " cover" : "";
+  const kicker = isCover ? "Cover · #1" : `#${listing.rank}`;
+  const prizeLine = isCover ? ' data-cover-prize-line="true"' : "";
   return `        <li class="cover-line${coverClass}" data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
-          <span class="rank">${kicker}</span>
+          <span class="rank"${prizeLine}>${kicker}</span>
           <div>
             <p class="hed">${escapeHtml(listing.blurb)}</p>
             <p class="dek"><a href="${href}">${escapeHtml(displaySponsor(listing.sponsorUrl))}</a></p>
@@ -485,6 +487,7 @@ button { cursor: pointer; }
   border-top: 1px solid var(--hair);
 }
 .cover-line.cover {
+  grid-template-columns: max-content 1fr auto;
   background: linear-gradient(180deg, rgb(157 28 20 / 0.08), transparent 70%);
   border-top: 2px solid var(--rule);
 }
@@ -494,6 +497,7 @@ button { cursor: pointer; }
   letter-spacing: 0.04em;
 }
 .cover .rank { color: var(--flag); }
+.rank[data-cover-prize-line] { white-space: nowrap; }
 .hed {
   margin: 0;
   font-family: var(--display);

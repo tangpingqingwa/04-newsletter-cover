@@ -327,6 +327,36 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "claim-cover UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: Cover · #1 is one prize line =="
+grep -qE '^### PR 19: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 19: first-time reader"
+grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "sold cover must mark data-cover-prize-line"
+grep -q 'Cover · #1' src/views/skin.ts || fail "sold cover must still say Cover · #1"
+grep -q 'white-space: nowrap' src/views/skin.ts || fail "Cover · #1 prize line must nowrap"
+grep -q 'rank\[data-cover-prize-line\]' src/views/skin.ts || fail "nowrap must target the Cover · #1 prize line"
+grep -q 'grid-template-columns: max-content 1fr auto' src/views/skin.ts \
+  || fail "sold cover row must give Cover · #1 a single-line track"
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /listing.rank === 1/ { saw_rank = 1 }
+  in_fn && saw_rank && /data-cover-prize-line="true"/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "data-cover-prize-line must stamp only rank 1"
+fi
+grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+grep -q 'data-cover-prize-line="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-cover-prize-line"
+grep -q 'Cover · #1 is one prize line' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing Cover · #1 prize-line case"
+grep -q 'doesNotMatch(emptyOpen, /data-cover-prize-line="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-cover-prize-line"
+grep -q 'doesNotMatch(closedEmpty, /data-cover-prize-line="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-cover-prize-line"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "cover prize-line UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
