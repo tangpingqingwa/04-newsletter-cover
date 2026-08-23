@@ -136,6 +136,7 @@ test("paid listing is a cover pitch: blurb, sponsor hop, $bid, clicks", async (t
   assert.match(html.body, /data-rank="1"/);
   assert.match(html.body, /data-id="lst_cover"/);
   assert.match(html.body, /Cover · #1/);
+  assert.match(html.body, /data-cover-prize-line="true"/);
   assert.match(html.body, /Widgets for the next issue/);
   assert.match(html.body, /href="\/l\/lst_cover"/);
   assert.match(html.body, /sponsor\.example\/pitch/);
@@ -400,4 +401,84 @@ test("occupied open / names one hop to claim the next cover", () => {
   assert.doesNotMatch(closedOccupied, /data-claim-cover/);
   assert.doesNotMatch(closedOccupied, /href="#claim"/);
   assert.doesNotMatch(closedOccupied, /id="claim"/);
+});
+
+test("Cover · #1 is one prize line", () => {
+  const occupiedOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_cover",
+        sponsorUrl: "https://sponsor.example/pitch",
+        blurb: "Widgets for the next issue",
+        bidUsd: 12,
+        clicks: 3,
+      },
+      {
+        rank: 2,
+        id: "lst_two",
+        sponsorUrl: "https://second.example/also",
+        blurb: "Also listed",
+        bidUsd: 6,
+        clicks: 0,
+      },
+    ],
+  });
+  const emptyOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const closedOccupied = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_won",
+        sponsorUrl: "https://won.example/cover",
+        blurb: "Frozen winner",
+        bidUsd: 20,
+        clicks: 1,
+      },
+    ],
+  });
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [],
+  });
+
+  assert.match(occupiedOpen, /data-cover-prize-line="true"/);
+  assert.match(occupiedOpen, /class="rank" data-cover-prize-line="true">Cover · #1</);
+  assert.equal((occupiedOpen.match(/data-cover-prize-line="true"/g) ?? []).length, 1);
+  assert.match(occupiedOpen, /white-space: nowrap/);
+  assert.match(occupiedOpen, /rank\[data-cover-prize-line\]/);
+  assert.match(occupiedOpen, /grid-template-columns: max-content 1fr auto/);
+  assert.match(occupiedOpen, /data-read-cover="true"/);
+  assert.match(occupiedOpen, /data-claim-cover="true"/);
+  assert.match(occupiedOpen, /Claim the next cover/);
+  assert.ok(occupiedOpen.indexOf('data-claim-cover="true"') < occupiedOpen.indexOf('data-read-cover="true"'));
+  assert.ok(occupiedOpen.indexOf('data-read-cover="true"') < occupiedOpen.indexOf('id="claim"'));
+  assert.ok(occupiedOpen.indexOf('data-cover-prize-line="true"') < occupiedOpen.indexOf('id="claim"'));
+  assert.match(occupiedOpen, /Widgets for the next issue/);
+  assert.match(occupiedOpen, /#2/);
+  assert.doesNotMatch(occupiedOpen, /subscriber/i);
+  assert.doesNotMatch(occupiedOpen, /article list/i);
+
+  assert.match(emptyOpen, /Claim #1 for/);
+  assert.doesNotMatch(emptyOpen, /data-cover-prize-line="true"/);
+  assert.doesNotMatch(emptyOpen, /Cover · #1/);
+
+  assert.match(closedOccupied, /data-cover-prize-line="true"/);
+  assert.match(closedOccupied, /Cover · #1/);
+  assert.doesNotMatch(closedOccupied, /data-claim-cover/);
+  assert.doesNotMatch(closedOccupied, /data-read-cover/);
+
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.doesNotMatch(closedEmpty, /data-cover-prize-line="true"/);
+  assert.doesNotMatch(closedEmpty, /Cover · #1/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
 });
