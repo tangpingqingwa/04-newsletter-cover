@@ -378,6 +378,56 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "empty-cover claim must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: empty open stand before Claim #1 =="
+grep -qE '^### PR 21: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 21: first-time reader"
+grep -q 'data-read-stand="true"' src/views/skin.ts || fail "empty open stand must mark data-read-stand"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "empty open stand must use class empty-stand"
+grep -q 'This issue’s cover is still open' src/views/skin.ts \
+  || fail "empty open stand must say this issue’s cover is still open"
+grep -q 'empty-kicker">This issue’s cover' src/views/skin.ts \
+  || fail "empty open stand must kick with This issue’s cover"
+grep -q 'data-cover-prize="true"' src/views/skin.ts || fail "empty open claim prize mark must stay"
+grep -q 'this issue’s cover' src/views/skin.ts || fail "empty open claim must still name this issue’s cover"
+if ! awk '
+  /function renderClaim/ { in_fn = 1 }
+  in_fn && /data-cover-prize="true"/ && /No cover sold/ && /No paid listings on this board/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "empty open claim must keep honest empty copy with the named prize"
+fi
+grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+if ! awk '
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /board.status === "closed"/ { saw_closed = 1 }
+  in_rack && saw_closed && /class="empty-issue"/ { saw_closed_slab = 1 }
+  in_rack && /class="empty-stand"/ { saw_open_stand = 1 }
+  in_rack && saw_open_stand && /data-read-stand="true"/ { found = 1 }
+  END { exit(found && saw_closed_slab ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "empty-stand must be the open empty folio; empty-issue stays closed-archive only"
+fi
+if ! awk '
+  /export function renderBoardHtml/ { in_fn = 1 }
+  in_fn && /readEmptyStand/ { saw_gate = 1 }
+  in_fn && saw_gate && /\$\{rack\}/ { saw_rack = 1 }
+  in_fn && saw_gate && saw_rack && /\$\{claim\}/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "empty open / must render the stand before Claim #1"
+fi
+grep -q 'data-read-stand="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-read-stand"
+grep -q 'empty open / lets a first-time reader hit the stand before Claim #1' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing empty-stand-first case"
+grep -q 'doesNotMatch(occupiedOpen, /data-read-stand/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not stamp data-read-stand"
+grep -q 'doesNotMatch(closedEmpty, /data-read-stand/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-read-stand"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "empty-stand UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
