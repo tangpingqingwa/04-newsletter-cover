@@ -142,6 +142,8 @@ test("paid listing is a cover pitch: blurb, sponsor hop, $bid, clicks", async (t
   assert.match(html.body, /3 clicks/);
   assert.match(html.body, /Paying less than #1 still lists/);
   assert.match(html.body, /You pay only the difference/);
+  assert.match(html.body, /data-read-cover="true"/);
+  assert.ok(html.body.indexOf('data-read-cover="true"') < html.body.indexOf('id="claim"'));
   assert.doesNotMatch(html.body, /no cover sold/i);
   assert.doesNotMatch(html.body, /class="claim-note" data-empty-issue="true"/);
   assert.doesNotMatch(html.body, /\$5 takes #1/);
@@ -249,4 +251,79 @@ test("closed empty archive is not the next open cover", () => {
   assert.match(openEmpty, /class="outbid"/);
   assert.doesNotMatch(openEmpty, /data-open-cover/);
   assert.doesNotMatch(openEmpty, /This issue is closed/);
+});
+
+test("occupied open / lets the sold cover win the eye", () => {
+  const occupiedOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_cover",
+        sponsorUrl: "https://sponsor.example/pitch",
+        blurb: "Widgets for the next issue",
+        bidUsd: 12,
+        clicks: 3,
+      },
+      {
+        rank: 2,
+        id: "lst_two",
+        sponsorUrl: "https://second.example/also",
+        blurb: "Also listed",
+        bidUsd: 6,
+        clicks: 0,
+      },
+    ],
+  });
+  const emptyOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const closedOccupied = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_won",
+        sponsorUrl: "https://won.example/cover",
+        blurb: "Frozen winner",
+        bidUsd: 20,
+        clicks: 1,
+      },
+    ],
+  });
+
+  const rackAt = occupiedOpen.indexOf('data-read-cover="true"');
+  const coverAt = occupiedOpen.indexOf('class="cover-line cover"');
+  const claimAt = occupiedOpen.indexOf('id="claim"');
+  assert.notEqual(rackAt, -1);
+  assert.notEqual(coverAt, -1);
+  assert.notEqual(claimAt, -1);
+  assert.ok(coverAt < claimAt);
+  assert.ok(rackAt < claimAt);
+  assert.match(occupiedOpen, /data-read-cover="true"/);
+  assert.match(occupiedOpen, /Cover · #1/);
+  assert.match(occupiedOpen, /Widgets for the next issue/);
+  assert.match(occupiedOpen, /Claim #1 for/);
+  assert.match(occupiedOpen, /You pay only the difference/);
+  assert.match(occupiedOpen, /Paying less than #1 still lists/);
+  assert.doesNotMatch(occupiedOpen, /subscriber/i);
+  assert.doesNotMatch(occupiedOpen, /article list/i);
+
+  const emptyClaim = emptyOpen.indexOf('id="claim"');
+  assert.notEqual(emptyClaim, -1);
+  assert.equal(emptyOpen.indexOf('class="cover-rack"'), -1);
+  assert.match(emptyOpen, /Claim #1 for/);
+  assert.doesNotMatch(emptyOpen, /data-read-cover/);
+
+  const closedHint = closedOccupied.indexOf("This issue is frozen");
+  const closedCover = closedOccupied.indexOf('class="cover-line cover"');
+  assert.notEqual(closedHint, -1);
+  assert.notEqual(closedCover, -1);
+  assert.ok(closedHint < closedCover);
+  assert.doesNotMatch(closedOccupied, /data-read-cover/);
+  assert.doesNotMatch(closedOccupied, /id="claim"/);
 });

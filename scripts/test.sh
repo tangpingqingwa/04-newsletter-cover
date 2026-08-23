@@ -279,6 +279,28 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "closed-archive UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: occupied open cover is the read =="
+grep -qE '^### PR 17: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 17: first-time reader"
+grep -q 'data-read-cover="true"' src/views/skin.ts || fail "occupied cover rack must mark data-read-cover"
+if ! awk '
+  /export function renderBoardHtml/ { in_fn = 1 }
+  in_fn && /readSoldCover/ { saw_gate = 1 }
+  in_fn && saw_gate && /\$\{rack\}/ { saw_rack = 1 }
+  in_fn && saw_gate && saw_rack && /\$\{claim\}/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "occupied open / must render the cover rack before Claim #1"
+fi
+grep -q 'data-read-cover="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-read-cover"
+grep -q 'occupied open / lets the sold cover win the eye' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing occupied-open read-cover case"
+grep -q 'doesNotMatch(emptyOpen, /data-read-cover/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-read-cover"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "sold-cover UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
