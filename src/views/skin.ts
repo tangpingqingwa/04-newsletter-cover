@@ -139,8 +139,15 @@ function renderMasthead(board: BoardView): string {
           <h1>The Cover</h1>
           <p class="ear ear-right">Weekly · UTC</p>
         </div>
-        <p class="flag">The next issue’s cover goes to whoever pays the most. Rank is the bid.</p>
+        ${renderFlag(board)}
       </header>`;
+}
+
+function renderFlag(board: BoardView): string {
+  if (board.status === "closed") {
+    return `<p class="flag">This issue is closed. It is not the next issue’s cover. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
+  }
+  return `<p class="flag">The next issue’s cover goes to whoever pays the most. Rank is the bid.</p>`;
 }
 
 function renderClaim(board: BoardView): string {
@@ -367,6 +374,10 @@ button { cursor: pointer; }
 .flag {
   margin: 0.55rem 0 0;
   font-size: 0.95rem;
+}
+.flag a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 .claim {
   padding: 1rem 0 1.05rem;

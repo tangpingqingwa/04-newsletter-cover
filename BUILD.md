@@ -150,6 +150,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 14
 - **Acceptance:** Empty open `/` has `class="claim-note" data-empty-issue="true"` and no `class="empty-issue"`. Occupied boards keep cover lines. Closed empty archives stay honest and do not show Claim #1. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 16: first-time reader — closed archive is not the next cover
+- **Description:** On a closed `/issue/:date`, the masthead no longer pitches the next issue’s cover. The flag says this issue is closed and is not the next cover, and points to `/` (`data-open-cover`) for the open stand. Empty closed archives stay honest (no Claim #1, empty-issue slab). Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 15
+- **Acceptance:** Closed empty `/issue/:date` has `data-open-cover="true"` and does not say the next issue’s cover goes to whoever pays the most. Open `/` keeps that pitch and Claim #1. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
