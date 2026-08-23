@@ -1,6 +1,9 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { AppDb, Issue, Listing } from "../../db.js";
 import { rankListings, type RankedListing } from "../../rank.js";
+import { renderBoardHtml } from "../../views/skin.js";
+
+export { renderBoardHtml };
 
 export const BOARD_PATH = "/" as const;
 export const ISSUE_BOARD_PATH = "/issue/:date" as const;
@@ -157,55 +160,6 @@ export function wantsJson(request: FastifyRequest): boolean {
   }
   const accept = request.headers.accept ?? "";
   return /\bapplication\/json\b/.test(accept) && !/\btext\/html\b/.test(accept);
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-export function renderBoardHtml(board: BoardPayload): string {
-  const issueLabel = board.issueDate
-    ? `Issue ${escapeHtml(board.issueDate)}${board.status ? ` · ${escapeHtml(board.status)}` : ""}`
-    : "No open issue";
-  const rows =
-    board.listings.length === 0
-      ? ""
-      : board.listings
-          .map(
-            (listing) => `      <li data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}">
-        <span class="rank">#${listing.rank}</span>
-        <span class="blurb">${escapeHtml(listing.blurb)}</span>
-        <span class="url">${escapeHtml(listing.sponsorUrl)}</span>
-        <span class="bid">$${listing.bidUsd}</span>
-        <span class="clicks">${listing.clicks} clicks</span>
-      </li>`,
-          )
-          .join("\n");
-  const empty =
-    board.listings.length === 0
-      ? "    <p>No paid listings on this board.</p>\n"
-      : "";
-  return `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Newsletter Cover</title>
-  </head>
-  <body>
-    <h1>Newsletter Cover</h1>
-    <p>The next issue’s cover goes to whoever pays the most. Rank is the bid.</p>
-    <p>${issueLabel}</p>
-${empty}    <ol>
-${rows}
-    </ol>
-  </body>
-</html>
-`;
 }
 
 async function sendBoard(

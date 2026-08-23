@@ -184,6 +184,8 @@ test("GET / empty board is valid HTML and JSON, not an error", async (t) => {
   assert.match(html.body, /<html/i);
   assert.match(html.body, /<\/html>/i);
   assert.match(html.body, /No paid listings on this board/);
+  assert.match(html.body, /no cover sold/i);
+  assert.doesNotMatch(html.body, /data-rank="1"/);
 
   const json = await app.inject({
     method: "GET",
@@ -208,7 +210,9 @@ test("GET /issue/:date empty archive is valid HTML/JSON, not an error", async (t
   assert.match(html.headers["content-type"] ?? "", /text\/html/);
   assert.match(html.body, /<!DOCTYPE html>/i);
   assert.match(html.body, /No paid listings on this board/);
+  assert.match(html.body, /no cover sold/i);
   assert.match(html.body, new RegExp(ISSUE));
+  assert.doesNotMatch(html.body, /data-rank="1"/);
 
   const json = await app.inject({
     method: "GET",
@@ -362,6 +366,8 @@ test("malformed issue date is an empty valid board, not an error", async (t) => 
   assert.match(html.headers["content-type"] ?? "", /text\/html/);
   assert.match(html.body, /<!DOCTYPE html>/i);
   assert.match(html.body, /No paid listings on this board/);
+  assert.match(html.body, /no cover sold/i);
+  assert.doesNotMatch(html.body, /data-rank="1"/);
 
   const json = await app.inject({
     method: "GET",
