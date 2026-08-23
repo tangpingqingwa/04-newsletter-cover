@@ -77,9 +77,11 @@ test("open board is a print masthead: folio OPEN, Claim #1, dashed amount, ±, O
   assert.match(body, /name="bidUsd"/);
   assert.match(body, /Leaderboard/);
   assert.match(body, /class="claim-note" data-empty-issue="true"/);
+  assert.match(body, /data-cover-prize="true"/);
   assert.match(body, /no cover sold/i);
   assert.match(body, /No paid listings on this board/);
   assert.match(body, /\$5 takes #1/);
+  assert.match(body, /this issue’s cover/);
   assert.doesNotMatch(body, /class="empty-issue"/);
   assert.doesNotMatch(body, /Nobody bought the cover/);
   assert.doesNotMatch(body, /data-rank="1"/);
@@ -111,6 +113,7 @@ test("empty archive is no cover sold; Claim #1 chrome must not count as a winner
   assert.doesNotMatch(html.body, /id="claim"/);
   assert.doesNotMatch(html.body, /Claim #1 for/);
   assert.doesNotMatch(html.body, /data-claim-cover/);
+  assert.doesNotMatch(html.body, /data-cover-prize="true"/);
   assert.doesNotMatch(html.body, /data-rank="1"/);
   assert.doesNotMatch(html.body, /class="cover-line"/);
   assert.doesNotMatch(html.body, /data-sponsor-url=/);
@@ -153,6 +156,7 @@ test("paid listing is a cover pitch: blurb, sponsor hop, $bid, clicks", async (t
   assert.ok(html.body.indexOf('data-claim-cover="true"') < html.body.indexOf('data-read-cover="true"'));
   assert.doesNotMatch(html.body, /no cover sold/i);
   assert.doesNotMatch(html.body, /class="claim-note" data-empty-issue="true"/);
+  assert.doesNotMatch(html.body, /data-cover-prize="true"/);
   assert.doesNotMatch(html.body, /\$5 takes #1/);
   assert.doesNotMatch(html.body, /subscribers/i);
 });
@@ -186,8 +190,10 @@ test("renderBoardHtml empty payload never invents a ranked cover", () => {
   assert.match(html, /no cover sold/i);
   assert.match(html, /No paid listings on this board/);
   assert.match(html, /\$5 takes #1/);
+  assert.match(html, /this issue’s cover/);
   assert.match(html, /Claim #1 for/);
   assert.match(html, /class="claim-note" data-empty-issue="true"/);
+  assert.match(html, /data-cover-prize="true"/);
   assert.doesNotMatch(html, /class="empty-issue"/);
   assert.doesNotMatch(html, /data-rank="1"/);
 });
@@ -203,9 +209,11 @@ test("empty open cover lets Claim #1 win the eye; empty archive stays a frozen f
   assert.notEqual(claimAt, -1);
   assert.equal(emptySlab, -1);
   assert.match(openEmpty, /class="claim-note" data-empty-issue="true"/);
+  assert.match(openEmpty, /data-cover-prize="true"/);
   assert.match(openEmpty, /No cover sold/);
   assert.match(openEmpty, /No paid listings on this board/);
   assert.match(openEmpty, /\$5 takes #1/);
+  assert.match(openEmpty, /this issue’s cover/);
   assert.match(openEmpty, /Claim #1 for/);
   assert.match(openEmpty, /class="outbid"/);
   assert.doesNotMatch(openEmpty, /Already on this issue/);
@@ -230,6 +238,7 @@ test("empty open cover lets Claim #1 win the eye; empty archive stays a frozen f
   assert.doesNotMatch(closedEmpty, /Claim #1 for/);
   assert.doesNotMatch(closedEmpty, /data-claim-cover/);
   assert.doesNotMatch(closedEmpty, /class="outbid"/);
+  assert.doesNotMatch(closedEmpty, /data-cover-prize="true"/);
 });
 
 test("closed empty archive is not the next open cover", () => {
@@ -259,6 +268,7 @@ test("closed empty archive is not the next open cover", () => {
   assert.match(openEmpty, /The next issue’s cover goes to whoever pays the most/);
   assert.match(openEmpty, /Claim #1 for/);
   assert.match(openEmpty, /class="outbid"/);
+  assert.match(openEmpty, /\$5 takes #1 — this issue’s cover/);
   assert.doesNotMatch(openEmpty, /data-open-cover/);
   assert.doesNotMatch(openEmpty, /This issue is closed/);
 });
@@ -327,6 +337,7 @@ test("occupied open / lets the sold cover win the eye", () => {
   assert.notEqual(emptyClaim, -1);
   assert.equal(emptyOpen.indexOf('class="cover-rack"'), -1);
   assert.match(emptyOpen, /Claim #1 for/);
+  assert.match(emptyOpen, /data-cover-prize="true"/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
   assert.doesNotMatch(emptyOpen, /data-claim-cover/);
 
@@ -480,5 +491,58 @@ test("Cover · #1 is one prize line", () => {
   assert.match(closedEmpty, /class="empty-issue"/);
   assert.doesNotMatch(closedEmpty, /data-cover-prize-line="true"/);
   assert.doesNotMatch(closedEmpty, /Cover · #1/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
+});
+
+test("empty open / names this issue’s cover as the $5 prize", () => {
+  const emptyOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const occupiedOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_cover",
+        sponsorUrl: "https://sponsor.example/pitch",
+        blurb: "Widgets for the next issue",
+        bidUsd: 12,
+        clicks: 3,
+      },
+    ],
+  });
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [],
+  });
+
+  assert.match(emptyOpen, /class="claim-note" data-empty-issue="true" data-cover-prize="true"/);
+  assert.match(emptyOpen, /\$5 takes #1 — this issue’s cover/);
+  assert.match(emptyOpen, /No cover sold/);
+  assert.match(emptyOpen, /No paid listings on this board/);
+  assert.match(emptyOpen, /Claim #1 for/);
+  assert.match(emptyOpen, /class="outbid"/);
+  assert.doesNotMatch(emptyOpen, /class="empty-issue"/);
+  assert.doesNotMatch(emptyOpen, /data-read-cover/);
+  assert.doesNotMatch(emptyOpen, /data-claim-cover/);
+  assert.doesNotMatch(emptyOpen, /data-cover-prize-line="true"/);
+  assert.doesNotMatch(emptyOpen, /subscriber/i);
+  assert.doesNotMatch(emptyOpen, /article list/i);
+
+  assert.match(occupiedOpen, /data-read-cover="true"/);
+  assert.match(occupiedOpen, /data-claim-cover="true"/);
+  assert.match(occupiedOpen, /Claim the next cover/);
+  assert.match(occupiedOpen, /data-cover-prize-line="true"/);
+  assert.match(occupiedOpen, /Cover · #1/);
+  assert.doesNotMatch(occupiedOpen, /data-cover-prize="true"/);
+  assert.doesNotMatch(occupiedOpen, /\$5 takes #1 — this issue’s cover/);
+
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.doesNotMatch(closedEmpty, /data-cover-prize="true"/);
+  assert.doesNotMatch(closedEmpty, /\$5 takes #1/);
   assert.doesNotMatch(closedEmpty, /id="claim"/);
 });
