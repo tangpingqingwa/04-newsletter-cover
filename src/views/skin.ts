@@ -372,9 +372,6 @@ button { cursor: pointer; }
   padding: 1rem 0 1.05rem;
   border-bottom: 1px solid var(--rule);
 }
-.claim:has(.claim-note[data-empty-issue="true"]) {
-  border-bottom: 0;
-}
 .claim-hed {
   display: flex;
   flex-wrap: wrap;
