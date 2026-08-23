@@ -230,9 +230,23 @@ grep -q 'live-smoke refuses CI=true' scripts/live-smoke.sh \
 grep -q 'PASS-ERROR' docs/live-smoke.md || fail "docs/live-smoke.md missing PASS-ERROR"
 grep -q 'BLOCKED-SECRET' docs/live-smoke.md || fail "docs/live-smoke.md missing BLOCKED-SECRET"
 
-if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests >/dev/null 2>&1; then
-  fail "src/tests must not hard-code polar.sh HTTP"
+if grep -RInE 'https?://([^/]*\.)?polar\.sh' src tests \
+  | grep -v 'src/billing/polar.ts' \
+  | grep -v 'tests/billing.test.ts' >/dev/null 2>&1; then
+  fail "only src/billing/polar.ts (and its unit tests) may mention polar.sh HTTP"
 fi
+if grep -RInE 'https?://api\.polar\.sh' src/http src/server.ts >/dev/null 2>&1; then
+  fail "HTTP / pages must not hard-code https://api.polar.sh"
+fi
+if grep -RInE "from ['\\\"].*billing/polar" src/http src/server.ts >/dev/null 2>&1; then
+  fail "HTTP / pages must not import billing/polar.ts directly"
+fi
+grep -q 'POLAR_API_BASE' src/billing/polar.ts \
+  || fail "src/billing/polar.ts missing POLAR_API_BASE override"
+grep -q 'export class LivePolar' src/billing/polar.ts \
+  || fail "src/billing/polar.ts must export LivePolar"
+grep -q 'LivePolar' src/billing/create.ts \
+  || fail "createPolar must select LivePolar when live is enabled"
 
 if [[ -f package.json ]]; then
   echo "== install =="

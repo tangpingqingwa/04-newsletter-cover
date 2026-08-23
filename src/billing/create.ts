@@ -15,6 +15,7 @@ import {
   quoteListingBid,
 } from "../listings.js";
 import { FixturePolar } from "./fixture.js";
+import { LivePolar } from "./polar.js";
 import type { PolarPort } from "./port.js";
 
 export { findListingById, MAX_BID_USD, MIN_BID_USD, parseBidUsd };
@@ -54,7 +55,7 @@ export function createPolar(env: NodeJS.ProcessEnv = process.env): PolarPort {
     if (!env.POLAR_ACCESS_TOKEN?.trim()) {
       throw new Error("BLOCKED-SECRET: POLAR_ACCESS_TOKEN");
     }
-    throw new Error("live Polar is env-gated and must not run in tests");
+    return new LivePolar({ env });
   }
   return new FixturePolar();
 }

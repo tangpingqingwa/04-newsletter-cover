@@ -17,6 +17,7 @@ export function fixtureCheckoutUrl(checkoutId: string): string {
 
 /** In-process Polar. No network. Tests call `complete` to mark a session paid. */
 export class FixturePolar implements PolarPort {
+  readonly kind = "fixture" as const;
   private readonly sessions = new Map<string, FixtureCheckoutRecord>();
 
   async createCheckout(input: CreateCheckoutInput): Promise<PolarCheckout> {
