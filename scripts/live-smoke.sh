@@ -312,10 +312,12 @@ fi
 if [[ "$board0_html_code" == "200" && "$board0_json_code" == "200" ]] \
   && [[ "$board0_count" == "0" ]] \
   && html_has "$board0_html" 'No paid listings on this board\.' \
+  && grep -Eiq 'no cover sold' "$board0_html" \
   && [[ "$issue_html_code" == "200" ]] \
   && html_has "$issue_html" 'No paid listings on this board\.' \
+  && grep -Eiq 'no cover sold' "$issue_html" \
   && ! html_has "$board0_html" 'data-rank="' \
-  && ! html_has "$board0_html" 'class="bid"' \
+  && ! html_has "$board0_html" 'class="cover-line"' \
   && ! html_has "$board0_html" 'subscriber' \
   && ! html_has "$board0_html" 'open rate'; then
   record "empty-board" "PASS" "GET / 200. Zero paid listings. No invented cover."

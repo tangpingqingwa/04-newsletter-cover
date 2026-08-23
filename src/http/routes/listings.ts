@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { startListingCheckout } from "../../billing/create.js";
 import { ListingError } from "../../listings.js";
+import { escapeHtml } from "../../views/skin.js";
 
 export const LISTINGS_PATH = "/listings" as const;
 
@@ -23,7 +24,25 @@ function polarGateError(err: unknown): { status: number; error: string } | null 
   return null;
 }
 
+function wantsHtml(request: { headers: Record<string, unknown> }): boolean {
+  const accept = String(request.headers.accept ?? "");
+  const type = String(request.headers["content-type"] ?? "");
+  return (
+    type.includes("application/x-www-form-urlencoded") ||
+    (/\btext\/html\b/.test(accept) && !/\bapplication\/json\b/.test(accept))
+  );
+}
+
 export function registerListingRoutes(app: FastifyInstance): void {
+  app.addContentTypeParser(
+    "application/x-www-form-urlencoded",
+    { parseAs: "string" },
+    (_request, body, done) => {
+      const raw = typeof body === "string" ? body : body.toString("utf8");
+      done(null, Object.fromEntries(new URLSearchParams(raw)));
+    },
+  );
+
   app.post(LISTINGS_PATH, async (request, reply) => {
     try {
       const started = await startListingCheckout(
@@ -31,13 +50,26 @@ export function registerListingRoutes(app: FastifyInstance): void {
         app.polar,
         request.body,
       );
+      if (wantsHtml(request)) {
+        return reply.redirect(started.url, 303);
+      }
       return { url: started.url };
     } catch (err) {
       if (err instanceof ListingError) {
+        if (wantsHtml(request)) {
+          return reply.code(err.statusCode).type("text/html; charset=utf-8").send(
+            `<!DOCTYPE html><html lang="en"><body><p>${escapeHtml(err.message)}</p><p><a href="/">Back</a></p></body></html>`,
+          );
+        }
         return reply.code(err.statusCode).send({ error: err.code });
       }
       const gated = polarGateError(err);
       if (gated) {
+        if (wantsHtml(request)) {
+          return reply.code(gated.status).type("text/html; charset=utf-8").send(
+            `<!DOCTYPE html><html lang="en"><body><p>${escapeHtml(gated.error)}</p><p><a href="/">Back</a></p></body></html>`,
+          );
+        }
         return reply.code(gated.status).send({ error: gated.error });
       }
       throw err;

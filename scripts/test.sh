@@ -210,6 +210,35 @@ grep -q 'invents no cover' tests/issues.test.ts || fail "tests/issues.test.ts mi
 grep -q 'boot catch-up' tests/issues.test.ts || fail "tests/issues.test.ts missing boot catch-up"
 grep -q 'frozen' tests/issues.test.ts || fail "tests/issues.test.ts missing archive frozen"
 
+echo "== product UI print masthead =="
+for f in src/views/skin.ts tests/product-ui.test.ts; do
+  [[ -f "$f" ]] || fail "missing $f"
+  [[ -s "$f" ]] || fail "empty $f"
+done
+grep -qE '^### PR 14: product UI' BUILD.md || fail "BUILD.md missing ### PR 14: product UI"
+grep -q 'class="masthead"' src/views/skin.ts || fail "board missing print masthead"
+grep -q 'data-issue-status' src/views/skin.ts || fail "board missing OPEN/CLOSED chrome"
+grep -q 'Claim #1 for' src/views/skin.ts || fail "board missing Claim #1"
+grep -q 'class="amount-field"' src/views/skin.ts || fail "board missing dashed amount field"
+grep -q 'underline dashed' src/views/skin.ts || fail "board missing dashed \$amount"
+grep -q 'data-bid-step' src/views/skin.ts || fail "board missing ± stepper"
+grep -q 'Outbid' src/views/skin.ts || fail "board missing Outbid"
+grep -qi 'no cover sold' src/views/skin.ts || fail "empty issue must say no cover sold"
+grep -q 'No paid listings on this board' src/views/skin.ts || fail "empty issue must keep honest empty copy"
+grep -q 'name="sponsorUrl"' src/views/skin.ts || fail "claim form missing sponsorUrl"
+grep -q 'name="blurb"' src/views/skin.ts || fail "claim form missing blurb"
+grep -q 'name="bidUsd"' src/views/skin.ts || fail "claim form missing bidUsd"
+grep -q 'cover-line' src/views/skin.ts || fail "paid listing must be a cover line"
+grep -q '/l/' src/views/skin.ts || fail "cover pitch must hop through /l/:id"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "product UI must not invent subscribers, open rates, or an article list"
+fi
+grep -q 'data-rank="1"' tests/issues.test.ts || fail "empty archive must assert against data-rank=\"1\", not Claim #1"
+grep -q 'no cover sold' tests/product-ui.test.ts || fail "tests/product-ui.test.ts missing no cover sold"
+grep -q 'Claim #1 for' tests/product-ui.test.ts || fail "tests/product-ui.test.ts missing Claim #1"
+grep -q 'application/x-www-form-urlencoded' tests/product-ui.test.ts || fail "tests/product-ui.test.ts missing form POST"
+grep -q 'addContentTypeParser' src/http/routes/listings.ts || fail "listings route missing urlencoded parser"
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"

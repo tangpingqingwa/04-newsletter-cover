@@ -138,6 +138,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 9
 - **Acceptance:** operator script starts (or assumes) a local process; walks empty board, paid fixture-or-live Polar bid, rank, raise-by-difference, public click 302, about/rules; missing Polar secret → `BLOCKED-SECRET: POLAR_ACCESS_TOKEN` (fixture checkout still allowed as a received pay when `POLAR_FIXTURE_ONLY=1`); **not** called from `scripts/test.sh` or Actions; CI must not set `POLAR_LIVE`
 
+### PR 14: product UI — next issue’s cover auction
+- **Description:** Print masthead for the next issue’s one cover. Issue date + OPEN/CLOSED is editorial chrome. A listing is a cover pitch (sponsor URL + one-line blurb). Empty issue is “no cover sold,” never a placeholder sponsor. Outbid DNA stays: Claim #1, dashed $amount, ±, Outbid, $bid + clicks. Not a parchment recolor of a web form. One prize: the cover.
+- **Files:** `src/views/skin.ts`, `src/http/routes/board.ts`, `src/http/routes/pages.ts`, `src/http/routes/listings.ts`, `tests/product-ui.test.ts`, `tests/rank.test.ts`, `tests/issues.test.ts`, `scripts/test.sh`, `scripts/live-smoke.sh`
+- **Dependencies:** launch-path already shipped (PRs 1–10 / live Polar smoke)
+- **Acceptance:** Empty issue says no cover sold and keeps `No paid listings on this board.` Issue chrome is the date + OPEN/CLOSED. Paid rows are cover lines, not cards in a cream form. No article list or subscriber count. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
