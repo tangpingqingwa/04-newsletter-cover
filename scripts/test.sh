@@ -428,6 +428,45 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "empty-stand UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time sponsor: claim after the empty stand =="
+grep -qE '^### PR 22: first-time sponsor' BUILD.md || fail "BUILD.md missing ### PR 22: first-time sponsor"
+grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "empty open stand must mark data-claim-after-stand"
+grep -q 'href="#claim"' src/views/skin.ts || fail "empty open stand must hop to #claim"
+grep -q 'Claim this issue’s cover' src/views/skin.ts || fail "empty hop must say Claim this issue’s cover"
+grep -q 'class="claim-after-stand"' src/views/skin.ts || fail "empty hop must use class claim-after-stand"
+grep -q 'data-read-stand="true"' src/views/skin.ts || fail "empty-stand-first must stay"
+grep -q 'data-cover-prize="true"' src/views/skin.ts || fail "\$5 takes this issue’s cover must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 prize line must stay"
+if ! awk '
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /class="empty-stand"/ { saw_stand = 1 }
+  in_rack && saw_stand && /data-read-stand="true"/ { saw_read = 1 }
+  in_rack && saw_read && /data-claim-after-stand="true"/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "claim-after-stand hop must sit on the empty stand after the stand read"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /listings.length > 0/ { saw_occupied = 1 }
+  in_fn && saw_occupied && /data-claim-cover="true"/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "occupied Claim the next cover hop must stay on the flag"
+fi
+grep -q 'data-claim-after-stand="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-claim-after-stand"
+grep -q 'empty open / names one hop to claim after the stand' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing claim-after-stand hop case"
+grep -q 'doesNotMatch(occupiedOpen, /data-claim-after-stand/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not stamp data-claim-after-stand"
+grep -q 'doesNotMatch(closedEmpty, /data-claim-after-stand/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-claim-after-stand"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "claim-after-stand UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"

@@ -240,6 +240,7 @@ function renderRack(board: BoardView): string {
         <p class="empty-kicker">This issue’s cover</p>
         <p class="hed">No cover sold</p>
         <p class="dek">No paid listings on this board. This issue’s cover is still open.</p>
+        <p class="claim-after-stand"><a href="#claim" data-claim-after-stand="true">Claim this issue’s cover.</a></p>
       </section>`;
   }
   const readCover = board.status === "open";
@@ -476,6 +477,11 @@ button { cursor: pointer; }
   padding: 0.95rem 0 1.15rem;
 }
 .empty-stand .hed { margin-top: 0.12rem; }
+.empty-stand .claim-after-stand { margin: 0.7rem 0 0; }
+.empty-stand .claim-after-stand a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
 .empty-issue {
   margin: 1.4rem 0 0;
   padding: 1.2rem 0.6rem 0.4rem;

@@ -186,6 +186,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 20
 - **Acceptance:** Empty open `/` has `data-read-stand="true"` before `id="claim"` and says this issue’s cover is still open. Occupied open `/` keeps `data-read-cover` and `data-claim-cover` and has no `data-read-stand`. Closed empty archives keep `class="empty-issue"` and do not stamp `data-read-stand`. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 22: first-time sponsor — claim after the empty stand
+- **Description:** On an empty open `/`, readers still hit the blank stand first. A first-time sponsor who came to buy gets one named hop (`data-claim-after-stand`) from the stand to `#claim` so Claim #1 / Outbid is not lost under the folio. Occupied boards keep sold-cover-first and **Claim the next cover**. Closed empty archives stay the frozen empty-issue slab. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 21
+- **Acceptance:** Empty open `/` has one `data-claim-after-stand="true"` `href="#claim"` after `data-read-stand` and before `id="claim"`. Occupied open `/` keeps `data-claim-cover` and has no `data-claim-after-stand`. Closed empty archives have no claim hop. `$5 takes #1 — this issue’s cover`, Claim the next cover, and Cover · #1 stay. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
