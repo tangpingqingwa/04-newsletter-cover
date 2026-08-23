@@ -12,5 +12,6 @@ export type PolarCheckout = {
 
 /** SPEC §8. App routes import this port, never Polar HTTP. */
 export type PolarPort = {
+  readonly kind?: "fixture" | "live";
   createCheckout(input: CreateCheckoutInput): Promise<PolarCheckout>;
 };

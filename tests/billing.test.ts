@@ -12,6 +12,7 @@ import {
   startListingCheckout,
 } from "../src/billing/create.js";
 import { FixturePolar } from "../src/billing/fixture.js";
+import { LivePolar, polarApiBase } from "../src/billing/polar.js";
 import type { AppDb } from "../src/db.js";
 import { ListingError } from "../src/listings.js";
 import { buildApp } from "../src/server.js";
@@ -72,8 +73,67 @@ test("createPolar is fixture; POLAR_FIXTURE_ONLY=1 ignores POLAR_LIVE", () => {
         POLAR_LIVE: "1",
         POLAR_ACCESS_TOKEN: "polar_tok_test",
       }),
-    /must not run in tests/,
+    /BLOCKED-SECRET: POLAR_PRODUCT_ID/,
   );
+  const live = createPolar({
+    POLAR_LIVE: "1",
+    POLAR_ACCESS_TOKEN: "polar_tok_test",
+    POLAR_PRODUCT_ID: "prod_test",
+    POLAR_API_BASE: "https://polar.example.test",
+  });
+  assert.ok(live instanceof LivePolar);
+});
+
+test("polarApiBase defaults to production host and honors POLAR_API_BASE", () => {
+  assert.equal(polarApiBase({}), "https://api.polar.sh");
+  assert.equal(
+    polarApiBase({ POLAR_API_BASE: "https://sandbox-api.polar.sh/" }),
+    "https://sandbox-api.polar.sh",
+  );
+});
+
+test("LivePolar createCheckout posts to POLAR_API_BASE and never production by default in tests", async () => {
+  const calls: Array<{ url: string; body: unknown }> = [];
+  const polar = new LivePolar({
+    env: {
+      POLAR_LIVE: "1",
+      POLAR_ACCESS_TOKEN: "polar_tok_test",
+      POLAR_PRODUCT_ID: "prod_test",
+      POLAR_API_BASE: "https://polar.example.test",
+    },
+    fetch: async (input, init) => {
+      const url = String(input);
+      calls.push({
+        url,
+        body: JSON.parse(String(init?.body ?? "{}")) as unknown,
+      });
+      return new Response(
+        JSON.stringify({
+          id: "chk_live_1",
+          url: "https://sandbox.polar.sh/checkout/chk_live_1",
+        }),
+        { status: 201, headers: { "content-type": "application/json" } },
+      );
+    },
+  });
+
+  const created = await polar.createCheckout({
+    amountUsd: 5,
+    listingId: "lst_live",
+    successUrl: "http://127.0.0.1:3000/",
+    cancelUrl: "http://127.0.0.1:3000/",
+  });
+  assert.equal(created.checkoutId, "chk_live_1");
+  assert.equal(created.url, "https://sandbox.polar.sh/checkout/chk_live_1");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0]?.url, "https://polar.example.test/v1/checkouts/");
+  assert.deepEqual(calls[0]?.body, {
+    product_id: "prod_test",
+    amount: 500,
+    currency: "usd",
+    success_url: "http://127.0.0.1:3000/",
+    metadata: { listingId: "lst_live", amountUsd: "5" },
+  });
 });
 
 test("unpaid checkout is hidden; $5 paid appears on the board", async (t) => {

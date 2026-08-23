@@ -47,6 +47,8 @@ OP_POLAR_LIVE="${POLAR_LIVE:-}"
 OP_POLAR_ACCESS_TOKEN="${POLAR_ACCESS_TOKEN:-}"
 OP_POLAR_WEBHOOK_SECRET="${POLAR_WEBHOOK_SECRET:-}"
 OP_POLAR_FIXTURE_ONLY="${POLAR_FIXTURE_ONLY:-}"
+OP_POLAR_API_BASE="${POLAR_API_BASE:-}"
+OP_POLAR_PRODUCT_ID="${POLAR_PRODUCT_ID:-}"
 
 cleanup() {
   if [[ -n "${LIVE_PID}" ]] && kill -0 "${LIVE_PID}" 2>/dev/null; then
@@ -612,7 +614,7 @@ fi
 # --- live Polar: always try the live path; never invent a paid row ---
 # createPolar() is fixture unless POLAR_LIVE=1 and POLAR_FIXTURE_ONLY is not 1.
 # Live without token throws BLOCKED-SECRET: POLAR_ACCESS_TOKEN.
-# Live with token currently throws "live Polar is env-gated and must not run in tests".
+# Live checkout must be a real Polar sandbox URL (sandbox.polar.sh), not a fixture listing.
 echo "== polar live-checkout =="
 live_port="$(pick_port)"
 live_db="${WORKDIR}/polar-live.sqlite"
@@ -632,6 +634,16 @@ live_base="http://127.0.0.1:${live_port}"
   else
     unset POLAR_WEBHOOK_SECRET || true
   fi
+  if [[ -n "${OP_POLAR_PRODUCT_ID}" ]]; then
+    export POLAR_PRODUCT_ID="${OP_POLAR_PRODUCT_ID}"
+  else
+    unset POLAR_PRODUCT_ID || true
+  fi
+  if [[ -n "${OP_POLAR_API_BASE}" ]]; then
+    export POLAR_API_BASE="${OP_POLAR_API_BASE}"
+  else
+    unset POLAR_API_BASE || true
+  fi
   export PORT="${live_port}"
   export DATABASE_PATH="${live_db}"
   export PUBLIC_BASE_URL="${live_base}"
@@ -642,9 +654,9 @@ if ! wait_health "$live_base"; then
   if grep -q 'BLOCKED-SECRET: POLAR_ACCESS_TOKEN' "${live_log}"; then
     echo "BLOCKED-SECRET: POLAR_ACCESS_TOKEN"
     record "live-checkout" "BLOCKED-SECRET" "POLAR_ACCESS_TOKEN"
-  elif grep -q 'live Polar is env-gated and must not run in tests' "${live_log}"; then
-    echo "BLOCKED-SECRET: POLAR_ACCESS_TOKEN"
-    record "live-checkout" "BLOCKED-SECRET" "POLAR_ACCESS_TOKEN"
+  elif grep -q 'BLOCKED-SECRET: POLAR_PRODUCT_ID' "${live_log}"; then
+    echo "BLOCKED-SECRET: POLAR_PRODUCT_ID"
+    record "live-checkout" "BLOCKED-SECRET" "POLAR_PRODUCT_ID"
   else
     echo "live Polar process log:" >&2
     cat "${live_log}" >&2 || true
@@ -665,12 +677,18 @@ else
   live_count="$(board_count "$live_board" || echo "?")"
   if html_has "$live_html" 'live.example/slot-' || [[ "$live_count" != "0" && "$live_count" != "?" ]]; then
     record "live-checkout" "FAIL" "unpaid live Polar session appeared on the board"
-  elif [[ "$live_list_code" == "200" && "$live_url" == https://*polar.sh* ]]; then
-    record "live-checkout" "PASS" "live Polar URL returned; unpaid session not listed"
+  elif [[ "$live_url" == /checkout/complete* || "$live_url" == *checkoutId=fix_* ]]; then
+    record "live-checkout" "FAIL" "live Polar returned a fixture listing URL"
+  elif [[ "$live_list_code" == "200" && "$live_url" == https://sandbox.polar.sh/* ]]; then
+    record "live-checkout" "PASS" "sandbox.polar.sh checkout URL; unpaid session not listed"
   elif [[ "$live_err" == "BLOCKED-SECRET: POLAR_ACCESS_TOKEN" ]] \
     || grep -q 'BLOCKED-SECRET: POLAR_ACCESS_TOKEN' "$live_list" "${live_log}"; then
     echo "BLOCKED-SECRET: POLAR_ACCESS_TOKEN"
     record "live-checkout" "BLOCKED-SECRET" "POLAR_ACCESS_TOKEN"
+  elif [[ "$live_err" == "BLOCKED-SECRET: POLAR_PRODUCT_ID" ]] \
+    || grep -q 'BLOCKED-SECRET: POLAR_PRODUCT_ID' "$live_list" "${live_log}"; then
+    echo "BLOCKED-SECRET: POLAR_PRODUCT_ID"
+    record "live-checkout" "BLOCKED-SECRET" "POLAR_PRODUCT_ID"
   else
     record "live-checkout" "PASS-ERROR" "POLAR_LIVE=1 HTTP ${live_list_code} (no invented listing)"
   fi
