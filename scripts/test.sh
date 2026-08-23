@@ -301,6 +301,32 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "sold-cover UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time sponsor: claim the next cover on occupied open / =="
+grep -qE '^### PR 18: first-time sponsor' BUILD.md || fail "BUILD.md missing ### PR 18: first-time sponsor"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "occupied open flag must mark data-claim-cover"
+grep -q 'href="#claim"' src/views/skin.ts || fail "occupied open flag must hop to #claim"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop must say Claim the next cover"
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /board.status === "closed"/ { saw_closed = 1 }
+  in_fn && /listings.length > 0/ { saw_occupied = 1 }
+  in_fn && saw_occupied && /data-claim-cover="true"/ { found = 1 }
+  END { exit(found && saw_closed ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "claim hop must be occupied-open only, after the closed-archive flag"
+fi
+grep -q 'data-claim-cover="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-claim-cover"
+grep -q 'occupied open / names one hop to claim the next cover' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing occupied-open claim-cover hop case"
+grep -q 'doesNotMatch(emptyOpen, /data-claim-cover/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-claim-cover"
+grep -q 'doesNotMatch(closedOccupied, /data-claim-cover/)' tests/product-ui.test.ts \
+  || fail "closed archive must not stamp data-claim-cover"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "claim-cover UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
