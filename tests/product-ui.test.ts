@@ -72,9 +72,12 @@ test("open board is a print masthead: folio OPEN, Claim #1, dashed amount, ±, O
   assert.match(body, /name="blurb"/);
   assert.match(body, /name="bidUsd"/);
   assert.match(body, /Leaderboard/);
+  assert.match(body, /class="claim-note" data-empty-issue="true"/);
   assert.match(body, /no cover sold/i);
   assert.match(body, /No paid listings on this board/);
-  assert.match(body, /data-empty-issue="true"/);
+  assert.match(body, /\$5 takes #1/);
+  assert.doesNotMatch(body, /class="empty-issue"/);
+  assert.doesNotMatch(body, /Nobody bought the cover/);
   assert.doesNotMatch(body, /data-rank="1"/);
   assert.doesNotMatch(body, /class="cover-line"/);
   assert.doesNotMatch(body, /subscriber/i);
@@ -93,7 +96,10 @@ test("empty archive is no cover sold; Claim #1 chrome must not count as a winner
   assert.match(html.body, />CLOSED</);
   assert.match(html.body, /no cover sold/i);
   assert.match(html.body, /No paid listings on this board/);
+  assert.match(html.body, /class="empty-issue"/);
   assert.match(html.body, /data-empty-issue="true"/);
+  assert.doesNotMatch(html.body, /id="claim"/);
+  assert.doesNotMatch(html.body, /Claim #1 for/);
   assert.doesNotMatch(html.body, /data-rank="1"/);
   assert.doesNotMatch(html.body, /class="cover-line"/);
   assert.doesNotMatch(html.body, /data-sponsor-url=/);
@@ -125,7 +131,11 @@ test("paid listing is a cover pitch: blurb, sponsor hop, $bid, clicks", async (t
   assert.match(html.body, /class="bid"/);
   assert.match(html.body, /\$12/);
   assert.match(html.body, /3 clicks/);
+  assert.match(html.body, /Paying less than #1 still lists/);
+  assert.match(html.body, /You pay only the difference/);
   assert.doesNotMatch(html.body, /no cover sold/i);
+  assert.doesNotMatch(html.body, /class="claim-note" data-empty-issue="true"/);
+  assert.doesNotMatch(html.body, /\$5 takes #1/);
   assert.doesNotMatch(html.body, /subscribers/i);
 });
 
@@ -157,6 +167,42 @@ test("renderBoardHtml empty payload never invents a ranked cover", () => {
   assert.match(html, /class="masthead"/);
   assert.match(html, /no cover sold/i);
   assert.match(html, /No paid listings on this board/);
+  assert.match(html, /\$5 takes #1/);
   assert.match(html, /Claim #1 for/);
+  assert.match(html, /class="claim-note" data-empty-issue="true"/);
+  assert.doesNotMatch(html, /class="empty-issue"/);
   assert.doesNotMatch(html, /data-rank="1"/);
+});
+
+test("empty open cover lets Claim #1 win the eye; empty archive stays a frozen folio", () => {
+  const openEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const claimAt = openEmpty.indexOf('id="claim"');
+  const emptySlab = openEmpty.indexOf('class="empty-issue"');
+  assert.notEqual(claimAt, -1);
+  assert.equal(emptySlab, -1);
+  assert.match(openEmpty, /class="claim-note" data-empty-issue="true"/);
+  assert.match(openEmpty, /No cover sold/);
+  assert.match(openEmpty, /No paid listings on this board/);
+  assert.match(openEmpty, /\$5 takes #1/);
+  assert.match(openEmpty, /Claim #1 for/);
+  assert.match(openEmpty, /class="outbid"/);
+  assert.doesNotMatch(openEmpty, /Already on this issue/);
+  assert.doesNotMatch(openEmpty, /data-rank="1"/);
+
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [],
+  });
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.match(closedEmpty, /data-empty-issue="true"/);
+  assert.match(closedEmpty, /This issue is frozen\. No cover sold/);
+  assert.match(closedEmpty, /No paid listings on this board/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
+  assert.doesNotMatch(closedEmpty, /Claim #1 for/);
+  assert.doesNotMatch(closedEmpty, /class="outbid"/);
 });

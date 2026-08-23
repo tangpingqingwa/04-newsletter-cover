@@ -239,6 +239,31 @@ grep -q 'Claim #1 for' tests/product-ui.test.ts || fail "tests/product-ui.test.t
 grep -q 'application/x-www-form-urlencoded' tests/product-ui.test.ts || fail "tests/product-ui.test.ts missing form POST"
 grep -q 'addContentTypeParser' src/http/routes/listings.ts || fail "listings route missing urlencoded parser"
 
+echo "== first-time sponsor: Claim #1 wins the empty cover =="
+grep -qE '^### PR 15: first-time sponsor' BUILD.md || fail "BUILD.md missing ### PR 15: first-time sponsor"
+grep -q 'takes #1' src/views/skin.ts || fail "empty open claim must say \$5 takes #1"
+grep -q 'data-empty-issue="true"' src/views/skin.ts || fail "empty open claim must mark data-empty-issue"
+if ! awk '
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /board.status === "closed"/ { saw_closed = 1 }
+  in_rack && saw_closed && /class="empty-issue"/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "empty-issue slab must stay closed-archive only"
+fi
+grep -q 'class="claim-note" data-empty-issue="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must put data-empty-issue on the claim note"
+grep -q 'class="empty-issue"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must still cover closed empty-issue"
+grep -q 'doesNotMatch(body, /class="empty-issue"/)' tests/product-ui.test.ts \
+  || fail "open empty / must not render a competing empty-issue slab"
+grep -q 'doesNotMatch(html.body, /id="claim"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must drop Claim #1"
+grep -q 'empty open cover lets Claim #1 win the eye' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing first-sponsor empty-cover case"
+grep -q '\$5 takes #1' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must assert \$5 takes #1 on empty claim"
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"

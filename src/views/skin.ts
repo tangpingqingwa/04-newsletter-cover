@@ -149,8 +149,16 @@ function renderClaim(board: BoardView): string {
       ? `      <p class="form-hint">This issue is frozen. No cover sold.</p>`
       : `      <p class="form-hint">This issue is frozen. The cover is whoever paid the most before close.</p>`;
   }
+  const empty = board.listings.length === 0;
   const top = board.listings[0]?.bidUsd ?? 0;
   const defaultBid = top > 0 ? top + 1 : MIN_BID_USD;
+  const note = empty
+    ? `<p class="claim-note" data-empty-issue="true">No cover sold. No paid listings on this board. $${MIN_BID_USD} takes #1.</p>`
+    : `<p class="claim-note">New spots start at $${MIN_BID_USD}. One prize: the cover. Paying less than #1 still lists at the rank that bid can take.</p>`;
+  const raiseHint = empty
+    ? ""
+    : `
+          <p class="form-hint">Already on this issue? Enter the same sponsor URL and raise. You pay only the difference.</p>`;
   return `      <section class="claim" id="claim">
         <h2 class="claim-hed">
           <span>Claim #1 for</span>
@@ -163,14 +171,13 @@ function renderClaim(board: BoardView): string {
             <button type="button" class="step" data-bid-step="1" aria-label="Increase bid by one dollar">+</button>
           </span>
         </h2>
-        <p class="claim-note">New spots start at $${MIN_BID_USD}. One prize: the cover. Paying less than #1 still lists at the rank that bid can take.</p>
+        ${note}
         <form id="bid-form" method="post" action="/listings">
           <div class="bid-row">
             <input name="sponsorUrl" type="url" required placeholder="Sponsor URL" autocomplete="url"/>
             <button type="submit" class="outbid">Outbid</button>
           </div>
-          <input class="blurb-field" name="blurb" type="text" required maxlength="120" placeholder="One-line cover pitch"/>
-          <p class="form-hint">Already on this issue? Enter the same sponsor URL and raise. You pay only the difference.</p>
+          <input class="blurb-field" name="blurb" type="text" required maxlength="120" placeholder="One-line cover pitch"/>${raiseHint}
         </form>
       </section>
       <script>
@@ -210,10 +217,13 @@ function renderPitch(listing: BoardViewListing): string {
 
 function renderRack(board: BoardView): string {
   if (board.listings.length === 0) {
-    return `      <section class="empty-issue" data-empty-issue="true">
+    if (board.status === "closed") {
+      return `      <section class="empty-issue" data-empty-issue="true">
         <p class="empty-kicker">No cover sold</p>
         <p>No paid listings on this board. Nobody bought the cover. The folio stays blank.</p>
       </section>`;
+    }
+    return "";
   }
   return `      <ol class="cover-rack" aria-label="Cover auction">
 ${board.listings.map(renderPitch).join("\n")}

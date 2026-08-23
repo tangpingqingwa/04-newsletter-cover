@@ -144,6 +144,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** launch-path already shipped (PRs 1–10 / live Polar smoke)
 - **Acceptance:** Empty issue says no cover sold and keeps `No paid listings on this board.` Issue chrome is the date + OPEN/CLOSED. Paid rows are cover lines, not cards in a cream form. No article list or subscriber count. `bash scripts/test.sh` stays offline.
 
+### PR 15: first-time sponsor — Claim #1 wins the empty cover
+- **Description:** On an empty open issue, one action wins the eye. Honest empty copy (“no cover sold”, `No paid listings on this board.`) lives in the claim note. The second empty-issue slab is gone. Closed empty archives still keep the honest empty rack and drop Claim #1. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 14
+- **Acceptance:** Empty open `/` has `class="claim-note" data-empty-issue="true"` and no `class="empty-issue"`. Occupied boards keep cover lines. Closed empty archives stay honest and do not show Claim #1. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
