@@ -510,6 +510,60 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "sold-cover certainty UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time sponsor: claim after the sold cover =="
+grep -qE '^### PR 24: first-time sponsor' BUILD.md || fail "BUILD.md missing ### PR 24: first-time sponsor"
+grep -q 'data-claim-after-sold="true"' src/views/skin.ts || fail "occupied claim hop must mark data-claim-after-sold"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'data-sold-cover="true"' src/views/skin.ts || fail "sold-cover name must stay"
+grep -q 'This issue’s cover is sold' src/views/skin.ts || fail "occupied flag must still say this issue’s cover is sold"
+grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
+grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 prize line must stay"
+grep -q 'data-read-stand="true"' src/views/skin.ts || fail "empty-stand-first must stay"
+grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-stand hop must stay"
+grep -q 'a\[data-claim-after-sold\]' src/views/skin.ts || fail "occupied claim hop must concentrate on the existing flag link"
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /board.status === "closed"/ { saw_closed = 1 }
+  in_fn && /listings.length > 0/ { saw_occupied = 1 }
+  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_fn && saw_sold && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_fn && saw_claim && /data-claim-after-sold="true"/ { found = 1 }
+  END { exit(found && saw_closed ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "data-claim-after-sold must concentrate the existing occupied-open Claim the next cover hop after the sold-cover line"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "occupied claim after sold must not add another #claim hop in the flag"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /The next issue/ { saw_next = 1 }
+  in_fn && saw_next && /data-claim-after-sold/ { leaked = 1 }
+  END { exit(leaked ? 1 : (saw_next ? 0 : 1)) }
+' src/views/skin.ts; then
+  fail "empty open flag must keep the next-issue pitch and must not stamp data-claim-after-sold"
+fi
+grep -q 'data-claim-after-sold="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-claim-after-sold"
+grep -q 'occupied open / concentrates Claim the next cover after the sold cover' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing occupied claim-after-sold case"
+grep -q 'doesNotMatch(emptyOpen, /data-claim-after-sold="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-claim-after-sold"
+grep -q 'doesNotMatch(closedEmpty, /data-claim-after-sold="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-claim-after-sold"
+grep -q 'doesNotMatch(closedOccupied, /data-claim-after-sold="true"/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not stamp data-claim-after-sold"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "claim-after-sold UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
