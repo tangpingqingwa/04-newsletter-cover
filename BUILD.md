@@ -162,6 +162,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 16
 - **Acceptance:** Occupied open `/` has `data-read-cover="true"` and the cover line before `id="claim"`. Empty open `/` still has Claim #1 first and no `data-read-cover`. Closed empty archives stay honest. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 18: first-time sponsor — claim the next cover on occupied open `/`
+- **Description:** On an occupied open `/`, readers still hit the sold cover first. A first-time sponsor who came to Outbid gets one named hop (`data-claim-cover`) from the flag to `#claim` so Claim #1 / raise-the-difference is not lost under the rack. Empty open `/` still lets Claim #1 win the eye with no extra hop. Closed-archive honesty is unchanged. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 17
+- **Acceptance:** Occupied open `/` has one `data-claim-cover="true"` `href="#claim"` before `data-read-cover` and `#claim`. Empty open `/` and closed archives have no claim hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
