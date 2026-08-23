@@ -59,6 +59,9 @@ test("open board is a print masthead: folio OPEN, Claim #1, dashed amount, ±, O
   assert.match(body, /data-issue-date="2099-01-05"/);
   assert.match(body, /data-issue-status="open"/);
   assert.match(body, />OPEN</);
+  assert.match(body, /The next issue’s cover goes to whoever pays the most/);
+  assert.doesNotMatch(body, /data-open-cover/);
+  assert.doesNotMatch(body, /This issue is closed/);
   assert.match(body, /Claim #1 for/);
   assert.match(body, /class="amount-field"/);
   assert.match(body, /text-decoration: underline dashed/);
@@ -94,10 +97,16 @@ test("empty archive is no cover sold; Claim #1 chrome must not count as a winner
   assert.equal(html.statusCode, 200);
   assert.match(html.body, /data-issue-status="closed"/);
   assert.match(html.body, />CLOSED</);
+  assert.match(html.body, /This issue is closed/);
+  assert.match(html.body, /not the next issue/);
+  assert.match(html.body, /data-open-cover="true"/);
+  assert.match(html.body, /href="\/"/);
+  assert.match(html.body, /The open cover is on the stand/);
   assert.match(html.body, /no cover sold/i);
   assert.match(html.body, /No paid listings on this board/);
   assert.match(html.body, /class="empty-issue"/);
   assert.match(html.body, /data-empty-issue="true"/);
+  assert.doesNotMatch(html.body, /goes to whoever pays the most/);
   assert.doesNotMatch(html.body, /id="claim"/);
   assert.doesNotMatch(html.body, /Claim #1 for/);
   assert.doesNotMatch(html.body, /data-rank="1"/);
@@ -202,7 +211,42 @@ test("empty open cover lets Claim #1 win the eye; empty archive stays a frozen f
   assert.match(closedEmpty, /data-empty-issue="true"/);
   assert.match(closedEmpty, /This issue is frozen\. No cover sold/);
   assert.match(closedEmpty, /No paid listings on this board/);
+  assert.match(closedEmpty, /This issue is closed/);
+  assert.match(closedEmpty, /not the next issue/);
+  assert.match(closedEmpty, /data-open-cover="true"/);
+  assert.match(closedEmpty, /The open cover is on the stand/);
+  assert.doesNotMatch(closedEmpty, /goes to whoever pays the most/);
   assert.doesNotMatch(closedEmpty, /id="claim"/);
   assert.doesNotMatch(closedEmpty, /Claim #1 for/);
   assert.doesNotMatch(closedEmpty, /class="outbid"/);
+});
+
+test("closed empty archive is not the next open cover", () => {
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [],
+  });
+  const openEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+
+  assert.match(closedEmpty, /data-issue-status="closed"/);
+  assert.match(closedEmpty, /This issue is closed\. It is not the next issue/);
+  assert.match(closedEmpty, /data-open-cover="true"/);
+  assert.match(closedEmpty, /href="\/"/);
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.match(closedEmpty, /No paid listings on this board/);
+  assert.doesNotMatch(closedEmpty, /goes to whoever pays the most/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
+  assert.doesNotMatch(closedEmpty, /Claim #1 for/);
+  assert.doesNotMatch(closedEmpty, /data-rank="1"/);
+
+  assert.match(openEmpty, /The next issue’s cover goes to whoever pays the most/);
+  assert.match(openEmpty, /Claim #1 for/);
+  assert.match(openEmpty, /class="outbid"/);
+  assert.doesNotMatch(openEmpty, /data-open-cover/);
+  assert.doesNotMatch(openEmpty, /This issue is closed/);
 });

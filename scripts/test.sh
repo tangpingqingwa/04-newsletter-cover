@@ -264,6 +264,21 @@ grep -q 'empty open cover lets Claim #1 win the eye' tests/product-ui.test.ts \
 grep -q '\$5 takes #1' tests/product-ui.test.ts \
   || fail "tests/product-ui.test.ts must assert \$5 takes #1 on empty claim"
 
+echo "== first-time reader: closed archive is not the next cover =="
+grep -qE '^### PR 16: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 16: first-time reader"
+grep -q 'data-open-cover="true"' src/views/skin.ts || fail "closed archive must point to the open cover"
+grep -q 'not the next issue' src/views/skin.ts || fail "closed archive must say it is not the next issue"
+grep -q 'The next issue' src/views/skin.ts || fail "open board must keep the next-issue pitch"
+grep -q 'data-open-cover="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-open-cover"
+grep -q 'doesNotMatch(closedEmpty, /goes to whoever pays the most/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not pitch the live next-issue auction"
+grep -q 'closed empty archive is not the next open cover' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing closed-vs-open cover case"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "closed-archive UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
