@@ -156,6 +156,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 15
 - **Acceptance:** Closed empty `/issue/:date` has `data-open-cover="true"` and does not say the next issue’s cover goes to whoever pays the most. Open `/` keeps that pitch and Claim #1. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 17: first-time reader — read the sold cover on occupied open `/`
+- **Description:** On an occupied open `/`, the sold cover is the first move. The cover rack sits above Claim #1 / raise-the-difference so a reader who came to read the cover does not hit the sell first. Empty open `/` still lets Claim #1 win the eye. Closed-archive honesty is unchanged. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 16
+- **Acceptance:** Occupied open `/` has `data-read-cover="true"` and the cover line before `id="claim"`. Empty open `/` still has Claim #1 first and no `data-read-cover`. Closed empty archives stay honest. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)

@@ -232,18 +232,31 @@ function renderRack(board: BoardView): string {
     }
     return "";
   }
-  return `      <ol class="cover-rack" aria-label="Cover auction">
+  const readCover = board.status === "open";
+  const attrs = readCover
+    ? ' aria-label="This issue’s cover" data-read-cover="true"'
+    : ' aria-label="Cover auction"';
+  return `      <ol class="cover-rack"${attrs}>
 ${board.listings.map(renderPitch).join("\n")}
       </ol>`;
 }
 
 export function renderBoardHtml(board: BoardView): string {
+  const masthead = renderMasthead(board);
+  const claim = renderClaim(board);
+  const rack = renderRack(board);
+  const readSoldCover = board.status === "open" && board.listings.length > 0;
+  const body = readSoldCover
+    ? `${masthead}
+${rack}
+${claim}`
+    : `${masthead}
+${claim}
+${rack}`;
   return renderDocument({
     title: "The Cover · Newsletter Cover",
     active: "cover",
-    body: `${renderMasthead(board)}
-${renderClaim(board)}
-${renderRack(board)}`,
+    body,
   });
 }
 
@@ -442,6 +455,10 @@ button { cursor: pointer; }
   font-weight: 700;
 }
 .form-hint { margin: 0.55rem 0 0; text-align: center; font-size: 0.78rem; color: var(--mute); }
+.cover-rack + .claim {
+  border-top: 1px solid var(--rule);
+  border-bottom: 0;
+}
 .empty-issue {
   margin: 1.4rem 0 0;
   padding: 1.2rem 0.6rem 0.4rem;
