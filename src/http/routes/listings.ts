@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { startListingCheckout } from "../../billing/create.js";
 import { ListingError } from "../../listings.js";
+import { escapeHtml } from "../../views/skin.js";
 
 export const LISTINGS_PATH = "/listings" as const;
 
@@ -56,14 +57,19 @@ export function registerListingRoutes(app: FastifyInstance): void {
     } catch (err) {
       if (err instanceof ListingError) {
         if (wantsHtml(request)) {
-          return reply.code(err.statusCode).type("text/html").send(
-            `<!DOCTYPE html><html lang="en"><body><p>${err.message}</p><p><a href="/">Back</a></p></body></html>`,
+          return reply.code(err.statusCode).type("text/html; charset=utf-8").send(
+            `<!DOCTYPE html><html lang="en"><body><p>${escapeHtml(err.message)}</p><p><a href="/">Back</a></p></body></html>`,
           );
         }
         return reply.code(err.statusCode).send({ error: err.code });
       }
       const gated = polarGateError(err);
       if (gated) {
+        if (wantsHtml(request)) {
+          return reply.code(gated.status).type("text/html; charset=utf-8").send(
+            `<!DOCTYPE html><html lang="en"><body><p>${escapeHtml(gated.error)}</p><p><a href="/">Back</a></p></body></html>`,
+          );
+        }
         return reply.code(gated.status).send({ error: gated.error });
       }
       throw err;
