@@ -148,7 +148,7 @@ function renderFlag(board: BoardView): string {
     return `<p class="flag">This issue is closed. It is not the next issue’s cover. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
   }
   if (board.listings.length > 0) {
-    return `<p class="flag"><span data-sold-cover="true">This issue’s cover is sold.</span> Rank is the bid. <a href="#claim" data-claim-cover="true" data-claim-after-sold="true">Claim the next cover.</a></p>`;
+    return `<p class="flag"><span data-sold-cover="true" data-read-after-claim-sold="true">This issue’s cover is sold.</span> Rank is the bid. <a href="#claim" data-claim-cover="true" data-claim-after-sold="true">Claim the next cover.</a></p>`;
   }
   return `<p class="flag">The next issue’s cover goes to whoever pays the most. Rank is the bid.</p>`;
 }
@@ -402,6 +402,10 @@ button { cursor: pointer; }
 .flag a {
   text-decoration: underline;
   text-underline-offset: 0.15em;
+}
+.flag [data-read-after-claim-sold] {
+  display: block;
+  font-weight: 700;
 }
 .flag a[data-claim-after-sold] {
   display: block;
