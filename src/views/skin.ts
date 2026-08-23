@@ -164,7 +164,7 @@ function renderClaim(board: BoardView): string {
   const top = board.listings[0]?.bidUsd ?? 0;
   const defaultBid = top > 0 ? top + 1 : MIN_BID_USD;
   const note = empty
-    ? `<p class="claim-note" data-empty-issue="true" data-cover-prize="true">No cover sold. No paid listings on this board. $${MIN_BID_USD} takes #1 — this issue’s cover.</p>`
+    ? `<p class="claim-note" data-empty-issue="true" data-cover-prize="true">$${MIN_BID_USD} takes #1 — this issue’s cover.</p>`
     : `<p class="claim-note">New spots start at $${MIN_BID_USD}. One prize: the cover. Paying less than #1 still lists at the rank that bid can take.</p>`;
   const raiseHint = empty
     ? ""
@@ -236,7 +236,11 @@ function renderRack(board: BoardView): string {
         <p>No paid listings on this board. Nobody bought the cover. The folio stays blank.</p>
       </section>`;
     }
-    return "";
+    return `      <section class="empty-stand" aria-label="This issue’s cover" data-read-stand="true">
+        <p class="empty-kicker">This issue’s cover</p>
+        <p class="hed">No cover sold</p>
+        <p class="dek">No paid listings on this board. This issue’s cover is still open.</p>
+      </section>`;
   }
   const readCover = board.status === "open";
   const attrs = readCover
@@ -252,7 +256,8 @@ export function renderBoardHtml(board: BoardView): string {
   const claim = renderClaim(board);
   const rack = renderRack(board);
   const readSoldCover = board.status === "open" && board.listings.length > 0;
-  const body = readSoldCover
+  const readEmptyStand = board.status !== "closed" && board.listings.length === 0;
+  const body = readSoldCover || readEmptyStand
     ? `${masthead}
 ${rack}
 ${claim}`
@@ -461,10 +466,16 @@ button { cursor: pointer; }
   font-weight: 700;
 }
 .form-hint { margin: 0.55rem 0 0; text-align: center; font-size: 0.78rem; color: var(--mute); }
-.cover-rack + .claim {
+.cover-rack + .claim,
+.empty-stand + .claim {
   border-top: 1px solid var(--rule);
   border-bottom: 0;
 }
+.empty-stand {
+  margin: 1.1rem 0 0;
+  padding: 0.95rem 0 1.15rem;
+}
+.empty-stand .hed { margin-top: 0.12rem; }
 .empty-issue {
   margin: 1.4rem 0 0;
   padding: 1.2rem 0.6rem 0.4rem;
