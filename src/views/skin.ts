@@ -215,7 +215,8 @@ function renderPitch(listing: BoardViewListing): string {
   const kicker = isCover ? "Cover · #1" : `#${listing.rank}`;
   const prizeLine = isCover ? ' data-cover-prize-line="true"' : "";
   const prizeBefore = isCover ? ' data-prize-before-price="true"' : "";
-  return `        <li class="cover-line${coverClass}"${prizeBefore} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
+  const laterRank = isCover ? "" : ' data-later-rank="true"';
+  return `        <li class="cover-line${coverClass}"${prizeBefore}${laterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
           <span class="rank"${prizeLine}>${kicker}</span>
           <div>
             <p class="hed">${escapeHtml(listing.blurb)}</p>
@@ -592,6 +593,27 @@ button { cursor: pointer; }
   font-size: 0.92rem;
 }
 .cover-line[data-prize-before-price] .clicks {
+  font-size: 0.7rem;
+}
+.cover-line[data-later-rank] {
+  padding: 0.55rem 0;
+}
+.cover-line[data-later-rank] .rank {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--mute);
+}
+.cover-line[data-later-rank] .hed {
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+.cover-line[data-later-rank] .bid {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.cover-line[data-later-rank] .clicks {
   font-size: 0.7rem;
 }
 .hed {
