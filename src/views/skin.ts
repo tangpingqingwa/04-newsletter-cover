@@ -766,10 +766,7 @@ export const OCCUPIED_CSS = /* css */ `
 .week-open-empty .cover-rack,
 .week-open-empty .cover-line,
 .week-open-sold .empty-stand,
-.week-open-sold .empty-issue,
-.week-open-sold .cover-line[data-later-rank] .hed,
-.week-open-sold .cover-line[data-later-rank] [data-paid-name],
-.week-open-sold .cover-line[data-later-rank] [data-cover-first] {
+.week-open-sold .empty-issue {
   display: none;
 }
 .week-open-sold .cover-line.cover {
@@ -822,11 +819,6 @@ export const OCCUPIED_CSS = /* css */ `
   font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--mute);
-}
-.week-open-sold .cover-line[data-later-rank] .hed {
-  font-size: 0.98rem;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
 }
 .week-open-sold .cover-line[data-later-rank] .dek {
   margin: 0;

@@ -1457,7 +1457,7 @@ grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 pr
 grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
 grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
 grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
-grep -q '\.cover-line\[data-later-rank\] \.hed' src/views/skin.ts \
+grep -q '\.cover-line\[data-later-rank\] \.slot' src/views/skin.ts \
   || fail "later-rank blurbs must stay quieter than Cover · #1"
 grep -q '\.cover-line\[data-later-rank\] \.rank' src/views/skin.ts \
   || fail "later-rank kickers must stay quieter than Cover · #1"

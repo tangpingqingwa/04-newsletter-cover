@@ -3609,7 +3609,7 @@ test("occupied open / keeps later ranks quieter than Cover · #1", () => {
   assert.match(occupiedOpen, /\.week-open-sold \.cover-line\[data-prize-before-price\] \.rank/);
   assert.match(occupiedOpen, /font-size: 1\.85rem/);
   assert.match(occupiedOpen, /\.week-open-sold \.cover-line\[data-later-rank\] \.rank/);
-  assert.match(occupiedOpen, /\.week-open-sold \.cover-line\[data-later-rank\] \.hed \{\s*font-size: 0\.98rem/);
+  assert.match(occupiedOpen, /\.week-open-sold \.cover-line\[data-later-rank\] \.slot \{\s*margin: 0\.18rem 0 0;/);
   assert.match(occupiedOpen, /Cover · #1/);
   assert.match(occupiedOpen, /#2/);
   assert.match(occupiedOpen, /Also listed/);
