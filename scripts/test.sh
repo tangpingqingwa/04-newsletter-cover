@@ -1777,6 +1777,84 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "empty-open certainty UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: occupied Cover · #1 prize stays before \$bid =="
+grep -qE '^### PR 43: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 43: first-time reader"
+grep -q 'data-later-fact="true"' src/views/skin.ts || fail "occupied Cover · #1 must mark data-later-fact"
+grep -q 'class="later-fact"' src/views/skin.ts || fail "occupied Cover · #1 must compose later-fact under the hed"
+grep -q 'Cover · #1' src/views/skin.ts || fail "occupied cover must still say Cover · #1"
+grep -q 'listing.blurb' src/views/skin.ts || fail "named prize must use the listing blurb already on the board"
+grep -q 'displaySponsor' src/views/skin.ts || fail "host/path must stay a later fact via displaySponsor"
+grep -q 'data-prize-before-price="true"' src/views/skin.ts || fail "Cover · #1 prize-before-price must stay"
+grep -q 'data-named-prize="true"' src/views/skin.ts || fail "occupied named prize must stay"
+grep -q 'data-later-rank="true"' src/views/skin.ts || fail "later-rank quiet must stay"
+grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 prize line must stay"
+grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "empty open stand must stay"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "closed empty archive must keep class empty-issue"
+grep -F -q '.week-open-sold .cover-line.cover[data-prize-before-price]' src/views/skin.ts \
+  || fail "occupied Cover · #1 must drop the money column"
+grep -F -q 'grid-template-columns: max-content 1fr;' src/views/skin.ts \
+  || fail "occupied Cover · #1 must stack prize before \$bid"
+grep -F -q '.week-open-sold .cover-line[data-prize-before-price][data-named-prize] .later-fact[data-later-fact]' src/views/skin.ts \
+  || fail "later-fact CSS must be scoped to occupied Cover · #1"
+grep -F -q '.week-open-empty[data-empty-open-stand] [data-later-fact]' src/views/skin.ts \
+  || fail "empty open shell must hide leaked later-fact chrome"
+if grep -E '^\.cover-line\[data-prize-before-price\]\[data-named-prize\] \.later-fact' src/views/skin.ts; then
+  fail "later-fact CSS must not apply outside week-open-sold"
+fi
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /laterFact = openPrize && isCover/ { saw_gate = 1 }
+  in_fn && saw_gate && /class="hed"/ { saw_hed = 1 }
+  in_fn && saw_hed && /listing.blurb/ { saw_name = 1 }
+  in_fn && saw_name && /class="later-fact" data-later-fact="true"/ { saw_later = 1 }
+  in_fn && saw_later && /class="dek"/ { saw_dek = 1 }
+  in_fn && saw_dek && /displaySponsor/ { saw_host = 1 }
+  in_fn && saw_host && /class="bid"/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "occupied Cover · #1 must name the blurb before host/path and \$bid"
+fi
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /const laterFact = openPrize && isCover/ { saw = 1 }
+  in_fn && saw && /laterFact$/ { next }
+  in_fn && /laterFact \?/ && /class="money"/ { leaked = 1 }
+  in_fn && saw && /class="money"/ { money_else = 1 }
+  END { exit(leaked ? 1 : (saw && money_else ? 0 : 1)) }
+' src/views/skin.ts; then
+  fail "class=money must stay on later ranks and closed archives, not occupied Cover · #1"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "prize before \$bid must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "prize before \$bid must not stamp claim-after-read-N / read-after-claim-N"
+fi
+if grep -E 'og:title|fetch\(' src/views/skin.ts src/http/routes/board.ts; then
+  fail "prize before \$bid must not scrape a second title from the live web"
+fi
+grep -q 'data-later-fact="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-later-fact"
+grep -q 'occupied open / keeps Cover · #1 prize before \$bid' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing occupied prize-before-bid case"
+grep -q 'doesNotMatch(emptyOpen, /data-later-fact="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-later-fact"
+grep -q 'doesNotMatch(closedEmpty, /data-later-fact="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-later-fact"
+grep -q 'doesNotMatch(closedOccupied, /data-later-fact="true"/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not stamp data-later-fact"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "prize-before-bid UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"

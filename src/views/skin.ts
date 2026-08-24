@@ -222,6 +222,20 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
   const stampedPrizeBefore = openPrize ? prizeBefore : "";
   const stampedLaterRank = openPrize ? laterRank : "";
   const stampedNamedPrize = openPrize ? namedPrize : "";
+  const laterFact = openPrize && isCover;
+  if (laterFact) {
+    return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}"${stampedNamedPrize}>
+          <span class="rank"${stampedPrizeLine}>${kicker}</span>
+          <div>
+            <p class="hed">${escapeHtml(listing.blurb)}</p>
+            <div class="later-fact" data-later-fact="true">
+              <p class="dek"><a href="${href}">${escapeHtml(displaySponsor(listing.sponsorUrl))}</a></p>
+              <p class="bid">$${listing.bidUsd}</p>
+              <p class="clicks">${listing.clicks} clicks</p>
+            </div>
+          </div>
+        </li>`;
+  }
   return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore}${stampedLaterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}"${stampedNamedPrize}>
           <span class="rank"${stampedPrizeLine}>${kicker}</span>
           <div>
@@ -590,6 +604,7 @@ button { cursor: pointer; }
 .week-open-empty[data-empty-open-stand] [data-sold-cover],
 .week-open-empty[data-empty-open-stand] [data-claim-cover],
 .week-open-empty[data-empty-open-stand] [data-named-prize],
+.week-open-empty[data-empty-open-stand] [data-later-fact],
 .week-open-empty .cover-rack,
 .week-open-empty .cover-line,
 .week-open-empty .empty-issue,
@@ -627,6 +642,30 @@ button { cursor: pointer; }
   grid-template-columns: max-content 1fr auto;
   background: linear-gradient(180deg, rgb(157 28 20 / 0.08), transparent 70%);
   border-top: 2px solid var(--rule);
+}
+.week-open-sold .cover-line.cover[data-prize-before-price] {
+  grid-template-columns: max-content 1fr;
+  align-items: start;
+}
+.week-open-sold .cover-line[data-prize-before-price][data-named-prize] .later-fact[data-later-fact] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.85rem;
+  margin: 0.4rem 0 0;
+}
+.week-open-sold .cover-line[data-prize-before-price][data-named-prize] .later-fact[data-later-fact] .dek {
+  margin: 0;
+  flex: 1 1 12rem;
+}
+.week-open-sold .cover-line[data-prize-before-price][data-named-prize] .later-fact[data-later-fact] .bid {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--mute);
+}
+.week-open-sold .cover-line[data-prize-before-price][data-named-prize] .later-fact[data-later-fact] .clicks {
+  margin: 0;
+  font-size: 0.7rem;
 }
 .rank {
   font-family: var(--display);

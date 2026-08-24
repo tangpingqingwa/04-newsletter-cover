@@ -4059,3 +4059,168 @@ test("empty open / stays the empty stand — no sold-cover, Claim the next cover
   assert.doesNotMatch(closedOccupied, /id="claim"/);
 });
 
+test("occupied open / keeps Cover · #1 prize before $bid — host path is a later fact", () => {
+  const occupiedOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_cover",
+        sponsorUrl: "https://sponsor.example/pitch",
+        blurb: "Widgets for the next issue",
+        bidUsd: 12,
+        clicks: 3,
+      },
+      {
+        rank: 2,
+        id: "lst_two",
+        sponsorUrl: "https://second.example/also",
+        blurb: "Also listed",
+        bidUsd: 6,
+        clicks: 0,
+      },
+    ],
+  });
+  const emptyOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const closedOccupied = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_won",
+        sponsorUrl: "https://won.example/cover",
+        blurb: "Frozen winner",
+        bidUsd: 20,
+        clicks: 1,
+      },
+    ],
+  });
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [],
+  });
+
+  const namedAt = occupiedOpen.indexOf('data-named-prize="true"');
+  const prizeAt = occupiedOpen.indexOf('data-prize-before-price="true"');
+  const coverKickerAt = occupiedOpen.indexOf("Cover · #1");
+  const hedAt = occupiedOpen.indexOf('class="hed">Widgets for the next issue<');
+  const laterFactAt = occupiedOpen.indexOf('data-later-fact="true"');
+  const dekAt = occupiedOpen.indexOf('class="dek"><a href="/l/lst_cover">sponsor.example/pitch');
+  const bidAt = occupiedOpen.indexOf('class="bid">$12<');
+  const hopAt = occupiedOpen.indexOf('data-claim-cover="true"');
+  const claimAt = occupiedOpen.indexOf('id="claim"');
+  assert.notEqual(namedAt, -1);
+  assert.notEqual(prizeAt, -1);
+  assert.notEqual(coverKickerAt, -1);
+  assert.notEqual(hedAt, -1);
+  assert.notEqual(laterFactAt, -1);
+  assert.notEqual(dekAt, -1);
+  assert.notEqual(bidAt, -1);
+  assert.notEqual(hopAt, -1);
+  assert.notEqual(claimAt, -1);
+  assert.ok(coverKickerAt < hedAt);
+  assert.ok(hedAt < laterFactAt);
+  assert.ok(laterFactAt < dekAt);
+  assert.ok(dekAt < bidAt);
+  assert.ok(hedAt < bidAt);
+  assert.ok(prizeAt < bidAt);
+  assert.ok(namedAt < claimAt);
+  assert.equal((occupiedOpen.match(/data-later-fact="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-named-prize="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-prize-before-price="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
+  assert.match(
+    occupiedOpen,
+    /class="cover-line cover" data-prize-before-price="true" data-rank="1"[^>]*data-named-prize="true"/,
+  );
+  assert.match(occupiedOpen, /class="rank" data-cover-prize-line="true">Cover · #1</);
+  assert.match(occupiedOpen, /class="hed">Widgets for the next issue</);
+  assert.match(
+    occupiedOpen,
+    /class="later-fact" data-later-fact="true"[\s\S]*class="dek"><a href="\/l\/lst_cover">sponsor\.example\/pitch[\s\S]*class="bid">\$12</,
+  );
+  assert.match(occupiedOpen, /3 clicks/);
+  assert.match(
+    occupiedOpen,
+    /\.week-open-sold \.cover-line\.cover\[data-prize-before-price\] \{\s*grid-template-columns: max-content 1fr;/,
+  );
+  assert.match(
+    occupiedOpen,
+    /\.week-open-sold \.cover-line\[data-prize-before-price\]\[data-named-prize\] \.later-fact\[data-later-fact\]/,
+  );
+  assert.match(occupiedOpen, /data-read-cover="true"/);
+  assert.match(occupiedOpen, /data-claim-cover="true"/);
+  assert.match(occupiedOpen, /Claim the next cover/);
+  assert.match(occupiedOpen, /data-cover-prize-line="true"/);
+  assert.match(occupiedOpen, /data-later-rank="true"/);
+  assert.match(occupiedOpen, /#2/);
+  assert.match(occupiedOpen, /Also listed/);
+  assert.doesNotMatch(
+    occupiedOpen,
+    /class="cover-line cover"[\s\S]{0,400}class="money"/,
+  );
+  assert.doesNotMatch(
+    occupiedOpen,
+    /class="cover-line"[^>]*data-later-fact/,
+  );
+  assert.ok(occupiedOpen.indexOf('data-sold-cover="true"') < hopAt);
+  assert.ok(hopAt < occupiedOpen.indexOf('data-read-cover="true"'));
+  assert.doesNotMatch(occupiedOpen, /data-claim-after-read-seven/);
+  assert.doesNotMatch(occupiedOpen, /data-read-after-claim-seven/);
+  assert.doesNotMatch(occupiedOpen, /og:title/);
+  assert.doesNotMatch(occupiedOpen, /subscriber/i);
+  assert.doesNotMatch(occupiedOpen, /article list/i);
+
+  const twoStart = occupiedOpen.indexOf('data-rank="2"');
+  const twoSlice = occupiedOpen.slice(twoStart);
+  assert.match(twoSlice, /class="money"/);
+  assert.doesNotMatch(twoSlice.slice(0, 600), /data-later-fact/);
+
+  assert.match(emptyOpen, /class="week week-open-empty"/);
+  assert.match(emptyOpen, /class="empty-stand"/);
+  assert.match(emptyOpen, /data-read-stand="true"/);
+  assert.match(emptyOpen, /data-claim-after-stand="true"/);
+  assert.match(emptyOpen, /No cover sold/);
+  assert.match(emptyOpen, /No paid listings on this board/);
+  assert.match(emptyOpen, /Claim #1 for/);
+  assert.match(emptyOpen, /\.week-open-empty\[data-empty-open-stand\] \[data-later-fact\]/);
+  assert.doesNotMatch(emptyOpen, /data-later-fact="true"/);
+  assert.doesNotMatch(emptyOpen, /data-named-prize="true"/);
+  assert.doesNotMatch(emptyOpen, /Cover · #1/);
+  assert.doesNotMatch(emptyOpen, /class="cover-line"/);
+  assert.doesNotMatch(emptyOpen, /data-read-cover/);
+  assert.doesNotMatch(emptyOpen, /data-claim-cover="true"/);
+  assert.doesNotMatch(emptyOpen, /class="empty-issue"/);
+
+  assert.doesNotMatch(closedOccupied, /data-later-fact="true"/);
+  assert.doesNotMatch(closedOccupied, /data-named-prize="true"/);
+  assert.doesNotMatch(closedOccupied, /data-prize-before-price="true"/);
+  assert.match(closedOccupied, /Cover · #1/);
+  assert.match(closedOccupied, /Frozen winner/);
+  assert.match(closedOccupied, /won\.example\/cover/);
+  assert.match(closedOccupied, /class="money"/);
+  assert.ok(closedOccupied.indexOf("Cover · #1") < closedOccupied.indexOf('class="bid"'));
+  assert.doesNotMatch(closedOccupied, /data-cover-prize-line="true"/);
+  assert.doesNotMatch(closedOccupied, /data-later-rank="true"/);
+  assert.doesNotMatch(closedOccupied, /data-claim-cover="true"/);
+  assert.doesNotMatch(closedOccupied, /data-read-cover/);
+  assert.doesNotMatch(closedOccupied, /id="claim"/);
+
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.match(closedEmpty, /data-closed-empty-issue="true"/);
+  assert.match(closedEmpty, /No paid listings on this board/);
+  assert.doesNotMatch(closedEmpty, /data-later-fact="true"/);
+  assert.doesNotMatch(closedEmpty, /data-named-prize="true"/);
+  assert.doesNotMatch(closedEmpty, /Cover · #1/);
+  assert.doesNotMatch(closedEmpty, /class="cover-line"/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
+  assert.doesNotMatch(closedEmpty, /Claim #1 for/);
+});
+
