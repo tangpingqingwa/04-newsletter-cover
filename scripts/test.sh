@@ -1652,6 +1652,7 @@ if ! awk '
   in_fn && /The next issue/ { saw_next = 1 }
   in_fn && saw_next && /data-empty-open-stand="true"/ { found = 1 }
   in_fn && saw_next && /data-sold-cover/ { leaked = 1 }
+  in_fn && saw_next && /data-claim-cover/ { leaked = 1 }
   END { exit(leaked ? 1 : (found && saw_closed && saw_claim ? 0 : 1)) }
 ' src/views/skin.ts; then
   fail "empty open flag must stamp data-empty-open-stand and must not leak sold-cover"
@@ -1693,6 +1694,69 @@ grep -q 'doesNotMatch(closedOccupied, /data-empty-open-stand="true"/)' tests/pro
   || fail "closed occupied archive must not stamp data-empty-open-stand"
 if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
   fail "empty-open-stand UX must not invent subscribers, open rates, or an article list"
+fi
+
+echo "== first-time reader: empty open stand stays certain — occupied chrome cannot leak =="
+grep -qE '^### PR 42: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 42: first-time reader"
+grep -q 'class="week week-open-empty"' src/views/skin.ts || fail "empty open / must wrap in week-open-empty"
+grep -q 'class="week week-open-sold"' src/views/skin.ts || fail "occupied open / must wrap in week-open-sold"
+grep -q 'week-closed-empty' src/views/skin.ts || fail "closed empty archive must wrap in week-closed-empty"
+grep -q 'week-closed-occupied' src/views/skin.ts || fail "closed occupied archive must wrap in week-closed-occupied"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "empty open stand must keep class empty-stand"
+grep -q 'Claim #1 for' src/views/skin.ts || fail "empty open / must keep Claim #1"
+grep -q 'data-sold-cover="true"' src/views/skin.ts || fail "occupied sold-cover name must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'data-named-prize="true"' src/views/skin.ts || fail "occupied named prize must stay"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "closed empty archive must keep class empty-issue"
+grep -F -q '.week-open-sold .flag [data-read-after-claim-sold]' src/views/skin.ts \
+  || fail "sold-cover flag CSS must be scoped to week-open-sold"
+grep -F -q '.week-open-sold .cover-line[data-named-prize] .hed' src/views/skin.ts \
+  || fail "named-prize CSS must be scoped to week-open-sold"
+grep -F -q '.week-open-empty[data-empty-open-stand] [data-sold-cover]' src/views/skin.ts \
+  || fail "empty open shell must hide leaked sold-cover chrome"
+grep -F -q '.week-open-empty[data-empty-open-stand] [data-claim-cover]' src/views/skin.ts \
+  || fail "empty open shell must hide leaked Claim the next cover chrome"
+grep -F -q '.week-open-empty[data-empty-open-stand] [data-named-prize]' src/views/skin.ts \
+  || fail "empty open shell must hide leaked named-prize chrome"
+if grep -E '^\.flag \[data-read-after-claim-sold\]' src/views/skin.ts; then
+  fail "sold-cover flag CSS must not apply outside week-open-sold"
+fi
+if grep -E '^\.cover-line\[data-named-prize\]' src/views/skin.ts; then
+  fail "named-prize CSS must not apply outside week-open-sold"
+fi
+if ! awk '
+  /function weekShell/ { in_fn = 1 }
+  in_fn && /^export function / { in_fn = 0 }
+  in_fn && /week-open-empty/ && /data-empty-open-stand="true"/ { found = 1 }
+  in_fn && /week-open-sold/ { saw_sold = 1 }
+  in_fn && /week-closed-empty/ { saw_closed = 1 }
+  END { exit(found && saw_sold && saw_closed ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "weekShell must isolate empty open / from occupied sold-cover and closed empty-issue"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "empty-open certainty must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "empty-open certainty must not stamp claim-after-read-N / read-after-claim-N"
+fi
+grep -q 'week-open-empty' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must assert the empty-open week shell"
+grep -q 'week-open-sold' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must assert the occupied-open week shell"
+grep -q 'week-closed-empty' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must assert the closed-empty week shell"
+grep -q 'doesNotMatch(emptyOpen, /class="week week-open-sold"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not wrap in week-open-sold"
+grep -q 'doesNotMatch(occupiedOpen, /class="week week-open-empty"/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not wrap in week-open-empty"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "empty-open certainty UX must not invent subscribers, open rates, or an article list"
 fi
 
 echo "== live-smoke stays operator-only =="

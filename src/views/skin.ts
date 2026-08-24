@@ -259,19 +259,43 @@ ${board.listings.map((listing) => renderPitch(listing, board.status === "open"))
       </ol>`;
 }
 
+function weekShell(board: BoardView): { open: string; close: string } {
+  if (board.status === "closed") {
+    const kind = board.listings.length === 0 ? "week-closed-empty" : "week-closed-occupied";
+    return {
+      open: `      <div class="week ${kind}">`,
+      close: `      </div>`,
+    };
+  }
+  if (board.listings.length > 0) {
+    return {
+      open: `      <div class="week week-open-sold">`,
+      close: `      </div>`,
+    };
+  }
+  return {
+    open: `      <div class="week week-open-empty" data-empty-open-stand="true">`,
+    close: `      </div>`,
+  };
+}
+
 export function renderBoardHtml(board: BoardView): string {
   const masthead = renderMasthead(board);
   const claim = renderClaim(board);
   const rack = renderRack(board);
+  const week = weekShell(board);
   const readSoldCover = board.status === "open" && board.listings.length > 0;
   const readEmptyStand = board.status !== "closed" && board.listings.length === 0;
-  const body = readSoldCover || readEmptyStand
+  const inner = readSoldCover || readEmptyStand
     ? `${masthead}
 ${rack}
 ${claim}`
     : `${masthead}
 ${claim}
 ${rack}`;
+  const body = `${week.open}
+${inner}
+${week.close}`;
   return renderDocument({
     title: "The Cover · Newsletter Cover",
     active: "cover",
@@ -411,74 +435,75 @@ button { cursor: pointer; }
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
-.flag a[data-open-cover] {
+.week-closed-empty .flag a[data-open-cover],
+.week-closed-occupied .flag a[data-open-cover] {
   display: block;
   font-weight: 700;
   margin-top: 0.55rem;
 }
-.flag [data-read-after-claim-sold] {
+.week-open-sold .flag [data-read-after-claim-sold] {
   display: block;
   font-weight: 700;
 }
-.flag [data-read-after-claim-two] {
+.week-open-sold .flag [data-read-after-claim-two] {
   font-family: var(--display);
   font-size: 1.2rem;
   letter-spacing: -0.02em;
   line-height: 1.15;
 }
-.flag [data-read-after-claim-three] {
+.week-open-sold .flag [data-read-after-claim-three] {
   font-size: 1.55rem;
   letter-spacing: -0.035em;
   line-height: 1.05;
 }
-.flag [data-read-after-claim-four] {
+.week-open-sold .flag [data-read-after-claim-four] {
   font-size: 1.9rem;
   letter-spacing: -0.05em;
   line-height: 0.98;
 }
-.flag [data-read-after-claim-five] {
+.week-open-sold .flag [data-read-after-claim-five] {
   font-size: 2.25rem;
   letter-spacing: -0.065em;
   line-height: 0.92;
 }
-.flag [data-read-after-claim-six] {
+.week-open-sold .flag [data-read-after-claim-six] {
   font-size: 2.6rem;
   letter-spacing: -0.08em;
   line-height: 0.86;
 }
-.flag a[data-claim-after-sold] {
+.week-open-sold .flag a[data-claim-after-sold] {
   display: block;
   margin-top: 0.55rem;
 }
-.flag a[data-claim-after-read-sold] {
+.week-open-sold .flag a[data-claim-after-read-sold] {
   font-weight: 700;
 }
-.flag a[data-claim-after-read-two] {
+.week-open-sold .flag a[data-claim-after-read-two] {
   font-family: var(--display);
   font-size: 1.2rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1.15;
 }
-.flag a[data-claim-after-read-three] {
+.week-open-sold .flag a[data-claim-after-read-three] {
   font-size: 1.42rem;
   letter-spacing: 0.06em;
   line-height: 1.08;
   margin-top: 0.75rem;
 }
-.flag a[data-claim-after-read-four] {
+.week-open-sold .flag a[data-claim-after-read-four] {
   font-size: 1.72rem;
   letter-spacing: 0.08em;
   line-height: 1.02;
   margin-top: 0.95rem;
 }
-.flag a[data-claim-after-read-five] {
+.week-open-sold .flag a[data-claim-after-read-five] {
   font-size: 2.02rem;
   letter-spacing: 0.1em;
   line-height: 0.96;
   margin-top: 1.15rem;
 }
-.flag a[data-claim-after-read-six] {
+.week-open-sold .flag a[data-claim-after-read-six] {
   font-size: 2.32rem;
   letter-spacing: 0.12em;
   line-height: 0.9;
@@ -562,6 +587,18 @@ button { cursor: pointer; }
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
+.week-open-empty .cover-rack,
+.week-open-empty .cover-line,
+.week-open-empty .empty-issue,
+.week-open-sold .empty-stand,
+.week-open-sold .empty-issue,
+.week-closed-empty .empty-stand,
+.week-closed-occupied .empty-stand {
+  display: none;
+}
+.week-open-empty .empty-stand {
+  display: block;
+}
 .empty-issue {
   margin: 1.4rem 0 0;
   padding: 1.2rem 0.6rem 0.4rem;
@@ -583,7 +620,7 @@ button { cursor: pointer; }
   padding: 0.85rem 0;
   border-top: 1px solid var(--hair);
 }
-.cover-line.cover {
+.week-open-sold .cover-line.cover {
   grid-template-columns: max-content 1fr auto;
   background: linear-gradient(180deg, rgb(157 28 20 / 0.08), transparent 70%);
   border-top: 2px solid var(--rule);
@@ -593,46 +630,46 @@ button { cursor: pointer; }
   font-weight: 700;
   letter-spacing: 0.04em;
 }
-.cover .rank { color: var(--flag); }
-.rank[data-cover-prize-line] { white-space: nowrap; }
-.cover-line[data-prize-before-price] .rank {
+.week-open-sold .cover .rank { color: var(--flag); }
+.week-open-sold .rank[data-cover-prize-line] { white-space: nowrap; }
+.week-open-sold .cover-line[data-prize-before-price] .rank {
   font-size: 1.85rem;
   letter-spacing: -0.04em;
   line-height: 0.92;
 }
-.cover-line[data-prize-before-price] .bid {
+.week-open-sold .cover-line[data-prize-before-price] .bid {
   font-size: 0.92rem;
 }
-.cover-line[data-prize-before-price] .clicks {
+.week-open-sold .cover-line[data-prize-before-price] .clicks {
   font-size: 0.7rem;
 }
-.cover-line[data-later-rank] {
+.week-open-sold .cover-line[data-later-rank] {
   padding: 0.55rem 0;
 }
-.cover-line[data-later-rank] .rank {
+.week-open-sold .cover-line[data-later-rank] .rank {
   font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--mute);
 }
-.cover-line[data-later-rank] .hed {
+.week-open-sold .cover-line[data-later-rank] .hed {
   font-size: 0.98rem;
   letter-spacing: -0.01em;
   line-height: 1.15;
 }
-.cover-line[data-later-rank] .bid {
+.week-open-sold .cover-line[data-later-rank] .bid {
   font-size: 0.85rem;
   font-weight: 600;
 }
-.cover-line[data-later-rank] .clicks {
+.week-open-sold .cover-line[data-later-rank] .clicks {
   font-size: 0.7rem;
 }
-.cover-line[data-named-prize] .hed {
+.week-open-sold .cover-line[data-named-prize] .hed {
   font-size: 1.55rem;
   letter-spacing: -0.04em;
   line-height: 1.02;
 }
-.cover-line[data-named-prize] .dek {
+.week-open-sold .cover-line[data-named-prize] .dek {
   font-size: 0.78rem;
   letter-spacing: 0.01em;
 }
