@@ -228,7 +228,7 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
     return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}"${stampedNamedPrize}>
           <span class="rank"${stampedPrizeLine}>${kicker}</span>
           <div>
-            <p class="hed">${escapeHtml(listing.blurb)}</p>
+            <p class="hed"><a href="${href}" data-cover-first="true">${escapeHtml(listing.blurb)}</a></p>
             <div class="later-fact" data-later-fact="true">
               <p class="dek"><a href="${href}">${escapeHtml(displaySponsor(listing.sponsorUrl))}</a></p>
               <p class="bid">$${listing.bidUsd}</p>
@@ -679,6 +679,7 @@ export const OCCUPIED_CSS = /* css */ `
 .week-open-empty[data-empty-open-stand] [data-claim-cover],
 .week-open-empty[data-empty-open-stand] [data-named-prize],
 .week-open-empty[data-empty-open-stand] [data-later-fact],
+.week-open-empty[data-empty-open-stand] [data-cover-first],
 .week-open-empty .cover-rack,
 .week-open-empty .cover-line,
 .week-open-sold .empty-stand,
@@ -756,6 +757,25 @@ export const OCCUPIED_CSS = /* css */ `
 .week-open-sold .cover-line[data-named-prize] .dek {
   font-size: 0.78rem;
   letter-spacing: 0.01em;
+}
+.week-open-sold .cover-line[data-named-prize] .hed a[data-cover-first] {
+  color: inherit;
+  text-decoration: none;
+}
+.week-open-sold .cover-line[data-named-prize] .hed a[data-cover-first]:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+.week-open-sold .flag a[data-claim-cover] {
+  display: block;
+  margin-top: 0.45rem;
+  font-family: var(--serif);
+  font-size: 0.92rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.45;
+  color: var(--mute);
 }
 `;
 

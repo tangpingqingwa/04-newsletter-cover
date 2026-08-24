@@ -1917,6 +1917,121 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "empty-open later-fact isolation must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: occupied Claim the next cover stays quieter than Cover · #1 — prize stays first =="
+grep -qE '^### PR 45: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 45: first-time reader"
+grep -q 'data-cover-first="true"' src/views/skin.ts || fail "occupied Cover · #1 must mark data-cover-first"
+grep -q 'Cover · #1' src/views/skin.ts || fail "occupied cover must still say Cover · #1"
+grep -q 'listing.blurb' src/views/skin.ts || fail "cover-first prize must use the listing blurb already on the board"
+grep -q 'displaySponsor' src/views/skin.ts || fail "host/path must stay a later fact via displaySponsor"
+grep -q 'data-later-fact="true"' src/views/skin.ts || fail "occupied Cover · #1 later-fact must stay"
+grep -q 'data-named-prize="true"' src/views/skin.ts || fail "occupied named prize must stay"
+grep -q 'data-prize-before-price="true"' src/views/skin.ts || fail "Cover · #1 prize-before-price must stay"
+grep -q 'data-later-rank="true"' src/views/skin.ts || fail "later-rank quiet must stay"
+grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 prize line must stay"
+grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "empty open stand must stay"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "closed empty archive must keep class empty-issue"
+grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
+  || fail "empty open / closed archives must still ship FOLIO_CSS only"
+grep -F -q '.week-open-sold .cover-line[data-named-prize] .hed a[data-cover-first]' src/views/skin.ts \
+  || fail "Cover · #1 prize click must be the named hed"
+grep -F -q '.week-open-sold .flag a[data-claim-cover]' src/views/skin.ts \
+  || fail "Claim the next cover must stay quieter than Cover · #1"
+grep -F -q '.week-open-empty[data-empty-open-stand] [data-cover-first]' src/views/skin.ts \
+  || fail "empty open shell must hide leaked cover-first chrome"
+if grep -E '^\.cover-line\[data-named-prize\] \.hed a\[data-cover-first\]' src/views/skin.ts; then
+  fail "cover-first CSS must not apply outside week-open-sold"
+fi
+if grep -E '^\.flag a\[data-claim-cover\]' src/views/skin.ts; then
+  fail "claim-cover quiet CSS must not apply outside week-open-sold"
+fi
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /laterFact = openPrize && isCover/ { saw_gate = 1 }
+  in_fn && saw_gate && /class="hed"/ { saw_hed = 1 }
+  in_fn && saw_hed && /data-cover-first="true"/ { saw_first = 1 }
+  in_fn && saw_first && /listing.blurb/ { saw_name = 1 }
+  in_fn && saw_name && /class="later-fact" data-later-fact="true"/ { saw_later = 1 }
+  in_fn && saw_later && /class="dek"/ { saw_dek = 1 }
+  in_fn && saw_dek && /displaySponsor/ { saw_host = 1 }
+  in_fn && saw_host && /class="bid"/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "occupied Cover · #1 must be the first occupied click before host/path and \$bid"
+fi
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /^function / && !/renderPitch/ { in_fn = 0 }
+  in_fn && /data-cover-first="true"/ { first++ }
+  in_fn && /laterFact = openPrize && isCover/ { saw = 1 }
+  in_fn && saw && /class="money"/ { money_else = 1 }
+  END { exit(first == 1 && money_else ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "data-cover-first must stamp only occupied Cover · #1"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "cover-first prize must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "cover-first prize must not stamp claim-after-read-N / read-after-claim-N"
+fi
+if grep -E 'og:title|fetch\(' src/views/skin.ts src/http/routes/board.ts; then
+  fail "cover-first prize must not scrape a second title from the live web"
+fi
+node -e '
+const { readFileSync } = require("fs");
+const src = readFileSync("src/views/skin.ts", "utf8");
+const css = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
+const hed = css.match(/\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/);
+const claim = css.match(/\.week-open-sold \.flag a\[data-claim-cover\] \{([^}]*)\}/);
+if (!hed || !claim) {
+  console.error("missing occupied Cover · #1 or Claim the next cover CSS");
+  process.exit(1);
+}
+const hedSize = hed[1].match(/font-size:\s*([\d.]+)rem/);
+const claimSize = claim[1].match(/font-size:\s*([\d.]+)rem/);
+if (!hedSize || !claimSize) {
+  console.error("missing font-size on Cover · #1 or Claim the next cover");
+  process.exit(1);
+}
+if (Number(claimSize[1]) >= Number(hedSize[1])) {
+  console.error("Claim the next cover is not quieter than Cover · #1");
+  process.exit(1);
+}
+if (!claim[1].includes("color: var(--mute)")) {
+  console.error("Claim the next cover must use mute ink");
+  process.exit(1);
+}
+if (!claim[1].includes("text-transform: none")) {
+  console.error("Claim the next cover must drop the shouty uppercase");
+  process.exit(1);
+}
+' || fail "Claim the next cover must stay quieter than Cover · #1"
+if awk '/^export const FOLIO_CSS/{p=1} p{print} /^export const OCCUPIED_CSS/{exit}' src/views/skin.ts \
+  | grep -Eq 'data-cover-first|a\[data-cover-first\]|a\[data-claim-cover\]'; then
+  fail "FOLIO_CSS must not contain cover-first / claim-cover quiet chrome"
+fi
+grep -q 'data-cover-first="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-cover-first"
+grep -q 'occupied open / keeps Claim the next cover quieter than Cover · #1' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing occupied claim-quieter-than-Cover · #1 case"
+grep -q 'doesNotMatch(emptyOpen, /data-cover-first="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-cover-first"
+grep -q 'doesNotMatch(closedEmpty, /data-cover-first="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-cover-first"
+grep -q 'doesNotMatch(closedOccupied, /data-cover-first="true"/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not stamp data-cover-first"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "cover-first prize UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"

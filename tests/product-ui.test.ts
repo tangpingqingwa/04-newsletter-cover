@@ -3837,7 +3837,7 @@ test("occupied open / names Cover · #1 from the listing blurb, not the host pat
   });
 
   const namedAt = occupiedOpen.indexOf('data-named-prize="true"');
-  const hedAt = occupiedOpen.indexOf('class="hed">Widgets for the next issue<');
+  const hedAt = occupiedOpen.indexOf('class="hed"><a href="/l/lst_cover" data-cover-first="true">Widgets for the next issue<');
   const dekAt = occupiedOpen.indexOf('class="dek"><a href="/l/lst_cover">sponsor.example/pitch');
   const hopAt = occupiedOpen.indexOf('data-claim-cover="true"');
   const claimAt = occupiedOpen.indexOf('id="claim"');
@@ -3855,7 +3855,7 @@ test("occupied open / names Cover · #1 from the listing blurb, not the host pat
     /class="cover-line cover" data-prize-before-price="true" data-rank="1"[^>]*data-named-prize="true"/,
   );
   assert.match(occupiedOpen, /class="rank" data-cover-prize-line="true">Cover · #1</);
-  assert.match(occupiedOpen, /class="hed">Widgets for the next issue</);
+  assert.match(occupiedOpen, /class="hed"><a href="\/l\/lst_cover" data-cover-first="true">Widgets for the next issue</);
   assert.match(occupiedOpen, /class="dek"><a href="\/l\/lst_cover">sponsor\.example\/pitch</);
   assert.match(occupiedOpen, /\.week-open-sold \.cover-line\[data-named-prize\] \.hed/);
   assert.match(occupiedOpen, /\.week-open-sold \.cover-line\[data-named-prize\] \.dek \{\s*font-size: 0\.78rem/);
@@ -4027,7 +4027,7 @@ test("empty open / stays the empty stand — no sold-cover, Claim the next cover
   assert.match(occupiedOpen, /Claim the next cover/);
   assert.match(occupiedOpen, /data-named-prize="true"/);
   assert.match(occupiedOpen, /Cover · #1/);
-  assert.match(occupiedOpen, /class="hed">Widgets for the next issue</);
+  assert.match(occupiedOpen, /class="hed"><a href="\/l\/lst_cover" data-cover-first="true">Widgets for the next issue</);
   assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
   assert.doesNotMatch(occupiedOpen, /data-empty-open-stand="true"/);
   assert.doesNotMatch(occupiedOpen, /class="week week-open-empty"/);
@@ -4109,7 +4109,7 @@ test("occupied open / keeps Cover · #1 prize before $bid — host path is a lat
   const namedAt = occupiedOpen.indexOf('data-named-prize="true"');
   const prizeAt = occupiedOpen.indexOf('data-prize-before-price="true"');
   const coverKickerAt = occupiedOpen.indexOf("Cover · #1");
-  const hedAt = occupiedOpen.indexOf('class="hed">Widgets for the next issue<');
+  const hedAt = occupiedOpen.indexOf('class="hed"><a href="/l/lst_cover" data-cover-first="true">Widgets for the next issue<');
   const laterFactAt = occupiedOpen.indexOf('data-later-fact="true"');
   const dekAt = occupiedOpen.indexOf('class="dek"><a href="/l/lst_cover">sponsor.example/pitch');
   const bidAt = occupiedOpen.indexOf('class="bid">$12<');
@@ -4140,7 +4140,7 @@ test("occupied open / keeps Cover · #1 prize before $bid — host path is a lat
     /class="cover-line cover" data-prize-before-price="true" data-rank="1"[^>]*data-named-prize="true"/,
   );
   assert.match(occupiedOpen, /class="rank" data-cover-prize-line="true">Cover · #1</);
-  assert.match(occupiedOpen, /class="hed">Widgets for the next issue</);
+  assert.match(occupiedOpen, /class="hed"><a href="\/l\/lst_cover" data-cover-first="true">Widgets for the next issue</);
   assert.match(
     occupiedOpen,
     /class="later-fact" data-later-fact="true"[\s\S]*class="dek"><a href="\/l\/lst_cover">sponsor\.example\/pitch[\s\S]*class="bid">\$12</,
@@ -4342,7 +4342,7 @@ test("empty open / stays Claim #1 — later-fact / named-prize cannot leak", () 
   assert.match(occupiedOpen, /class="week week-open-sold"/);
   assert.match(occupiedOpen, /data-later-fact="true"/);
   assert.match(occupiedOpen, /data-named-prize="true"/);
-  assert.match(occupiedOpen, /class="hed">Widgets for the next issue</);
+  assert.match(occupiedOpen, /class="hed"><a href="\/l\/lst_cover" data-cover-first="true">Widgets for the next issue</);
   assert.match(
     occupiedOpen,
     /class="later-fact" data-later-fact="true"[\s\S]*class="dek"><a href="\/l\/lst_cover">sponsor\.example\/pitch[\s\S]*class="bid">\$12</,
@@ -4387,6 +4387,183 @@ test("empty open / stays Claim #1 — later-fact / named-prize cannot leak", () 
   assert.doesNotMatch(unsetCss, /later-fact/);
   assert.doesNotMatch(unsetEmpty, /data-later-fact="true"/);
   assert.doesNotMatch(unsetEmpty, /data-named-prize="true"/);
+});
+
+test("occupied open / keeps Claim the next cover quieter than Cover · #1 — prize stays first", () => {
+  const occupiedOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_cover",
+        sponsorUrl: "https://sponsor.example/pitch",
+        blurb: "Widgets for the next issue",
+        bidUsd: 12,
+        clicks: 3,
+      },
+      {
+        rank: 2,
+        id: "lst_two",
+        sponsorUrl: "https://second.example/also",
+        blurb: "Also listed",
+        bidUsd: 6,
+        clicks: 0,
+      },
+    ],
+  });
+  const emptyOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const closedOccupied = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_won",
+        sponsorUrl: "https://won.example/cover",
+        blurb: "Frozen winner",
+        bidUsd: 20,
+        clicks: 1,
+      },
+    ],
+  });
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [],
+  });
+
+  const occupiedCss = occupiedOpen.slice(
+    occupiedOpen.indexOf("<style>"),
+    occupiedOpen.indexOf("</style>"),
+  );
+  const emptyCss = emptyOpen.slice(emptyOpen.indexOf("<style>"), emptyOpen.indexOf("</style>"));
+  const closedEmptyCss = closedEmpty.slice(
+    closedEmpty.indexOf("<style>"),
+    closedEmpty.indexOf("</style>"),
+  );
+  const closedOccupiedCss = closedOccupied.slice(
+    closedOccupied.indexOf("<style>"),
+    closedOccupied.indexOf("</style>"),
+  );
+
+  const coverFirstAt = occupiedOpen.indexOf('data-cover-first="true"');
+  const coverKickerAt = occupiedOpen.indexOf("Cover · #1");
+  const hedAt = occupiedOpen.indexOf(
+    'class="hed"><a href="/l/lst_cover" data-cover-first="true">Widgets for the next issue<',
+  );
+  const laterFactAt = occupiedOpen.indexOf('data-later-fact="true"');
+  const dekAt = occupiedOpen.indexOf('class="dek"><a href="/l/lst_cover">sponsor.example/pitch');
+  const bidAt = occupiedOpen.indexOf('class="bid">$12<');
+  const hopAt = occupiedOpen.indexOf('data-claim-cover="true"');
+  const rackAt = occupiedOpen.indexOf('data-read-cover="true"');
+  const claimAt = occupiedOpen.indexOf('id="claim"');
+  assert.notEqual(coverFirstAt, -1);
+  assert.notEqual(coverKickerAt, -1);
+  assert.notEqual(hedAt, -1);
+  assert.notEqual(laterFactAt, -1);
+  assert.notEqual(dekAt, -1);
+  assert.notEqual(bidAt, -1);
+  assert.notEqual(hopAt, -1);
+  assert.notEqual(rackAt, -1);
+  assert.notEqual(claimAt, -1);
+  assert.ok(coverKickerAt < hedAt);
+  assert.ok(hedAt < laterFactAt);
+  assert.ok(laterFactAt < dekAt);
+  assert.ok(dekAt < bidAt);
+  assert.ok(hedAt < bidAt);
+  assert.ok(hopAt < rackAt);
+  assert.ok(rackAt < claimAt);
+  assert.ok(coverFirstAt < claimAt);
+  assert.equal((occupiedOpen.match(/data-cover-first="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-claim-cover="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
+  assert.match(
+    occupiedOpen,
+    /class="hed"><a href="\/l\/lst_cover" data-cover-first="true">Widgets for the next issue</,
+  );
+  assert.match(occupiedOpen, /class="rank" data-cover-prize-line="true">Cover · #1</);
+  assert.match(occupiedOpen, /Claim the next cover/);
+  assert.match(occupiedOpen, /data-read-cover="true"/);
+  assert.match(occupiedOpen, /data-claim-cover="true"/);
+  assert.match(occupiedOpen, /data-cover-prize-line="true"/);
+  assert.match(occupiedOpen, /data-prize-before-price="true"/);
+  assert.match(occupiedOpen, /data-named-prize="true"/);
+  assert.match(occupiedOpen, /data-later-fact="true"/);
+  assert.match(occupiedOpen, /data-later-rank="true"/);
+  assert.match(occupiedOpen, /#2/);
+  assert.match(occupiedOpen, /Also listed/);
+  assert.match(occupiedOpen, /Claim #1 for/);
+  assert.match(occupiedOpen, /class="outbid"/);
+  assert.match(
+    occupiedCss,
+    /\.week-open-sold \.cover-line\[data-named-prize\] \.hed a\[data-cover-first\]/,
+  );
+  assert.match(occupiedCss, /\.week-open-sold \.flag a\[data-claim-cover\] \{\s*display: block;/);
+  assert.match(occupiedCss, /\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{\s*font-size: 1\.55rem/);
+  const prizeHed = occupiedCss.match(
+    /\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/,
+  );
+  const claimHop = occupiedCss.match(/\.week-open-sold \.flag a\[data-claim-cover\] \{([^}]*)\}/);
+  assert.ok(prizeHed);
+  assert.ok(claimHop);
+  const prizeSize = prizeHed[1].match(/font-size:\s*([\d.]+)rem/);
+  const claimSize = claimHop[1].match(/font-size:\s*([\d.]+)rem/);
+  assert.ok(prizeSize);
+  assert.ok(claimSize);
+  assert.ok(
+    Number(claimSize[1]) < Number(prizeSize[1]),
+    "Claim the next cover must stay quieter than Cover · #1",
+  );
+  assert.match(claimHop[1], /color:\s*var\(--mute\)/);
+  assert.match(claimHop[1], /font-weight:\s*400/);
+  assert.match(claimHop[1], /text-transform:\s*none/);
+  assert.doesNotMatch(
+    occupiedOpen,
+    /class="cover-line"[^>]*data-cover-first/,
+  );
+  assert.doesNotMatch(occupiedOpen, /data-claim-after-read-seven/);
+  assert.doesNotMatch(occupiedOpen, /data-read-after-claim-seven/);
+  assert.doesNotMatch(occupiedOpen, /subscriber/i);
+  assert.doesNotMatch(occupiedOpen, /article list/i);
+
+  assert.equal(emptyCss, `<style>${FOLIO_CSS}`);
+  assert.ok(occupiedCss.includes(OCCUPIED_CSS));
+  assert.ok(!emptyCss.includes(OCCUPIED_CSS));
+  assert.match(emptyOpen, /class="week week-open-empty"/);
+  assert.match(emptyOpen, /class="empty-stand"/);
+  assert.match(emptyOpen, /data-read-stand="true"/);
+  assert.match(emptyOpen, /Claim #1 for/);
+  assert.match(emptyOpen, /\$5 takes #1 — this issue’s cover/);
+  assert.doesNotMatch(emptyOpen, /data-cover-first="true"/);
+  assert.doesNotMatch(emptyCss, /data-cover-first/);
+  assert.doesNotMatch(emptyCss, /a\[data-cover-first\]/);
+  assert.doesNotMatch(emptyOpen, /data-sold-cover="true"/);
+  assert.doesNotMatch(emptyOpen, /Claim the next cover/);
+  assert.doesNotMatch(emptyOpen, /Cover · #1/);
+  assert.doesNotMatch(emptyOpen, /class="cover-line"/);
+  assert.doesNotMatch(emptyOpen, /class="empty-issue"/);
+
+  assert.equal(closedEmptyCss, `<style>${FOLIO_CSS}`);
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.match(closedEmpty, /data-closed-empty-issue="true"/);
+  assert.doesNotMatch(closedEmpty, /data-cover-first="true"/);
+  assert.doesNotMatch(closedEmptyCss, /data-cover-first/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
+  assert.doesNotMatch(closedEmpty, /Claim #1 for/);
+
+  assert.equal(closedOccupiedCss, `<style>${FOLIO_CSS}`);
+  assert.match(closedOccupied, /Cover · #1/);
+  assert.match(closedOccupied, /Frozen winner/);
+  assert.match(closedOccupied, /class="money"/);
+  assert.doesNotMatch(closedOccupied, /data-cover-first="true"/);
+  assert.doesNotMatch(closedOccupiedCss, /data-cover-first/);
+  assert.doesNotMatch(closedOccupied, /data-named-prize="true"/);
+  assert.doesNotMatch(closedOccupied, /id="claim"/);
 });
 
 
