@@ -2156,6 +2156,172 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "empty-open later-write UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: occupied Cover · #1 identity is the paid name — later ranks cannot wear it =="
+grep -qE '^### PR 47: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 47: first-time reader"
+grep -q 'data-paid-name="true"' src/views/skin.ts || fail "occupied Cover · #1 must mark data-paid-name"
+grep -q 'Cover · #1' src/views/skin.ts || fail "occupied cover must still say Cover · #1"
+grep -q 'listing.blurb' src/views/skin.ts || fail "paid name must use the listing blurb already on the board"
+grep -q 'displaySponsor' src/views/skin.ts || fail "host/path must stay a later fact via displaySponsor"
+grep -q 'class="slot"' src/views/skin.ts || fail "later ranks must drop the hed and sit as a slot"
+grep -q 'data-later-listing="true"' src/views/skin.ts || fail "occupied claim rail must mark data-later-listing"
+grep -q 'One-line listing' src/views/skin.ts || fail "occupied claim rail must not wear the cover-pitch placeholder"
+grep -q 'One-line cover pitch' src/views/skin.ts || fail "empty open cover identity must still name the cover pitch"
+grep -q 'data-cover-first="true"' src/views/skin.ts || fail "occupied Cover · #1 prize click must stay"
+grep -q 'data-later-fact="true"' src/views/skin.ts || fail "occupied Cover · #1 later-fact must stay"
+grep -q 'data-named-prize="true"' src/views/skin.ts || fail "occupied named prize must stay"
+grep -q 'data-prize-before-price="true"' src/views/skin.ts || fail "Cover · #1 prize-before-price must stay"
+grep -q 'data-later-rank="true"' src/views/skin.ts || fail "later-rank quiet must stay"
+grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 prize line must stay"
+grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'data-later-write="true"' src/views/skin.ts || fail "empty-open later-write must stay"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "empty open stand must stay"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "closed empty archive must keep class empty-issue"
+grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
+  || fail "empty open / closed archives must still ship FOLIO_CSS only"
+grep -F -q '.week-open-sold .cover-line[data-named-prize][data-paid-name] .hed' src/views/skin.ts \
+  || fail "paid-name CSS must compose Cover · #1 as the only hed"
+grep -F -q '.week-open-sold .cover-line[data-later-rank] .slot' src/views/skin.ts \
+  || fail "later-rank CSS must compose a quieter slot, not a Cover · #1 hed"
+grep -F -q '.week-open-sold .later-listing[data-later-listing]' src/views/skin.ts \
+  || fail "occupied claim rail must compose later-listing off the cover name"
+grep -F -q '.week-open-empty[data-empty-open-stand] [data-paid-name]' src/views/skin.ts \
+  || fail "empty open shell must hide leaked paid-name chrome"
+grep -F -q '.week-open-sold .cover-line[data-named-prize] .hed a[data-cover-first]' src/views/skin.ts \
+  || fail "Cover · #1 prize click must stay the named hed"
+grep -F -q '.week-open-sold .flag a[data-claim-cover]' src/views/skin.ts \
+  || fail "Claim the next cover must stay quieter than Cover · #1"
+if grep -E '^\.cover-line\[data-named-prize\]\[data-paid-name\]' src/views/skin.ts; then
+  fail "paid-name CSS must not apply outside week-open-sold"
+fi
+if grep -E '^\.cover-line\[data-later-rank\] \.slot' src/views/skin.ts; then
+  fail "later-rank slot CSS must not apply outside week-open-sold"
+fi
+if grep -E '^\.later-listing\[data-later-listing\]' src/views/skin.ts; then
+  fail "later-listing CSS must not apply outside week-open-sold"
+fi
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /^function / && !/renderPitch/ { in_fn = 0 }
+  in_fn && /const paidName = isCover/ && /data-paid-name="true"/ { saw_paid = 1 }
+  in_fn && /laterFact = openPrize && isCover/ { saw_gate = 1 }
+  in_fn && saw_gate && /stampedPaidName/ { saw_stamp = 1 }
+  in_fn && saw_gate && /class="hed"/ && /listing.blurb/ { saw_hed = 1 }
+  in_fn && /openPrize && !isCover/ { saw_later = 1 }
+  in_fn && saw_later && /class="slot"/ && /listing.blurb/ { saw_slot = 1 }
+  in_fn && saw_later && /class="dek"/ && /displaySponsor/ { saw_dek = 1 }
+  END { exit(saw_paid && saw_stamp && saw_hed && saw_slot && saw_dek ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "occupied Cover · #1 must keep the paid-name hed; later ranks must drop class=hed"
+fi
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /^function / && !/renderPitch/ { in_fn = 0 }
+  in_fn && /data-paid-name="true"/ { paid++ }
+  in_fn && /openPrize && !isCover/ { later = 1 }
+  later && /return `/ { in_ret = 1 }
+  later && in_ret { body = body $0 }
+  later && in_ret && /`;/ { in_ret = 0; later = 0 }
+  END {
+    if (paid != 1) exit 1
+    if (body ~ /class="hed"/) exit 1
+    if (body !~ /class="slot"/) exit 1
+    exit 0
+  }
+' src/views/skin.ts; then
+  fail "data-paid-name must stamp only occupied Cover · #1; later ranks must not wear class=hed"
+fi
+if ! awk '
+  /function renderClaim/ { in_fn = 1 }
+  in_fn && /^function / && !/renderClaim/ { in_fn = 0 }
+  in_fn && /const formFields = empty/ { saw = 1 }
+  in_fn && saw && /One-line cover pitch/ { empty_pitch++ }
+  in_fn && saw && /data-later-listing="true"/ { later++ }
+  in_fn && saw && /One-line listing/ { listing++ }
+  END { exit(empty_pitch == 1 && later == 1 && listing == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "occupied claim rail must drop the cover-pitch placeholder; empty open keeps it as a later write"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "paid-name identity must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "paid-name identity must not stamp claim-after-read-N / read-after-claim-N"
+fi
+if grep -E 'og:title|fetch\(' src/views/skin.ts src/http/routes/board.ts; then
+  fail "paid-name identity must not scrape a second title from the live web"
+fi
+node -e '
+const { readFileSync } = require("fs");
+const src = readFileSync("src/views/skin.ts", "utf8");
+const occupied = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
+const hed = occupied.match(/\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/);
+const claim = occupied.match(/\.week-open-sold \.flag a\[data-claim-cover\] \{([^}]*)\}/);
+const slot = occupied.match(/\.week-open-sold \.cover-line\[data-later-rank\] \.slot \{([^}]*)\}/);
+if (!hed || !claim || !slot) {
+  console.error("missing occupied Cover · #1, Claim the next cover, or later-rank slot CSS");
+  process.exit(1);
+}
+const hedSize = hed[1].match(/font-size:\s*([\d.]+)rem/);
+const claimSize = claim[1].match(/font-size:\s*([\d.]+)rem/);
+const slotSize = slot[1].match(/font-size:\s*([\d.]+)rem/);
+if (!hedSize || !claimSize || !slotSize) {
+  console.error("missing font-size on Cover · #1, Claim the next cover, or later-rank slot");
+  process.exit(1);
+}
+if (Number(claimSize[1]) >= Number(hedSize[1])) {
+  console.error("Claim the next cover is not quieter than Cover · #1");
+  process.exit(1);
+}
+if (Number(slotSize[1]) >= Number(hedSize[1])) {
+  console.error("later ranks still wear Cover · #1 size");
+  process.exit(1);
+}
+if (hed[1].includes("font-size: 1.55rem") === false) {
+  console.error("do not re-ship Cover-first size");
+  process.exit(1);
+}
+if (!slot[1].includes("text-transform: none")) {
+  console.error("later-rank slot must drop the Cover · #1 shout");
+  process.exit(1);
+}
+if (!slot[1].includes("color: var(--mute)")) {
+  console.error("later-rank slot must use mute ink");
+  process.exit(1);
+}
+' || fail "later ranks must not wear Cover · #1 identity; Cover-first size must stay"
+if awk '/^export const FOLIO_CSS/{p=1} p{print} /^export const OCCUPIED_CSS/{exit}' src/views/skin.ts \
+  | grep -Eq 'data-paid-name|later-listing|One-line listing'; then
+  fail "FOLIO_CSS must not contain paid-name / later-listing chrome"
+fi
+if awk '/^export const OCCUPIED_CSS/{p=1} p{print} /^export const ISSUE_CSS/{exit}' src/views/skin.ts \
+  | grep -Eq 'empty-claim-first|data-later-write|Then the cover URL|cover-identity'; then
+  fail "OCCUPIED_CSS must not swallow empty later-write composition"
+fi
+grep -q 'data-paid-name="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-paid-name"
+grep -q 'occupied open / keeps Cover · #1 as the paid name' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing occupied paid-name identity case"
+grep -q 'doesNotMatch(emptyOpen, /data-paid-name="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-paid-name"
+grep -q 'doesNotMatch(closedEmpty, /data-paid-name="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-paid-name"
+grep -q 'doesNotMatch(closedOccupied, /data-paid-name="true"/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not stamp data-paid-name"
+grep -q 'doesNotMatch(twoSlice.slice(0, 800), /class="hed"/)' tests/product-ui.test.ts \
+  || fail "later ranks on occupied open / must not wear class=hed"
+grep -q 'doesNotMatch(occupiedOpen, /One-line cover pitch/)' tests/product-ui.test.ts \
+  || fail "occupied claim rail must not wear the cover-pitch placeholder"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "paid-name identity UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"

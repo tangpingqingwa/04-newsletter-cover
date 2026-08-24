@@ -187,7 +187,9 @@ function renderClaim(board: BoardView): string {
             <input name="sponsorUrl" type="url" required placeholder="Sponsor URL" autocomplete="url"/>
             <button type="submit" class="outbid">Outbid</button>
           </div>
-          <input class="blurb-field" name="blurb" type="text" required maxlength="120" placeholder="One-line cover pitch"/>${raiseHint}`;
+          <div class="later-listing" data-later-listing="true">
+            <input class="blurb-field" name="blurb" type="text" required maxlength="120" placeholder="One-line listing"/>
+          </div>${raiseHint}`;
   return `      <section${claimAttrs}>
         <h2${claimHedAttrs}>
           <span>Claim #1 for</span>
@@ -232,14 +234,16 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
   const prizeBefore = isCover ? ' data-prize-before-price="true"' : "";
   const laterRank = isCover ? "" : ' data-later-rank="true"';
   const namedPrize = isCover ? ' data-named-prize="true"' : "";
+  const paidName = isCover ? ' data-paid-name="true"' : "";
   const stampedCoverClass = openPrize ? coverClass : "";
   const stampedPrizeLine = openPrize ? prizeLine : "";
   const stampedPrizeBefore = openPrize ? prizeBefore : "";
   const stampedLaterRank = openPrize ? laterRank : "";
   const stampedNamedPrize = openPrize ? namedPrize : "";
+  const stampedPaidName = openPrize ? paidName : "";
   const laterFact = openPrize && isCover;
   if (laterFact) {
-    return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}"${stampedNamedPrize}>
+    return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}"${stampedNamedPrize}${stampedPaidName}>
           <span class="rank"${stampedPrizeLine}>${kicker}</span>
           <div>
             <p class="hed"><a href="${href}" data-cover-first="true">${escapeHtml(listing.blurb)}</a></p>
@@ -248,6 +252,19 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
               <p class="bid">$${listing.bidUsd}</p>
               <p class="clicks">${listing.clicks} clicks</p>
             </div>
+          </div>
+        </li>`;
+  }
+  if (openPrize && !isCover) {
+    return `        <li class="cover-line"${stampedLaterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
+          <span class="rank">${kicker}</span>
+          <div>
+            <p class="dek"><a href="${href}">${escapeHtml(displaySponsor(listing.sponsorUrl))}</a></p>
+            <p class="slot">${escapeHtml(listing.blurb)}</p>
+          </div>
+          <div class="money">
+            <p class="bid">$${listing.bidUsd}</p>
+            <p class="clicks">${listing.clicks} clicks</p>
           </div>
         </li>`;
   }
@@ -744,10 +761,15 @@ export const OCCUPIED_CSS = /* css */ `
 .week-open-empty[data-empty-open-stand] [data-named-prize],
 .week-open-empty[data-empty-open-stand] [data-later-fact],
 .week-open-empty[data-empty-open-stand] [data-cover-first],
+.week-open-empty[data-empty-open-stand] [data-paid-name],
+.week-open-empty[data-empty-open-stand] [data-later-listing],
 .week-open-empty .cover-rack,
 .week-open-empty .cover-line,
 .week-open-sold .empty-stand,
-.week-open-sold .empty-issue {
+.week-open-sold .empty-issue,
+.week-open-sold .cover-line[data-later-rank] .hed,
+.week-open-sold .cover-line[data-later-rank] [data-paid-name],
+.week-open-sold .cover-line[data-later-rank] [data-cover-first] {
   display: none;
 }
 .week-open-sold .cover-line.cover {
@@ -806,6 +828,20 @@ export const OCCUPIED_CSS = /* css */ `
   letter-spacing: -0.01em;
   line-height: 1.15;
 }
+.week-open-sold .cover-line[data-later-rank] .dek {
+  margin: 0;
+  font-size: 0.78rem;
+}
+.week-open-sold .cover-line[data-later-rank] .slot {
+  margin: 0.18rem 0 0;
+  font-family: var(--serif);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--mute);
+  line-height: 1.35;
+}
 .week-open-sold .cover-line[data-later-rank] .bid {
   font-size: 0.85rem;
   font-weight: 600;
@@ -829,6 +865,24 @@ export const OCCUPIED_CSS = /* css */ `
 .week-open-sold .cover-line[data-named-prize] .hed a[data-cover-first]:hover {
   text-decoration: underline;
   text-underline-offset: 0.12em;
+}
+.week-open-sold .cover-line[data-named-prize][data-paid-name] .hed {
+  font-size: 1.55rem;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+}
+.week-open-sold .cover-line[data-named-prize][data-paid-name] .hed a[data-cover-first] {
+  color: inherit;
+  text-decoration: none;
+}
+.week-open-sold .later-listing[data-later-listing] {
+  margin-top: 0.5rem;
+}
+.week-open-sold .later-listing[data-later-listing] .blurb-field {
+  margin-top: 0;
+  height: 2.2rem;
+  font-size: 0.88rem;
+  color: var(--mute);
 }
 .week-open-sold .flag a[data-claim-cover] {
   display: block;
