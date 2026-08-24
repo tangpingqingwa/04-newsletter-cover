@@ -214,7 +214,8 @@ function renderPitch(listing: BoardViewListing): string {
   const coverClass = isCover ? " cover" : "";
   const kicker = isCover ? "Cover · #1" : `#${listing.rank}`;
   const prizeLine = isCover ? ' data-cover-prize-line="true"' : "";
-  return `        <li class="cover-line${coverClass}" data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
+  const prizeBefore = isCover ? ' data-prize-before-price="true"' : "";
+  return `        <li class="cover-line${coverClass}"${prizeBefore} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
           <span class="rank"${prizeLine}>${kicker}</span>
           <div>
             <p class="hed">${escapeHtml(listing.blurb)}</p>
@@ -582,6 +583,17 @@ button { cursor: pointer; }
 }
 .cover .rank { color: var(--flag); }
 .rank[data-cover-prize-line] { white-space: nowrap; }
+.cover-line[data-prize-before-price] .rank {
+  font-size: 1.85rem;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+}
+.cover-line[data-prize-before-price] .bid {
+  font-size: 0.92rem;
+}
+.cover-line[data-prize-before-price] .clicks {
+  font-size: 0.7rem;
+}
 .hed {
   margin: 0;
   font-family: var(--display);
