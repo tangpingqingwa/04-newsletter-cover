@@ -829,7 +829,7 @@ test("occupied open / names the sold cover before Claim the next cover", () => {
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
   assert.equal((occupiedOpen.match(/data-claim-cover="true"/g) ?? []).length, 1);
   assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
-  assert.match(occupiedOpen, /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true">This issue’s cover is sold\.</);
+  assert.match(occupiedOpen, /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true">This issue’s cover is sold\.</);
   assert.match(occupiedOpen, /This issue’s cover is sold/);
   assert.match(occupiedOpen, /Claim the next cover/);
   assert.match(occupiedOpen, /Cover · #1/);
@@ -950,7 +950,7 @@ test("occupied open / concentrates Claim the next cover after the sold cover", (
     /data-claim-cover="true" data-claim-after-sold="true" data-claim-after-read-sold="true" data-claim-after-read-two="true" data-claim-after-read-three="true">Claim the next cover\.</,
   );
   assert.match(occupiedOpen, /a\[data-claim-after-sold\]/);
-  assert.match(occupiedOpen, /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true">This issue’s cover is sold\.</);
+  assert.match(occupiedOpen, /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true">This issue’s cover is sold\.</);
   assert.match(occupiedOpen, /This issue’s cover is sold/);
   assert.match(occupiedOpen, /Claim the next cover/);
   assert.match(occupiedOpen, /Cover · #1/);
@@ -1076,7 +1076,7 @@ test("occupied open / concentrates the sold-cover read after Claim the next cove
   assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
   assert.match(
     occupiedOpen,
-    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true">This issue’s cover is sold\.</,
+    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true">This issue’s cover is sold\.</,
   );
   assert.match(
     occupiedOpen,
@@ -1218,7 +1218,7 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
   assert.match(
     occupiedOpen,
-    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true">This issue’s cover is sold\.</,
+    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true">This issue’s cover is sold\.</,
   );
   assert.match(
     occupiedOpen,
@@ -1370,7 +1370,7 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
   assert.match(
     occupiedOpen,
-    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true">This issue’s cover is sold\.</,
+    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true">This issue’s cover is sold\.</,
   );
   assert.match(
     occupiedOpen,
@@ -1533,7 +1533,7 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
   assert.match(
     occupiedOpen,
-    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true">This issue’s cover is sold\.</,
+    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true">This issue’s cover is sold\.</,
   );
   assert.match(
     occupiedOpen,
@@ -1707,7 +1707,7 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
   assert.match(
     occupiedOpen,
-    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true">This issue’s cover is sold\.</,
+    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true">This issue’s cover is sold\.</,
   );
   assert.match(
     occupiedOpen,
@@ -1893,7 +1893,7 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
   assert.match(
     occupiedOpen,
-    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true">This issue’s cover is sold\.</,
+    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true">This issue’s cover is sold\.</,
   );
   assert.match(
     occupiedOpen,
@@ -1963,6 +1963,208 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.doesNotMatch(closedEmpty, /data-read-after-claim-sold="true"/);
   assert.doesNotMatch(closedEmpty, /data-read-after-claim-two="true"/);
   assert.doesNotMatch(closedEmpty, /data-read-after-claim-three="true"/);
+  assert.doesNotMatch(closedEmpty, /data-claim-cover/);
+  assert.doesNotMatch(closedEmpty, /data-claim-after-sold="true"/);
+  assert.doesNotMatch(closedEmpty, /data-claim-after-read-sold="true"/);
+  assert.doesNotMatch(closedEmpty, /data-claim-after-read-two="true"/);
+  assert.doesNotMatch(closedEmpty, /data-claim-after-read-three="true"/);
+  assert.doesNotMatch(closedEmpty, /data-claim-after-stand/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
+});
+
+test("occupied open / concentrates the sold-cover read after Claim is re-concentrated a fourth time", () => {
+  const occupiedOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_cover",
+        sponsorUrl: "https://sponsor.example/pitch",
+        blurb: "Widgets for the next issue",
+        bidUsd: 12,
+        clicks: 3,
+      },
+      {
+        rank: 2,
+        id: "lst_two",
+        sponsorUrl: "https://second.example/also",
+        blurb: "Also listed",
+        bidUsd: 6,
+        clicks: 0,
+      },
+    ],
+  });
+  const emptyOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const closedOccupied = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_won",
+        sponsorUrl: "https://won.example/cover",
+        blurb: "Frozen winner",
+        bidUsd: 20,
+        clicks: 1,
+      },
+    ],
+  });
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [],
+  });
+
+  const soldAt = occupiedOpen.indexOf('data-sold-cover="true"');
+  const readAfterAt = occupiedOpen.indexOf('data-read-after-claim-sold="true"');
+  const readTwoAt = occupiedOpen.indexOf('data-read-after-claim-two="true"');
+  const readThreeAt = occupiedOpen.indexOf('data-read-after-claim-three="true"');
+  const readFourAt = occupiedOpen.indexOf('data-read-after-claim-four="true"');
+  const hopAt = occupiedOpen.indexOf('data-claim-cover="true"');
+  const afterSoldAt = occupiedOpen.indexOf('data-claim-after-sold="true"');
+  const afterReadAt = occupiedOpen.indexOf('data-claim-after-read-sold="true"');
+  const afterReadTwoAt = occupiedOpen.indexOf('data-claim-after-read-two="true"');
+  const afterReadThreeAt = occupiedOpen.indexOf('data-claim-after-read-three="true"');
+  const rackAt = occupiedOpen.indexOf('data-read-cover="true"');
+  const prizeAt = occupiedOpen.indexOf('data-cover-prize-line="true"');
+  const claimAt = occupiedOpen.indexOf('id="claim"');
+  assert.notEqual(soldAt, -1);
+  assert.notEqual(readAfterAt, -1);
+  assert.notEqual(readTwoAt, -1);
+  assert.notEqual(readThreeAt, -1);
+  assert.notEqual(readFourAt, -1);
+  assert.notEqual(hopAt, -1);
+  assert.notEqual(afterSoldAt, -1);
+  assert.notEqual(afterReadAt, -1);
+  assert.notEqual(afterReadTwoAt, -1);
+  assert.notEqual(afterReadThreeAt, -1);
+  assert.notEqual(rackAt, -1);
+  assert.notEqual(prizeAt, -1);
+  assert.notEqual(claimAt, -1);
+  assert.ok(soldAt < hopAt);
+  assert.ok(readAfterAt < hopAt);
+  assert.ok(readTwoAt < hopAt);
+  assert.ok(readThreeAt < hopAt);
+  assert.ok(readFourAt < hopAt);
+  assert.ok(soldAt < afterSoldAt);
+  assert.ok(readAfterAt < afterSoldAt);
+  assert.ok(readTwoAt < afterSoldAt);
+  assert.ok(readThreeAt < afterSoldAt);
+  assert.ok(readFourAt < afterSoldAt);
+  assert.ok(soldAt < afterReadAt);
+  assert.ok(readAfterAt < afterReadAt);
+  assert.ok(readTwoAt < afterReadAt);
+  assert.ok(readThreeAt < afterReadAt);
+  assert.ok(readFourAt < afterReadAt);
+  assert.ok(soldAt < afterReadTwoAt);
+  assert.ok(readAfterAt < afterReadTwoAt);
+  assert.ok(readTwoAt < afterReadTwoAt);
+  assert.ok(readThreeAt < afterReadTwoAt);
+  assert.ok(readFourAt < afterReadTwoAt);
+  assert.ok(soldAt < afterReadThreeAt);
+  assert.ok(readAfterAt < afterReadThreeAt);
+  assert.ok(readTwoAt < afterReadThreeAt);
+  assert.ok(readThreeAt < afterReadThreeAt);
+  assert.ok(readFourAt < afterReadThreeAt);
+  assert.ok(hopAt < rackAt);
+  assert.ok(afterSoldAt < rackAt);
+  assert.ok(afterReadAt < rackAt);
+  assert.ok(afterReadTwoAt < rackAt);
+  assert.ok(afterReadThreeAt < rackAt);
+  assert.ok(rackAt < claimAt);
+  assert.ok(soldAt < prizeAt);
+  assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-read-after-claim-sold="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-read-after-claim-two="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-read-after-claim-three="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-read-after-claim-four="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-claim-cover="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-claim-after-sold="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-claim-after-read-sold="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-claim-after-read-two="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-claim-after-read-three="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
+  assert.match(
+    occupiedOpen,
+    /data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true">This issue’s cover is sold\.</,
+  );
+  assert.match(
+    occupiedOpen,
+    /data-claim-cover="true" data-claim-after-sold="true" data-claim-after-read-sold="true" data-claim-after-read-two="true" data-claim-after-read-three="true">Claim the next cover\.</,
+  );
+  assert.match(occupiedOpen, /\[data-read-after-claim-sold\]/);
+  assert.match(occupiedOpen, /\[data-read-after-claim-two\]/);
+  assert.match(occupiedOpen, /\[data-read-after-claim-three\]/);
+  assert.match(occupiedOpen, /\[data-read-after-claim-four\]/);
+  assert.match(occupiedOpen, /a\[data-claim-after-sold\]/);
+  assert.match(occupiedOpen, /a\[data-claim-after-read-sold\]/);
+  assert.match(occupiedOpen, /a\[data-claim-after-read-two\]/);
+  assert.match(occupiedOpen, /a\[data-claim-after-read-three\]/);
+  assert.match(occupiedOpen, /This issue’s cover is sold/);
+  assert.match(occupiedOpen, /Claim the next cover/);
+  assert.match(occupiedOpen, /Cover · #1/);
+  assert.match(occupiedOpen, /Widgets for the next issue/);
+  assert.match(occupiedOpen, /Claim #1 for/);
+  assert.match(occupiedOpen, /class="outbid"/);
+  assert.match(occupiedOpen, /You pay only the difference/);
+  assert.doesNotMatch(occupiedOpen, /goes to whoever pays the most/);
+  assert.doesNotMatch(occupiedOpen, /data-read-stand/);
+  assert.doesNotMatch(occupiedOpen, /data-claim-after-stand/);
+  assert.doesNotMatch(occupiedOpen, /data-cover-prize="true"/);
+  assert.doesNotMatch(occupiedOpen, /subscriber/i);
+  assert.doesNotMatch(occupiedOpen, /article list/i);
+
+  assert.match(emptyOpen, /The next issue’s cover goes to whoever pays the most/);
+  assert.match(emptyOpen, /data-read-stand="true"/);
+  assert.match(emptyOpen, /data-claim-after-stand="true"/);
+  assert.match(emptyOpen, /This issue’s cover is still open/);
+  assert.match(emptyOpen, /\$5 takes #1 — this issue’s cover/);
+  assert.match(emptyOpen, /Claim #1 for/);
+  assert.doesNotMatch(emptyOpen, /data-sold-cover/);
+  assert.doesNotMatch(emptyOpen, /This issue’s cover is sold/);
+  assert.doesNotMatch(emptyOpen, /data-read-after-claim-sold="true"/);
+  assert.doesNotMatch(emptyOpen, /data-read-after-claim-two="true"/);
+  assert.doesNotMatch(emptyOpen, /data-read-after-claim-three="true"/);
+  assert.doesNotMatch(emptyOpen, /data-read-after-claim-four="true"/);
+  assert.doesNotMatch(emptyOpen, /data-claim-cover/);
+  assert.doesNotMatch(emptyOpen, /data-claim-after-sold="true"/);
+  assert.doesNotMatch(emptyOpen, /data-claim-after-read-sold="true"/);
+  assert.doesNotMatch(emptyOpen, /data-claim-after-read-two="true"/);
+  assert.doesNotMatch(emptyOpen, /data-claim-after-read-three="true"/);
+  assert.doesNotMatch(emptyOpen, /Claim the next cover/);
+  assert.doesNotMatch(emptyOpen, /data-read-cover/);
+
+  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /data-open-cover="true"/);
+  assert.match(closedOccupied, /Cover · #1/);
+  assert.doesNotMatch(closedOccupied, /data-sold-cover/);
+  assert.doesNotMatch(closedOccupied, /This issue’s cover is sold/);
+  assert.doesNotMatch(closedOccupied, /data-read-after-claim-sold="true"/);
+  assert.doesNotMatch(closedOccupied, /data-read-after-claim-two="true"/);
+  assert.doesNotMatch(closedOccupied, /data-read-after-claim-three="true"/);
+  assert.doesNotMatch(closedOccupied, /data-read-after-claim-four="true"/);
+  assert.doesNotMatch(closedOccupied, /data-claim-cover/);
+  assert.doesNotMatch(closedOccupied, /data-claim-after-sold="true"/);
+  assert.doesNotMatch(closedOccupied, /data-claim-after-read-sold="true"/);
+  assert.doesNotMatch(closedOccupied, /data-claim-after-read-two="true"/);
+  assert.doesNotMatch(closedOccupied, /data-claim-after-read-three="true"/);
+  assert.doesNotMatch(closedOccupied, /Claim the next cover/);
+  assert.doesNotMatch(closedOccupied, /data-read-cover/);
+  assert.doesNotMatch(closedOccupied, /id="claim"/);
+
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.match(closedEmpty, /data-open-cover="true"/);
+  assert.doesNotMatch(closedEmpty, /data-sold-cover/);
+  assert.doesNotMatch(closedEmpty, /This issue’s cover is sold/);
+  assert.doesNotMatch(closedEmpty, /data-read-after-claim-sold="true"/);
+  assert.doesNotMatch(closedEmpty, /data-read-after-claim-two="true"/);
+  assert.doesNotMatch(closedEmpty, /data-read-after-claim-three="true"/);
+  assert.doesNotMatch(closedEmpty, /data-read-after-claim-four="true"/);
   assert.doesNotMatch(closedEmpty, /data-claim-cover/);
   assert.doesNotMatch(closedEmpty, /data-claim-after-sold="true"/);
   assert.doesNotMatch(closedEmpty, /data-claim-after-read-sold="true"/);
