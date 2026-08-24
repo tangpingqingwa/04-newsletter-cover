@@ -276,6 +276,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 35
 - **Acceptance:** Occupied open `/` has one `data-claim-cover="true"`, one `data-claim-after-sold="true"`, one `data-claim-after-read-sold="true"`, one `data-claim-after-read-two="true"`, one `data-claim-after-read-three="true"`, one `data-claim-after-read-four="true"`, one `data-claim-after-read-five="true"`, and one `data-claim-after-read-six="true"` on the same `href="#claim"` after `data-sold-cover` / `data-read-after-claim-sold` / `data-read-after-claim-two` / `data-read-after-claim-three` / `data-read-after-claim-four` / `data-read-after-claim-five` / `data-read-after-claim-six` and before `data-read-cover`. Empty open `/` and closed archives have no `data-claim-after-read-six`. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 37: first-time reader — prize before price on the occupied cover
+- **Description:** On an occupied open `/`, a first-time reader who came to read hits **Cover · #1** before `$bid`. The existing cover line keeps `Cover · #1` first and larger than `$bid` + clicks (`data-prize-before-price`). Money stays a later fact. Do not add another named hop. Do not stamp claim-after-read-N / read-after-claim-N. Empty open `/` stays honest. Closed empty archives stay the empty-issue slab. One prize. No article list or subscriber count. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 36
+- **Acceptance:** Occupied open `/` has one `data-prize-before-price="true"` on the rank-1 cover line. `Cover · #1` is before `class="bid"` and larger in CSS. Empty open `/` and closed empty archives have no `data-prize-before-price`. `data-read-cover`, `data-claim-cover`, and `data-cover-prize-line` stay. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)

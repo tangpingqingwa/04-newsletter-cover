@@ -1380,6 +1380,57 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "claim-after-read-six UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: prize before price on the occupied cover =="
+grep -qE '^### PR 37: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 37: first-time reader"
+grep -q 'data-prize-before-price="true"' src/views/skin.ts || fail "occupied cover must mark data-prize-before-price"
+grep -q 'Cover · #1' src/views/skin.ts || fail "occupied cover must still say Cover · #1"
+grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 prize line must stay"
+grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q '\.cover-line\[data-prize-before-price\] \.rank' src/views/skin.ts \
+  || fail "Cover · #1 must be larger than \$bid on the occupied cover"
+grep -q '\.cover-line\[data-prize-before-price\] \.bid' src/views/skin.ts \
+  || fail "\$bid must stay quieter than Cover · #1 on the occupied cover"
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /listing.rank === 1/ { saw_rank = 1 }
+  in_fn && saw_rank && /data-prize-before-price="true"/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "data-prize-before-price must stamp only rank 1"
+fi
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /Cover · #1/ { saw_prize = 1 }
+  in_fn && saw_prize && /class="bid"/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "Cover · #1 must read before \$bid in the occupied cover line"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "prize before price must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "prize before price must not stamp claim-after-read-N / read-after-claim-N"
+fi
+grep -q 'data-prize-before-price="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-prize-before-price"
+grep -q 'occupied open / lets Cover · #1 read before \$bid' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing occupied prize-before-price case"
+grep -q 'doesNotMatch(emptyOpen, /data-prize-before-price="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-prize-before-price"
+grep -q 'doesNotMatch(closedEmpty, /data-prize-before-price="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-prize-before-price"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "prize-before-price UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
