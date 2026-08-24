@@ -258,6 +258,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 32
 - **Acceptance:** Occupied open `/` has one `data-sold-cover="true"`, one `data-read-after-claim-sold="true"`, one `data-read-after-claim-two="true"`, one `data-read-after-claim-three="true"`, one `data-read-after-claim-four="true"`, and one `data-read-after-claim-five="true"` on the same sold-cover span before `data-claim-cover` / `data-claim-after-sold` / `data-claim-after-read-sold` / `data-claim-after-read-two` / `data-claim-after-read-three` / `data-claim-after-read-four` and `data-read-cover`. Empty open `/` and closed archives have no `data-read-after-claim-five`. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 34: first-time sponsor — claim after the sold-cover read is re-concentrated a fifth time
+- **Description:** On an occupied open `/`, readers already have **This issue’s cover is sold.** as the certain first read after Claim is re-concentrated a fifth time (`data-read-after-claim-five`). A first-time sponsor who came to Outbid now gets the existing **Claim the next cover** hop concentrated a fifth time (`data-claim-after-read-five` on the same `#claim` hop) so the claim does not disappear under that louder sold-cover line. Do not add another claim hop. Empty open `/` keeps claim-after-stand. Closed archives stay honest. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 33
+- **Acceptance:** Occupied open `/` has one `data-claim-cover="true"`, one `data-claim-after-sold="true"`, one `data-claim-after-read-sold="true"`, one `data-claim-after-read-two="true"`, one `data-claim-after-read-three="true"`, one `data-claim-after-read-four="true"`, and one `data-claim-after-read-five="true"` on the same `href="#claim"` after `data-sold-cover` / `data-read-after-claim-sold` / `data-read-after-claim-two` / `data-read-after-claim-three` / `data-read-after-claim-four` / `data-read-after-claim-five` and before `data-read-cover`. Empty open `/` and closed archives have no `data-claim-after-read-five`. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
