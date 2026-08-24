@@ -342,6 +342,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 46
 - **Acceptance:** Occupied open `/` has one `data-paid-name="true"` on rank 1. Cover · #1 hed is the listing blurb; ranks 2+ have no `class="hed"` and no `data-paid-name`. Occupied claim uses `data-later-listing` / “One-line listing”, not the cover-pitch placeholder. Empty open `/` and closed archives have no `data-paid-name`. `data-read-cover`, `data-claim-cover`, `data-cover-prize-line`, `data-prize-before-price`, `data-named-prize`, `data-later-fact`, `data-later-rank`, and `data-cover-first` stay. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 48: first-time reader — closed occupied keeps frozen Cover · #1; live claim cannot steal the archive
+- **Description:** On a closed occupied `/issue/:date`, Cover · #1 is the paid name of that frozen issue (`data-frozen-cover` / `data-archive-name`). The board stays a three-column freeze. Live Claim the next cover / open checkout stays off the archive. The existing open-stand hop (`data-open-cover`) sits after the frozen rack, not above Cover · #1. Empty closed stays empty-issue. Occupied open Cover · #1 stays the first occupied click. Do not add another named hop. Do not stamp `*-after-*-N`. Do not re-ship FOLIO vs ISSUE, Cover-first size, empty later-write, or paid-name. Do not recolor. Do not rebuild the folio. Stamp-only = REJECT.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 47
+- **Acceptance:** Closed occupied `/issue/:date` has one `data-frozen-cover="true"` Cover · #1 hed (listing blurb) before later ranks and before `data-open-cover`. No `id="claim"`, no Claim the next cover, no `action="/listings"`. Later ranks drop `class="hed"`. Empty closed keeps `class="empty-issue"`. Occupied open `/` keeps `data-paid-name`, `data-cover-first`, and one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)

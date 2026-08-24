@@ -146,7 +146,10 @@ function renderMasthead(board: BoardView): string {
 
 function renderFlag(board: BoardView): string {
   if (board.status === "closed") {
-    return `<p class="flag">This issue is closed. It is not the next issue’s cover. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
+    if (board.listings.length === 0) {
+      return `<p class="flag">This issue is closed. It is not the next issue’s cover. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
+    }
+    return `<p class="flag">This issue is closed. It is not the next issue’s cover.</p>`;
   }
   if (board.listings.length > 0) {
     return `<p class="flag"><span data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true" data-read-after-claim-five="true" data-read-after-claim-six="true">This issue’s cover is sold.</span> Rank is the bid. <a href="#claim" data-claim-cover="true" data-claim-after-sold="true" data-claim-after-read-sold="true" data-claim-after-read-two="true" data-claim-after-read-three="true" data-claim-after-read-four="true" data-claim-after-read-five="true" data-claim-after-read-six="true">Claim the next cover.</a></p>`;
@@ -158,7 +161,7 @@ function renderClaim(board: BoardView): string {
   if (board.status === "closed") {
     return board.listings.length === 0
       ? `      <p class="form-hint">This issue is frozen. No cover sold.</p>`
-      : `      <p class="form-hint">This issue is frozen. The cover is whoever paid the most before close.</p>`;
+      : `      <p class="form-hint" data-frozen-issue="true">This issue is frozen. The cover is whoever paid the most before close. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
   }
   const empty = board.listings.length === 0;
   const top = board.listings[0]?.bidUsd ?? 0;
@@ -268,6 +271,32 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
           </div>
         </li>`;
   }
+  if (!openPrize && isCover) {
+    return `        <li class="cover-line cover" data-frozen-cover="true" data-archive-name="true" data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
+          <span class="rank">${kicker}</span>
+          <div>
+            <p class="hed"><a href="${href}">${escapeHtml(listing.blurb)}</a></p>
+            <p class="dek"><a href="${href}">${escapeHtml(displaySponsor(listing.sponsorUrl))}</a></p>
+          </div>
+          <div class="money">
+            <p class="bid">$${listing.bidUsd}</p>
+            <p class="clicks">${listing.clicks} clicks</p>
+          </div>
+        </li>`;
+  }
+  if (!openPrize && !isCover) {
+    return `        <li class="cover-line" data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
+          <span class="rank">${kicker}</span>
+          <div>
+            <p class="dek"><a href="${href}">${escapeHtml(displaySponsor(listing.sponsorUrl))}</a></p>
+            <p class="slot">${escapeHtml(listing.blurb)}</p>
+          </div>
+          <div class="money">
+            <p class="bid">$${listing.bidUsd}</p>
+            <p class="clicks">${listing.clicks} clicks</p>
+          </div>
+        </li>`;
+  }
   return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore}${stampedLaterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}"${stampedNamedPrize}>
           <span class="rank"${stampedPrizeLine}>${kicker}</span>
           <div>
@@ -299,7 +328,7 @@ function renderRack(board: BoardView): string {
   const readCover = board.status === "open";
   const attrs = readCover
     ? ' aria-label="This issue’s cover" data-read-cover="true"'
-    : ' aria-label="Cover auction"';
+    : ' aria-label="This issue’s cover" data-frozen-board="true"';
   return `      <ol class="cover-rack"${attrs}>
 ${board.listings.map((listing) => renderPitch(listing, board.status === "open")).join("\n")}
       </ol>`;
@@ -337,7 +366,8 @@ export function renderBoardHtml(board: BoardView): string {
   const week = weekShell(board);
   const readSoldCover = board.status === "open" && board.listings.length > 0;
   const readEmptyStand = board.status !== "closed" && board.listings.length === 0;
-  const inner = readSoldCover || readEmptyStand
+  const readFrozenCover = board.status === "closed" && board.listings.length > 0;
+  const inner = readSoldCover || readEmptyStand || readFrozenCover
     ? `${masthead}
 ${rack}
 ${claim}`
@@ -487,11 +517,86 @@ button { cursor: pointer; }
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
-.week-closed-empty .flag a[data-open-cover],
-.week-closed-occupied .flag a[data-open-cover] {
+.week-closed-empty .flag a[data-open-cover] {
   display: block;
   font-weight: 700;
   margin-top: 0.55rem;
+}
+.week-closed-occupied .cover-rack[data-frozen-board] {
+  margin-top: 0.85rem;
+}
+.week-closed-occupied .cover-line.cover[data-frozen-cover][data-archive-name] {
+  grid-template-columns: max-content 1fr auto;
+  background: linear-gradient(180deg, rgb(157 28 20 / 0.08), transparent 70%);
+  border-top: 2px solid var(--rule);
+}
+.week-closed-occupied .cover-line.cover[data-frozen-cover][data-archive-name] .rank {
+  color: var(--flag);
+  font-size: 1.85rem;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+  white-space: nowrap;
+}
+.week-closed-occupied .cover-line.cover[data-frozen-cover][data-archive-name] .hed {
+  font-size: 1.55rem;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+}
+.week-closed-occupied .cover-line.cover[data-frozen-cover][data-archive-name] .hed a {
+  color: inherit;
+  text-decoration: none;
+}
+.week-closed-occupied .cover-line.cover[data-frozen-cover][data-archive-name] .hed a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+.week-closed-occupied .cover-line.cover[data-frozen-cover][data-archive-name] .dek {
+  font-size: 0.78rem;
+}
+.week-closed-occupied .cover-line.cover[data-frozen-cover][data-archive-name] .bid {
+  font-size: 0.92rem;
+}
+.week-closed-occupied .cover-line:not([data-frozen-cover]) {
+  padding: 0.55rem 0;
+}
+.week-closed-occupied .cover-line:not([data-frozen-cover]) .rank {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--mute);
+}
+.week-closed-occupied .cover-line:not([data-frozen-cover]) .dek {
+  margin: 0;
+  font-size: 0.78rem;
+}
+.week-closed-occupied .cover-line:not([data-frozen-cover]) .slot {
+  margin: 0.18rem 0 0;
+  font-family: var(--serif);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--mute);
+  line-height: 1.35;
+}
+.week-closed-occupied .form-hint[data-frozen-issue] {
+  margin: 1.1rem 0 0;
+  padding: 0.85rem 0 0;
+  border-top: 1px solid var(--rule);
+  text-align: left;
+  font-size: 0.88rem;
+  color: var(--mute);
+}
+.week-closed-occupied .form-hint[data-frozen-issue] a[data-open-cover] {
+  display: block;
+  margin-top: 0.45rem;
+  font-weight: 400;
+  color: var(--mute);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.week-closed-empty .form-hint[data-frozen-issue] {
+  display: none;
 }
 .claim {
   padding: 1rem 0 1.05rem;
@@ -607,7 +712,8 @@ button { cursor: pointer; }
 }
 .form-hint { margin: 0.55rem 0 0; text-align: center; font-size: 0.78rem; color: var(--mute); }
 .cover-rack + .claim,
-.empty-stand + .claim {
+.empty-stand + .claim,
+.cover-rack + .form-hint[data-frozen-issue] {
   border-top: 1px solid var(--rule);
   border-bottom: 0;
 }
@@ -623,7 +729,17 @@ button { cursor: pointer; }
 }
 .week-open-empty .empty-issue,
 .week-closed-empty .empty-stand,
-.week-closed-occupied .empty-stand {
+.week-closed-occupied .empty-stand,
+.week-closed-occupied .claim,
+.week-closed-empty [data-frozen-cover],
+.week-closed-empty [data-frozen-board],
+.week-closed-empty [data-archive-name],
+.week-open-empty [data-frozen-cover],
+.week-open-empty [data-frozen-board],
+.week-open-empty [data-archive-name],
+.week-open-sold [data-frozen-cover],
+.week-open-sold [data-frozen-board],
+.week-open-sold [data-archive-name] {
   display: none;
 }
 .week-open-empty .empty-stand {
