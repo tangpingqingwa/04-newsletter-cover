@@ -208,7 +208,7 @@ function renderClaim(board: BoardView): string {
       </script>`;
 }
 
-function renderPitch(listing: BoardViewListing): string {
+function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
   const href = `/l/${encodeURIComponent(listing.id)}`;
   const isCover = listing.rank === 1;
   const coverClass = isCover ? " cover" : "";
@@ -216,8 +216,12 @@ function renderPitch(listing: BoardViewListing): string {
   const prizeLine = isCover ? ' data-cover-prize-line="true"' : "";
   const prizeBefore = isCover ? ' data-prize-before-price="true"' : "";
   const laterRank = isCover ? "" : ' data-later-rank="true"';
-  return `        <li class="cover-line${coverClass}"${prizeBefore}${laterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
-          <span class="rank"${prizeLine}>${kicker}</span>
+  const stampedCoverClass = openPrize ? coverClass : "";
+  const stampedPrizeLine = openPrize ? prizeLine : "";
+  const stampedPrizeBefore = openPrize ? prizeBefore : "";
+  const stampedLaterRank = openPrize ? laterRank : "";
+  return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore}${stampedLaterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
+          <span class="rank"${stampedPrizeLine}>${kicker}</span>
           <div>
             <p class="hed">${escapeHtml(listing.blurb)}</p>
             <p class="dek"><a href="${href}">${escapeHtml(displaySponsor(listing.sponsorUrl))}</a></p>
@@ -232,7 +236,7 @@ function renderPitch(listing: BoardViewListing): string {
 function renderRack(board: BoardView): string {
   if (board.listings.length === 0) {
     if (board.status === "closed") {
-      return `      <section class="empty-issue" data-empty-issue="true">
+      return `      <section class="empty-issue" data-empty-issue="true" data-closed-empty-issue="true">
         <p class="empty-kicker">No cover sold</p>
         <p>No paid listings on this board. Nobody bought the cover. The folio stays blank.</p>
       </section>`;
@@ -249,7 +253,7 @@ function renderRack(board: BoardView): string {
     ? ' aria-label="This issue’s cover" data-read-cover="true"'
     : ' aria-label="Cover auction"';
   return `      <ol class="cover-rack"${attrs}>
-${board.listings.map(renderPitch).join("\n")}
+${board.listings.map((listing) => renderPitch(listing, board.status === "open")).join("\n")}
       </ol>`;
 }
 
@@ -404,6 +408,11 @@ button { cursor: pointer; }
 .flag a {
   text-decoration: underline;
   text-underline-offset: 0.15em;
+}
+.flag a[data-open-cover] {
+  display: block;
+  font-weight: 700;
+  margin-top: 0.55rem;
 }
 .flag [data-read-after-claim-sold] {
   display: block;

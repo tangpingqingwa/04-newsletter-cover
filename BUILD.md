@@ -288,6 +288,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 37
 - **Acceptance:** Occupied open `/` stamps `data-later-rank="true"` only on ranks 2+. `Cover · #1` keeps `data-prize-before-price` and stays larger in CSS. Empty open `/` and closed empty archives have no `data-later-rank`. `data-read-cover`, `data-claim-cover`, and `data-cover-prize-line` stay. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 39: first-time reader — closed issue stays empty-issue
+- **Description:** On a closed `/issue/:date`, a first-time reader must not think this archive is claimable. Closed empty archives stay the `empty-issue` slab (`data-closed-empty-issue`). The only hop is the existing open stand (`data-open-cover`). Occupied closed archives keep the frozen board but drop sold-cover, Claim the next cover, and prize stamps. One prize lives on the open issue only. Do not add another named hop. Do not stamp `*-after-*-N`. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 38
+- **Acceptance:** Closed empty `/issue/:date` has `class="empty-issue"` and `data-closed-empty-issue="true"`. The only hop is one `data-open-cover="true"` `href="/"`. Closed occupied archives have no `data-sold-cover`, no Claim the next cover, and no `data-cover-prize` / `data-cover-prize-line` / `data-prize-before-price` / `data-later-rank`. Occupied open `/` keeps those prize marks and one `#claim` hop. Empty open `/` stays the empty stand. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
