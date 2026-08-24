@@ -228,6 +228,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 27
 - **Acceptance:** Occupied open `/` has one `data-claim-cover="true"`, one `data-claim-after-sold="true"`, one `data-claim-after-read-sold="true"`, and one `data-claim-after-read-two="true"` on the same `href="#claim"` after `data-sold-cover` / `data-read-after-claim-sold` / `data-read-after-claim-two` and before `data-read-cover`. Empty open `/` and closed archives have no `data-claim-after-read-two`. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 29: first-time reader — read after Claim is re-concentrated again
+- **Description:** On an occupied open `/`, sponsors already have **Claim the next cover** louder after the sold-cover read (`data-claim-after-read-two`). A first-time reader who came to read now gets the existing sold-cover line concentrated again (`data-read-after-claim-three` on the same `data-sold-cover` / `data-read-after-claim-sold` / `data-read-after-claim-two` span) so **This issue’s cover is sold.** does not lose to that louder claim hop. Do not add another claim hop. Empty open `/` keeps empty-stand-first. Closed archives stay honest. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 28
+- **Acceptance:** Occupied open `/` has one `data-sold-cover="true"`, one `data-read-after-claim-sold="true"`, one `data-read-after-claim-two="true"`, and one `data-read-after-claim-three="true"` on the same sold-cover span before `data-claim-cover` / `data-claim-after-sold` / `data-claim-after-read-sold` / `data-claim-after-read-two` and `data-read-cover`. Empty open `/` and closed archives have no `data-read-after-claim-three`. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)

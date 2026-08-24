@@ -804,6 +804,71 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "claim-after-read-two UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: read after Claim the next cover is re-concentrated again =="
+grep -qE '^### PR 29: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 29: first-time reader"
+grep -q 'data-read-after-claim-three="true"' src/views/skin.ts || fail "occupied sold-cover read must mark data-read-after-claim-three"
+grep -q 'data-read-after-claim-two="true"' src/views/skin.ts || fail "sold-cover read-after-claim-two must stay"
+grep -q 'data-read-after-claim-sold="true"' src/views/skin.ts || fail "sold-cover read-after-claim must stay"
+grep -q 'data-sold-cover="true"' src/views/skin.ts || fail "sold-cover name must stay"
+grep -q 'This issue’s cover is sold' src/views/skin.ts || fail "occupied flag must still say this issue’s cover is sold"
+grep -q 'data-claim-after-read-two="true"' src/views/skin.ts || fail "claim-after-read-two hop must stay"
+grep -q 'data-claim-after-read-sold="true"' src/views/skin.ts || fail "claim-after-read-sold hop must stay"
+grep -q 'data-claim-after-sold="true"' src/views/skin.ts || fail "claim-after-sold hop must stay"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
+grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 prize line must stay"
+grep -q 'data-read-stand="true"' src/views/skin.ts || fail "empty-stand-first must stay"
+grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-stand hop must stay"
+grep -q '\[data-read-after-claim-three\]' src/views/skin.ts \
+  || fail "occupied sold-cover read must concentrate again on the existing sold-cover span"
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /board.status === "closed"/ { saw_closed = 1 }
+  in_fn && /listings.length > 0/ { saw_occupied = 1 }
+  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_fn && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
+  in_fn && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
+  in_fn && saw_three && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
+  in_fn && saw_after_read && /data-claim-after-read-two="true"/ { found = 1 }
+  END { exit(found && saw_closed ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "data-read-after-claim-three must concentrate the existing occupied-open sold-cover line before Claim the next cover"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "sold-cover read after claim is re-concentrated again must not add another #claim hop in the flag"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /The next issue/ { saw_next = 1 }
+  in_fn && saw_next && /data-read-after-claim-three/ { leaked = 1 }
+  END { exit(leaked ? 1 : (saw_next ? 0 : 1)) }
+' src/views/skin.ts; then
+  fail "empty open flag must keep the next-issue pitch and must not stamp data-read-after-claim-three"
+fi
+grep -q 'data-read-after-claim-three="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-read-after-claim-three"
+grep -q 'occupied open / concentrates the sold-cover read after Claim is re-concentrated again' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing occupied sold-cover read-after-claim-three case"
+grep -q 'doesNotMatch(emptyOpen, /data-read-after-claim-three="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-read-after-claim-three"
+grep -q 'doesNotMatch(closedEmpty, /data-read-after-claim-three="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-read-after-claim-three"
+grep -q 'doesNotMatch(closedOccupied, /data-read-after-claim-three="true"/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not stamp data-read-after-claim-three"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "read-after-claim-three UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
