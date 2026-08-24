@@ -587,6 +587,9 @@ button { cursor: pointer; }
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
+.week-open-empty[data-empty-open-stand] [data-sold-cover],
+.week-open-empty[data-empty-open-stand] [data-claim-cover],
+.week-open-empty[data-empty-open-stand] [data-named-prize],
 .week-open-empty .cover-rack,
 .week-open-empty .cover-line,
 .week-open-empty .empty-issue,

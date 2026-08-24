@@ -308,6 +308,7 @@ grep -q 'href="#claim"' src/views/skin.ts || fail "occupied open flag must hop t
 grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop must say Claim the next cover"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-claim-cover="true"/ { found = 1 }
@@ -319,9 +320,9 @@ grep -q 'data-claim-cover="true"' tests/product-ui.test.ts \
   || fail "tests/product-ui.test.ts must cover data-claim-cover"
 grep -q 'occupied open / names one hop to claim the next cover' tests/product-ui.test.ts \
   || fail "tests/product-ui.test.ts missing occupied-open claim-cover hop case"
-grep -q 'doesNotMatch(emptyOpen, /data-claim-cover/)' tests/product-ui.test.ts \
+grep -q 'doesNotMatch(emptyOpen, /data-claim-cover="true"/)' tests/product-ui.test.ts \
   || fail "empty open / must not stamp data-claim-cover"
-grep -q 'doesNotMatch(closedOccupied, /data-claim-cover/)' tests/product-ui.test.ts \
+grep -q 'doesNotMatch(closedOccupied, /data-claim-cover="true"/)' tests/product-ui.test.ts \
   || fail "closed archive must not stamp data-claim-cover"
 if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
   fail "claim-cover UX must not invent subscribers, open rates, or an article list"
@@ -449,6 +450,7 @@ if ! awk '
 fi
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-claim-cover="true"/ { found = 1 }
   END { exit(found ? 0 : 1) }
@@ -480,6 +482,7 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q 'The next issue' src/views/skin.ts || fail "empty open board must keep the next-issue pitch"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -490,8 +493,9 @@ if ! awk '
 fi
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /The next issue/ { saw_next = 1 }
-  in_fn && saw_next && /data-sold-cover/ { leaked = 1 }
+  in_fn && saw_next && /data-sold-cover="true"/ { leaked = 1 }
   END { exit(leaked ? 1 : (saw_next ? 0 : 1)) }
 ' src/views/skin.ts; then
   fail "empty open flag must keep the next-issue pitch and must not stamp data-sold-cover"
@@ -500,11 +504,11 @@ grep -q 'data-sold-cover="true"' tests/product-ui.test.ts \
   || fail "tests/product-ui.test.ts must cover data-sold-cover"
 grep -q 'occupied open / names the sold cover before Claim the next cover' tests/product-ui.test.ts \
   || fail "tests/product-ui.test.ts missing occupied sold-cover certainty case"
-grep -q 'doesNotMatch(emptyOpen, /data-sold-cover/)' tests/product-ui.test.ts \
+grep -q 'doesNotMatch(emptyOpen, /data-sold-cover="true"/)' tests/product-ui.test.ts \
   || fail "empty open / must not stamp data-sold-cover"
-grep -q 'doesNotMatch(closedEmpty, /data-sold-cover/)' tests/product-ui.test.ts \
+grep -q 'doesNotMatch(closedEmpty, /data-sold-cover="true"/)' tests/product-ui.test.ts \
   || fail "closed empty archive must not stamp data-sold-cover"
-grep -q 'doesNotMatch(closedOccupied, /data-sold-cover/)' tests/product-ui.test.ts \
+grep -q 'doesNotMatch(closedOccupied, /data-sold-cover="true"/)' tests/product-ui.test.ts \
   || fail "closed occupied archive must not stamp data-sold-cover"
 if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
   fail "sold-cover certainty UX must not invent subscribers, open rates, or an article list"
@@ -524,6 +528,7 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q 'a\[data-claim-after-sold\]' src/views/skin.ts || fail "occupied claim hop must concentrate on the existing flag link"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -580,6 +585,7 @@ grep -q '\[data-read-after-claim-sold\]' src/views/skin.ts \
   || fail "occupied sold-cover read must concentrate on the existing sold-cover span"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -638,6 +644,7 @@ grep -q 'a\[data-claim-after-read-sold\]' src/views/skin.ts \
   || fail "occupied claim hop must concentrate on the existing flag link after the sold-cover read"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -698,6 +705,7 @@ grep -q '\[data-read-after-claim-two\]' src/views/skin.ts \
   || fail "occupied sold-cover read must re-concentrate on the existing sold-cover span"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -760,6 +768,7 @@ grep -q 'a\[data-claim-after-read-two\]' src/views/skin.ts \
   || fail "occupied claim hop must re-concentrate on the existing flag link after the sold-cover read"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -824,6 +833,7 @@ grep -q '\[data-read-after-claim-three\]' src/views/skin.ts \
   || fail "occupied sold-cover read must concentrate again on the existing sold-cover span"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -890,6 +900,7 @@ grep -q 'a\[data-claim-after-read-three\]' src/views/skin.ts \
   || fail "occupied claim hop must concentrate again on the existing flag link after the sold-cover read"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -958,6 +969,7 @@ grep -q '\[data-read-after-claim-four\]' src/views/skin.ts \
   || fail "occupied sold-cover read must concentrate a fourth time on the existing sold-cover span"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -1028,6 +1040,7 @@ grep -q 'a\[data-claim-after-read-four\]' src/views/skin.ts \
   || fail "occupied claim hop must concentrate a fourth time on the existing flag link after the sold-cover read"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -1100,6 +1113,7 @@ grep -q '\[data-read-after-claim-five\]' src/views/skin.ts \
   || fail "occupied sold-cover read must concentrate a fifth time on the existing sold-cover span"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -1174,6 +1188,7 @@ grep -q 'a\[data-claim-after-read-five\]' src/views/skin.ts \
   || fail "occupied claim hop must concentrate a fifth time on the existing flag link after the sold-cover read"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -1250,6 +1265,7 @@ grep -q '\[data-read-after-claim-six\]' src/views/skin.ts \
   || fail "occupied sold-cover read must concentrate a sixth time on the existing sold-cover span"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -1328,6 +1344,7 @@ grep -q 'a\[data-claim-after-read-six\]' src/views/skin.ts \
   || fail "occupied claim hop must concentrate a sixth time on the existing flag link after the sold-cover read"
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
@@ -1500,6 +1517,7 @@ if ! awk '
 fi
 if ! awk '
   /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && saw_closed && /data-open-cover="true"/ { found = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
@@ -1533,7 +1551,7 @@ grep -q 'data-closed-empty-issue="true"' tests/product-ui.test.ts \
   || fail "tests/product-ui.test.ts must cover data-closed-empty-issue"
 grep -q 'closed archive stays empty-issue' tests/product-ui.test.ts \
   || fail "tests/product-ui.test.ts missing closed empty-issue stand case"
-grep -q 'doesNotMatch(closedOccupied, /data-sold-cover/)' tests/product-ui.test.ts \
+grep -q 'doesNotMatch(closedOccupied, /data-sold-cover="true"/)' tests/product-ui.test.ts \
   || fail "closed occupied archive must not stamp data-sold-cover"
 grep -q 'doesNotMatch(closedOccupied, /data-cover-prize-line="true"/)' tests/product-ui.test.ts \
   || fail "closed occupied archive must not stamp data-cover-prize-line"
@@ -1651,8 +1669,8 @@ if ! awk '
   in_fn && saw_sold && /data-claim-cover="true"/ { saw_claim = 1 }
   in_fn && /The next issue/ { saw_next = 1 }
   in_fn && saw_next && /data-empty-open-stand="true"/ { found = 1 }
-  in_fn && saw_next && /data-sold-cover/ { leaked = 1 }
-  in_fn && saw_next && /data-claim-cover/ { leaked = 1 }
+  in_fn && saw_next && /data-sold-cover="true"/ { leaked = 1 }
+  in_fn && saw_next && /data-claim-cover="true"/ { leaked = 1 }
   END { exit(leaked ? 1 : (found && saw_closed && saw_claim ? 0 : 1)) }
 ' src/views/skin.ts; then
   fail "empty open flag must stamp data-empty-open-stand and must not leak sold-cover"
@@ -1680,7 +1698,7 @@ grep -q 'data-empty-open-stand="true"' tests/product-ui.test.ts \
   || fail "tests/product-ui.test.ts must cover data-empty-open-stand"
 grep -q 'empty open / stays the empty stand' tests/product-ui.test.ts \
   || fail "tests/product-ui.test.ts missing empty-open-stand honesty case"
-grep -q 'doesNotMatch(emptyOpen, /data-sold-cover/)' tests/product-ui.test.ts \
+grep -q 'doesNotMatch(emptyOpen, /data-sold-cover="true"/)' tests/product-ui.test.ts \
   || fail "empty open / must not stamp data-sold-cover"
 grep -q 'doesNotMatch(emptyOpen, /data-named-prize="true"/)' tests/product-ui.test.ts \
   || fail "empty open / must not stamp data-named-prize"
