@@ -1431,6 +1431,50 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "prize-before-price UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: later ranks stay quieter than Cover · #1 =="
+grep -qE '^### PR 38: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 38: first-time reader"
+grep -q 'data-later-rank="true"' src/views/skin.ts || fail "later ranks must mark data-later-rank"
+grep -q 'Cover · #1' src/views/skin.ts || fail "occupied cover must still say Cover · #1"
+grep -q 'data-prize-before-price="true"' src/views/skin.ts || fail "Cover · #1 prize-before-price must stay"
+grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 prize line must stay"
+grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q '\.cover-line\[data-later-rank\] \.hed' src/views/skin.ts \
+  || fail "later-rank blurbs must stay quieter than Cover · #1"
+grep -q '\.cover-line\[data-later-rank\] \.rank' src/views/skin.ts \
+  || fail "later-rank kickers must stay quieter than Cover · #1"
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /const laterRank = isCover \? ""/ && /data-later-rank="true"/ { found = 1 }
+  in_fn && /const prizeBefore = isCover/ && /data-later-rank/ { leaked = 1 }
+  END { exit(leaked ? 1 : (found ? 0 : 1)) }
+' src/views/skin.ts; then
+  fail "data-later-rank must stamp only ranks after Cover · #1"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "later-rank quiet must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "later-rank quiet must not stamp claim-after-read-N / read-after-claim-N"
+fi
+grep -q 'data-later-rank="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-later-rank"
+grep -q 'occupied open / keeps later ranks quieter than Cover · #1' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing occupied later-rank quiet case"
+grep -q 'doesNotMatch(emptyOpen, /data-later-rank="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-later-rank"
+grep -q 'doesNotMatch(closedEmpty, /data-later-rank="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-later-rank"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "later-rank quiet UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
