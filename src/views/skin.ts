@@ -150,7 +150,7 @@ function renderFlag(board: BoardView): string {
   if (board.listings.length > 0) {
     return `<p class="flag"><span data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true" data-read-after-claim-five="true" data-read-after-claim-six="true">This issue’s cover is sold.</span> Rank is the bid. <a href="#claim" data-claim-cover="true" data-claim-after-sold="true" data-claim-after-read-sold="true" data-claim-after-read-two="true" data-claim-after-read-three="true" data-claim-after-read-four="true" data-claim-after-read-five="true" data-claim-after-read-six="true">Claim the next cover.</a></p>`;
   }
-  return `<p class="flag">The next issue’s cover goes to whoever pays the most. Rank is the bid.</p>`;
+  return `<p class="flag" data-empty-open-stand="true">The next issue’s cover goes to whoever pays the most. Rank is the bid.</p>`;
 }
 
 function renderClaim(board: BoardView): string {
@@ -243,7 +243,7 @@ function renderRack(board: BoardView): string {
         <p>No paid listings on this board. Nobody bought the cover. The folio stays blank.</p>
       </section>`;
     }
-    return `      <section class="empty-stand" aria-label="This issue’s cover" data-read-stand="true">
+    return `      <section class="empty-stand" aria-label="This issue’s cover" data-read-stand="true" data-empty-open-stand="true">
         <p class="empty-kicker">This issue’s cover</p>
         <p class="hed">No cover sold</p>
         <p class="dek">No paid listings on this board. This issue’s cover is still open.</p>
