@@ -148,7 +148,7 @@ function renderFlag(board: BoardView): string {
     return `<p class="flag">This issue is closed. It is not the next issue’s cover. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
   }
   if (board.listings.length > 0) {
-    return `<p class="flag"><span data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true" data-read-after-claim-five="true">This issue’s cover is sold.</span> Rank is the bid. <a href="#claim" data-claim-cover="true" data-claim-after-sold="true" data-claim-after-read-sold="true" data-claim-after-read-two="true" data-claim-after-read-three="true" data-claim-after-read-four="true" data-claim-after-read-five="true">Claim the next cover.</a></p>`;
+    return `<p class="flag"><span data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true" data-read-after-claim-five="true" data-read-after-claim-six="true">This issue’s cover is sold.</span> Rank is the bid. <a href="#claim" data-claim-cover="true" data-claim-after-sold="true" data-claim-after-read-sold="true" data-claim-after-read-two="true" data-claim-after-read-three="true" data-claim-after-read-four="true" data-claim-after-read-five="true">Claim the next cover.</a></p>`;
   }
   return `<p class="flag">The next issue’s cover goes to whoever pays the most. Rank is the bid.</p>`;
 }
@@ -427,6 +427,11 @@ button { cursor: pointer; }
   font-size: 2.25rem;
   letter-spacing: -0.065em;
   line-height: 0.92;
+}
+.flag [data-read-after-claim-six] {
+  font-size: 2.6rem;
+  letter-spacing: -0.08em;
+  line-height: 0.86;
 }
 .flag a[data-claim-after-sold] {
   display: block;
