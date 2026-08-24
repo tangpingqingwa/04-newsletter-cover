@@ -1545,6 +1545,76 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "closed empty-issue UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: occupied Cover · #1 names the sponsor, not the host path =="
+grep -qE '^### PR 40: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 40: first-time reader"
+grep -q 'data-named-prize="true"' src/views/skin.ts || fail "occupied Cover · #1 must mark data-named-prize"
+grep -q 'Cover · #1' src/views/skin.ts || fail "occupied cover must still say Cover · #1"
+grep -q 'listing.blurb' src/views/skin.ts || fail "named prize must use the listing blurb already on the board"
+grep -q 'displaySponsor' src/views/skin.ts || fail "host/path must stay a later fact via displaySponsor"
+grep -q 'data-prize-before-price="true"' src/views/skin.ts || fail "Cover · #1 prize-before-price must stay"
+grep -q 'data-later-rank="true"' src/views/skin.ts || fail "later-rank quiet must stay"
+grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 prize line must stay"
+grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first must stay"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'data-closed-empty-issue="true"' src/views/skin.ts || fail "closed empty-issue must stay"
+grep -q '\.cover-line\[data-named-prize\] \.hed' src/views/skin.ts \
+  || fail "Cover · #1 must name the sponsor on the hed"
+grep -q '\.cover-line\[data-named-prize\] \.dek' src/views/skin.ts \
+  || fail "host/path must stay quieter on the dek"
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /const namedPrize = isCover/ && /data-named-prize="true"/ { found = 1 }
+  in_fn && /const laterRank = isCover/ && /named-prize/ { leaked = 1 }
+  END { exit(leaked ? 1 : (found ? 0 : 1)) }
+' src/views/skin.ts; then
+  fail "data-named-prize must stamp only Cover · #1"
+fi
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /openPrize/ { saw_gate = 1 }
+  in_fn && saw_gate && /data-named-prize="true"/ { saw = 1 }
+  in_fn && saw_gate && /stampedNamedPrize = openPrize/ { found = 1 }
+  END { exit(found && saw ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "named-prize stamp must stay on the open issue only"
+fi
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /class="hed"/ && /listing.blurb/ { saw_name = 1 }
+  in_fn && saw_name && /class="dek"/ && /displaySponsor/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "Cover · #1 must name the blurb before host/path"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "named prize must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "named prize must not stamp claim-after-read-N / read-after-claim-N"
+fi
+if grep -E 'og:title|fetch\(' src/views/skin.ts src/http/routes/board.ts; then
+  fail "named prize must not scrape a second title from the live web"
+fi
+grep -q 'data-named-prize="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-named-prize"
+grep -q 'occupied open / names Cover · #1 from the listing blurb, not the host path' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing occupied named-prize case"
+grep -q 'doesNotMatch(emptyOpen, /data-named-prize="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-named-prize"
+grep -q 'doesNotMatch(closedEmpty, /data-named-prize="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-named-prize"
+grep -q 'doesNotMatch(closedOccupied, /data-named-prize="true"/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not stamp data-named-prize"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "named-prize UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"

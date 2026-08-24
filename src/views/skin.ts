@@ -216,11 +216,13 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
   const prizeLine = isCover ? ' data-cover-prize-line="true"' : "";
   const prizeBefore = isCover ? ' data-prize-before-price="true"' : "";
   const laterRank = isCover ? "" : ' data-later-rank="true"';
+  const namedPrize = isCover ? ' data-named-prize="true"' : "";
   const stampedCoverClass = openPrize ? coverClass : "";
   const stampedPrizeLine = openPrize ? prizeLine : "";
   const stampedPrizeBefore = openPrize ? prizeBefore : "";
   const stampedLaterRank = openPrize ? laterRank : "";
-  return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore}${stampedLaterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
+  const stampedNamedPrize = openPrize ? namedPrize : "";
+  return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore}${stampedLaterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}"${stampedNamedPrize}>
           <span class="rank"${stampedPrizeLine}>${kicker}</span>
           <div>
             <p class="hed">${escapeHtml(listing.blurb)}</p>
@@ -624,6 +626,15 @@ button { cursor: pointer; }
 }
 .cover-line[data-later-rank] .clicks {
   font-size: 0.7rem;
+}
+.cover-line[data-named-prize] .hed {
+  font-size: 1.55rem;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+}
+.cover-line[data-named-prize] .dek {
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
 }
 .hed {
   margin: 0;
