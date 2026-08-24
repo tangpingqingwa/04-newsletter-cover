@@ -1855,6 +1855,68 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "prize-before-bid UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time sponsor: empty open stand stays Claim #1 — later-fact / named-prize cannot leak =="
+grep -qE '^### PR 44: first-time sponsor' BUILD.md || fail "BUILD.md missing ### PR 44: first-time sponsor"
+grep -q 'export const FOLIO_CSS' src/views/skin.ts || fail "empty/closed pages must export FOLIO_CSS"
+grep -q 'export const OCCUPIED_CSS' src/views/skin.ts || fail "occupied later-fact / named-prize CSS must live in OCCUPIED_CSS"
+grep -q 'ISSUE_CSS = `${FOLIO_CSS}' src/views/skin.ts || fail "occupied open / must concatenate FOLIO_CSS + OCCUPIED_CSS"
+grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
+  || fail "empty open / closed archives must ship FOLIO_CSS only"
+grep -q 'class="week week-open-empty"' src/views/skin.ts || fail "empty open / must wrap in week-open-empty"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "empty open stand must keep class empty-stand"
+grep -q 'Claim #1 for' src/views/skin.ts || fail "empty open / must keep Claim #1"
+grep -q 'data-later-fact="true"' src/views/skin.ts || fail "occupied Cover · #1 later-fact must stay"
+grep -q 'data-named-prize="true"' src/views/skin.ts || fail "occupied named prize must stay"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "closed empty archive must keep class empty-issue"
+if awk '/^export const FOLIO_CSS/{p=1} p{print} /^export const OCCUPIED_CSS/{exit}' src/views/skin.ts \
+  | grep -Eq 'data-later-fact|later-fact|data-named-prize'; then
+  fail "FOLIO_CSS must not contain later-fact / named-prize chrome"
+fi
+if awk '/^export const FOLIO_CSS/{p=1} p{print} /^export const OCCUPIED_CSS/{exit}' src/views/skin.ts \
+  | grep -Eq 'data-sold-cover|data-claim-cover|data-prize-before-price'; then
+  fail "FOLIO_CSS must not contain occupied sold-cover / named-prize CSS"
+fi
+if ! awk '
+  /^export const OCCUPIED_CSS/ { p = 1 }
+  p && /later-fact\[data-later-fact\]/ { later = 1 }
+  p && /\[data-named-prize\]/ { named = 1 }
+  END { exit(later && named ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "OCCUPIED_CSS must keep later-fact / named-prize chrome for occupied Cover · #1"
+fi
+if ! awk '
+  /function boardCss/ { in_fn = 1 }
+  in_fn && /occupiedOpen \? ISSUE_CSS : FOLIO_CSS/ { found = 1 }
+  in_fn && /^export function / { in_fn = 0 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "empty open / must not concatenate OCCUPIED_CSS"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "empty-open later-fact isolation must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "empty-open later-fact isolation must not stamp claim-after-read-N / read-after-claim-N"
+fi
+grep -q 'FOLIO_CSS' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must assert FOLIO_CSS on empty open /"
+grep -q 'empty open / stays Claim #1 — later-fact / named-prize cannot leak' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing empty-open later-fact isolation case"
+grep -q 'doesNotMatch(emptyOpen, /data-later-fact="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-later-fact"
+grep -q 'doesNotMatch(emptyOpen, /data-named-prize="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-named-prize"
+grep -q 'doesNotMatch(closedEmpty, /data-later-fact="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-later-fact"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "empty-open later-fact isolation must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"

@@ -318,6 +318,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 42
 - **Acceptance:** Occupied open `/` has one `data-later-fact="true"` on rank 1. The Cover · #1 hed is before host/path and `$bid`. Occupied `#1` has no `class="money"`. Empty open `/` and closed archives have no `data-later-fact`. `data-read-cover`, `data-claim-cover`, `data-cover-prize-line`, `data-prize-before-price`, `data-named-prize`, and `data-later-rank` stay. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 44: first-time sponsor — empty open stand stays Claim #1; later-fact / named-prize cannot leak
+- **Description:** On an empty open `/`, occupied later-fact / named-prize CSS cannot leak after Cover · #1 money moved under the hed. Empty and closed pages ship `FOLIO_CSS` only. Occupied open `/` still concatenates `OCCUPIED_CSS` so the cover name reads before `$bid`. Closed archives stay empty-issue. Do not add another named hop. Do not stamp `*-after-*-N`. Do not re-ship Cover · #1 later-fact grouping. Do not recolor. Do not rebuild the folio. A stamp without this CSS isolation is REJECT.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 43
+- **Acceptance:** Empty open `/` has `class="week week-open-empty"` wrapping the empty stand before `id="claim"` and ships `FOLIO_CSS` without `.later-fact[data-later-fact]` or `[data-named-prize]`. Occupied open `/` keeps `data-later-fact`, `data-named-prize`, and one `#claim` hop. Closed empty archives keep `class="empty-issue"` / `data-closed-empty-issue` and have no later-fact / named-prize CSS. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)

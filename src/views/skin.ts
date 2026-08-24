@@ -88,6 +88,7 @@ export function renderDocument(input: {
   title: string;
   active: NavId;
   body: string;
+  css?: string;
 }): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -95,7 +96,7 @@ export function renderDocument(input: {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${escapeHtml(input.title)}</title>
-    <style>${ISSUE_CSS}</style>
+    <style>${input.css ?? FOLIO_CSS}</style>
   </head>
   <body>
     <div class="sheet">
@@ -293,6 +294,11 @@ function weekShell(board: BoardView): { open: string; close: string } {
   };
 }
 
+function boardCss(board: BoardView): string {
+  const occupiedOpen = board.status === "open" && board.listings.length > 0;
+  return occupiedOpen ? ISSUE_CSS : FOLIO_CSS;
+}
+
 export function renderBoardHtml(board: BoardView): string {
   const masthead = renderMasthead(board);
   const claim = renderClaim(board);
@@ -314,10 +320,11 @@ ${week.close}`;
     title: "The Cover · Newsletter Cover",
     active: "cover",
     body,
+    css: boardCss(board),
   });
 }
 
-export const ISSUE_CSS = /* css */ `
+export const FOLIO_CSS = /* css */ `
 :root {
   --stone: #1c1d21;
   --sheet: #ece7dc;
@@ -455,74 +462,6 @@ button { cursor: pointer; }
   font-weight: 700;
   margin-top: 0.55rem;
 }
-.week-open-sold .flag [data-read-after-claim-sold] {
-  display: block;
-  font-weight: 700;
-}
-.week-open-sold .flag [data-read-after-claim-two] {
-  font-family: var(--display);
-  font-size: 1.2rem;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-}
-.week-open-sold .flag [data-read-after-claim-three] {
-  font-size: 1.55rem;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
-}
-.week-open-sold .flag [data-read-after-claim-four] {
-  font-size: 1.9rem;
-  letter-spacing: -0.05em;
-  line-height: 0.98;
-}
-.week-open-sold .flag [data-read-after-claim-five] {
-  font-size: 2.25rem;
-  letter-spacing: -0.065em;
-  line-height: 0.92;
-}
-.week-open-sold .flag [data-read-after-claim-six] {
-  font-size: 2.6rem;
-  letter-spacing: -0.08em;
-  line-height: 0.86;
-}
-.week-open-sold .flag a[data-claim-after-sold] {
-  display: block;
-  margin-top: 0.55rem;
-}
-.week-open-sold .flag a[data-claim-after-read-sold] {
-  font-weight: 700;
-}
-.week-open-sold .flag a[data-claim-after-read-two] {
-  font-family: var(--display);
-  font-size: 1.2rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 1.15;
-}
-.week-open-sold .flag a[data-claim-after-read-three] {
-  font-size: 1.42rem;
-  letter-spacing: 0.06em;
-  line-height: 1.08;
-  margin-top: 0.75rem;
-}
-.week-open-sold .flag a[data-claim-after-read-four] {
-  font-size: 1.72rem;
-  letter-spacing: 0.08em;
-  line-height: 1.02;
-  margin-top: 0.95rem;
-}
-.week-open-sold .flag a[data-claim-after-read-five] {
-  font-size: 2.02rem;
-  letter-spacing: 0.1em;
-  line-height: 0.96;
-  margin-top: 1.15rem;
-}
-.week-open-sold .flag a[data-claim-after-read-six] {
-  font-size: 2.32rem;
-  letter-spacing: 0.12em;
-  line-height: 0.9;
-  margin-top: 1.35rem;
-}
 .claim {
   padding: 1rem 0 1.05rem;
   border-bottom: 1px solid var(--rule);
@@ -601,15 +540,7 @@ button { cursor: pointer; }
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
-.week-open-empty[data-empty-open-stand] [data-sold-cover],
-.week-open-empty[data-empty-open-stand] [data-claim-cover],
-.week-open-empty[data-empty-open-stand] [data-named-prize],
-.week-open-empty[data-empty-open-stand] [data-later-fact],
-.week-open-empty .cover-rack,
-.week-open-empty .cover-line,
 .week-open-empty .empty-issue,
-.week-open-sold .empty-stand,
-.week-open-sold .empty-issue,
 .week-closed-empty .empty-stand,
 .week-closed-occupied .empty-stand {
   display: none;
@@ -637,6 +568,122 @@ button { cursor: pointer; }
   gap: 0.55rem 0.8rem;
   padding: 0.85rem 0;
   border-top: 1px solid var(--hair);
+}
+.rank {
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.hed {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.35rem;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+.dek {
+  margin: 0.28rem 0 0;
+  color: var(--mute);
+  font-size: 0.92rem;
+}
+.dek a { text-decoration: underline; text-underline-offset: 0.15em; }
+.money { text-align: right; }
+.bid {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.clicks { margin: 0.2rem 0 0; color: var(--mute); font-size: 0.78rem; }
+.doc { max-width: 38rem; margin: 1.2rem auto 0; }
+.doc h1 {
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+}
+.doc p, .doc li { color: #2a271f; }
+.doc a { color: var(--flag); text-decoration: underline; }
+`;
+
+export const OCCUPIED_CSS = /* css */ `
+.week-open-sold .flag [data-read-after-claim-sold] {
+  display: block;
+  font-weight: 700;
+}
+.week-open-sold .flag [data-read-after-claim-two] {
+  font-family: var(--display);
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.week-open-sold .flag [data-read-after-claim-three] {
+  font-size: 1.55rem;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+.week-open-sold .flag [data-read-after-claim-four] {
+  font-size: 1.9rem;
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+}
+.week-open-sold .flag [data-read-after-claim-five] {
+  font-size: 2.25rem;
+  letter-spacing: -0.065em;
+  line-height: 0.92;
+}
+.week-open-sold .flag [data-read-after-claim-six] {
+  font-size: 2.6rem;
+  letter-spacing: -0.08em;
+  line-height: 0.86;
+}
+.week-open-sold .flag a[data-claim-after-sold] {
+  display: block;
+  margin-top: 0.55rem;
+}
+.week-open-sold .flag a[data-claim-after-read-sold] {
+  font-weight: 700;
+}
+.week-open-sold .flag a[data-claim-after-read-two] {
+  font-family: var(--display);
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+.week-open-sold .flag a[data-claim-after-read-three] {
+  font-size: 1.42rem;
+  letter-spacing: 0.06em;
+  line-height: 1.08;
+  margin-top: 0.75rem;
+}
+.week-open-sold .flag a[data-claim-after-read-four] {
+  font-size: 1.72rem;
+  letter-spacing: 0.08em;
+  line-height: 1.02;
+  margin-top: 0.95rem;
+}
+.week-open-sold .flag a[data-claim-after-read-five] {
+  font-size: 2.02rem;
+  letter-spacing: 0.1em;
+  line-height: 0.96;
+  margin-top: 1.15rem;
+}
+.week-open-sold .flag a[data-claim-after-read-six] {
+  font-size: 2.32rem;
+  letter-spacing: 0.12em;
+  line-height: 0.9;
+  margin-top: 1.35rem;
+}
+.week-open-empty[data-empty-open-stand] [data-sold-cover],
+.week-open-empty[data-empty-open-stand] [data-claim-cover],
+.week-open-empty[data-empty-open-stand] [data-named-prize],
+.week-open-empty[data-empty-open-stand] [data-later-fact],
+.week-open-empty .cover-rack,
+.week-open-empty .cover-line,
+.week-open-sold .empty-stand,
+.week-open-sold .empty-issue {
+  display: none;
 }
 .week-open-sold .cover-line.cover {
   grid-template-columns: max-content 1fr auto;
@@ -666,11 +713,6 @@ button { cursor: pointer; }
 .week-open-sold .cover-line[data-prize-before-price][data-named-prize] .later-fact[data-later-fact] .clicks {
   margin: 0;
   font-size: 0.7rem;
-}
-.rank {
-  font-family: var(--display);
-  font-weight: 700;
-  letter-spacing: 0.04em;
 }
 .week-open-sold .cover .rank { color: var(--flag); }
 .week-open-sold .rank[data-cover-prize-line] { white-space: nowrap; }
@@ -715,37 +757,9 @@ button { cursor: pointer; }
   font-size: 0.78rem;
   letter-spacing: 0.01em;
 }
-.hed {
-  margin: 0;
-  font-family: var(--display);
-  font-size: 1.35rem;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-}
-.dek {
-  margin: 0.28rem 0 0;
-  color: var(--mute);
-  font-size: 0.92rem;
-}
-.dek a { text-decoration: underline; text-underline-offset: 0.15em; }
-.money { text-align: right; }
-.bid {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.clicks { margin: 0.2rem 0 0; color: var(--mute); font-size: 0.78rem; }
-.doc { max-width: 38rem; margin: 1.2rem auto 0; }
-.doc h1 {
-  font-family: var(--display);
-  text-transform: uppercase;
-  letter-spacing: -0.03em;
-}
-.doc p, .doc li { color: #2a271f; }
-.doc a { color: var(--flag); text-decoration: underline; }
 `;
+
+export const ISSUE_CSS = `${FOLIO_CSS}\n${OCCUPIED_CSS}`;
 
 export const BOARD_CSS = ISSUE_CSS;
 
