@@ -171,7 +171,7 @@ test("paid listing is a cover pitch: blurb, sponsor hop, $bid, clicks", async (t
   assert.match(html.body, /href="#claim"/);
   assert.match(html.body, /Claim the next cover/);
   assert.ok(html.body.indexOf('data-sold-cover="true"') < html.body.indexOf('data-claim-cover="true"'));
-  assert.ok(html.body.indexOf('data-claim-cover="true"') < html.body.indexOf('data-read-cover="true"'));
+  assert.ok(html.body.indexOf('data-read-cover="true"') < html.body.indexOf('data-claim-cover="true"'));
   assert.doesNotMatch(html.body, /goes to whoever pays the most/);
   assert.doesNotMatch(html.body, /no cover sold/i);
   assert.doesNotMatch(html.body, /class="claim-note" data-empty-issue="true"/);
@@ -448,7 +448,7 @@ test("occupied open / names one hop to claim the next cover", () => {
   assert.notEqual(hopAt, -1);
   assert.notEqual(rackAt, -1);
   assert.notEqual(claimAt, -1);
-  assert.ok(hopAt < rackAt);
+  assert.ok(rackAt < hopAt);
   assert.ok(rackAt < claimAt);
   assert.equal((occupiedOpen.match(/data-claim-cover="true"/g) ?? []).length, 1);
   assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
@@ -534,7 +534,7 @@ test("Cover · #1 is one prize line", () => {
   assert.match(occupiedOpen, /data-sold-cover="true"/);
   assert.match(occupiedOpen, /This issue’s cover is sold/);
   assert.ok(occupiedOpen.indexOf('data-sold-cover="true"') < occupiedOpen.indexOf('data-claim-cover="true"'));
-  assert.ok(occupiedOpen.indexOf('data-claim-cover="true"') < occupiedOpen.indexOf('data-read-cover="true"'));
+  assert.ok(occupiedOpen.indexOf('data-read-cover="true"') < occupiedOpen.indexOf('data-claim-cover="true"'));
   assert.ok(occupiedOpen.indexOf('data-read-cover="true"') < occupiedOpen.indexOf('id="claim"'));
   assert.ok(occupiedOpen.indexOf('data-cover-prize-line="true"') < occupiedOpen.indexOf('id="claim"'));
   assert.match(occupiedOpen, /Widgets for the next issue/);
@@ -827,7 +827,7 @@ test("occupied open / names the sold cover before Claim the next cover", () => {
   assert.notEqual(prizeAt, -1);
   assert.notEqual(claimAt, -1);
   assert.ok(soldAt < hopAt);
-  assert.ok(hopAt < rackAt);
+  assert.ok(rackAt < hopAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -941,8 +941,8 @@ test("occupied open / concentrates Claim the next cover after the sold cover", (
   assert.notEqual(claimAt, -1);
   assert.ok(soldAt < hopAt);
   assert.ok(soldAt < afterSoldAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -1069,8 +1069,8 @@ test("occupied open / concentrates the sold-cover read after Claim the next cove
   assert.ok(readAfterAt < hopAt);
   assert.ok(soldAt < afterSoldAt);
   assert.ok(readAfterAt < afterSoldAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -1209,9 +1209,9 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.ok(readAfterAt < afterSoldAt);
   assert.ok(soldAt < afterReadAt);
   assert.ok(readAfterAt < afterReadAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
-  assert.ok(afterReadAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
+  assert.ok(rackAt < afterReadAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -1360,9 +1360,9 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.ok(soldAt < afterReadAt);
   assert.ok(readAfterAt < afterReadAt);
   assert.ok(readTwoAt < afterReadAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
-  assert.ok(afterReadAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
+  assert.ok(rackAt < afterReadAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -1521,10 +1521,10 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.ok(soldAt < afterReadTwoAt);
   assert.ok(readAfterAt < afterReadTwoAt);
   assert.ok(readTwoAt < afterReadTwoAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
-  assert.ok(afterReadAt < rackAt);
-  assert.ok(afterReadTwoAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
+  assert.ok(rackAt < afterReadAt);
+  assert.ok(rackAt < afterReadTwoAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -1694,10 +1694,10 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.ok(readAfterAt < afterReadTwoAt);
   assert.ok(readTwoAt < afterReadTwoAt);
   assert.ok(readThreeAt < afterReadTwoAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
-  assert.ok(afterReadAt < rackAt);
-  assert.ok(afterReadTwoAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
+  assert.ok(rackAt < afterReadAt);
+  assert.ok(rackAt < afterReadTwoAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -1878,11 +1878,11 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.ok(readAfterAt < afterReadThreeAt);
   assert.ok(readTwoAt < afterReadThreeAt);
   assert.ok(readThreeAt < afterReadThreeAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
-  assert.ok(afterReadAt < rackAt);
-  assert.ok(afterReadTwoAt < rackAt);
-  assert.ok(afterReadThreeAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
+  assert.ok(rackAt < afterReadAt);
+  assert.ok(rackAt < afterReadTwoAt);
+  assert.ok(rackAt < afterReadThreeAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -2075,11 +2075,11 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.ok(readTwoAt < afterReadThreeAt);
   assert.ok(readThreeAt < afterReadThreeAt);
   assert.ok(readFourAt < afterReadThreeAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
-  assert.ok(afterReadAt < rackAt);
-  assert.ok(afterReadTwoAt < rackAt);
-  assert.ok(afterReadThreeAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
+  assert.ok(rackAt < afterReadAt);
+  assert.ok(rackAt < afterReadTwoAt);
+  assert.ok(rackAt < afterReadThreeAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -2284,12 +2284,12 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.ok(readTwoAt < afterReadFourAt);
   assert.ok(readThreeAt < afterReadFourAt);
   assert.ok(readFourAt < afterReadFourAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
-  assert.ok(afterReadAt < rackAt);
-  assert.ok(afterReadTwoAt < rackAt);
-  assert.ok(afterReadThreeAt < rackAt);
-  assert.ok(afterReadFourAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
+  assert.ok(rackAt < afterReadAt);
+  assert.ok(rackAt < afterReadTwoAt);
+  assert.ok(rackAt < afterReadThreeAt);
+  assert.ok(rackAt < afterReadFourAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -2507,12 +2507,12 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.ok(readThreeAt < afterReadFourAt);
   assert.ok(readFourAt < afterReadFourAt);
   assert.ok(readFiveAt < afterReadFourAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
-  assert.ok(afterReadAt < rackAt);
-  assert.ok(afterReadTwoAt < rackAt);
-  assert.ok(afterReadThreeAt < rackAt);
-  assert.ok(afterReadFourAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
+  assert.ok(rackAt < afterReadAt);
+  assert.ok(rackAt < afterReadTwoAt);
+  assert.ok(rackAt < afterReadThreeAt);
+  assert.ok(rackAt < afterReadFourAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -2743,13 +2743,13 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.ok(readThreeAt < afterReadFiveAt);
   assert.ok(readFourAt < afterReadFiveAt);
   assert.ok(readFiveAt < afterReadFiveAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
-  assert.ok(afterReadAt < rackAt);
-  assert.ok(afterReadTwoAt < rackAt);
-  assert.ok(afterReadThreeAt < rackAt);
-  assert.ok(afterReadFourAt < rackAt);
-  assert.ok(afterReadFiveAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
+  assert.ok(rackAt < afterReadAt);
+  assert.ok(rackAt < afterReadTwoAt);
+  assert.ok(rackAt < afterReadThreeAt);
+  assert.ok(rackAt < afterReadFourAt);
+  assert.ok(rackAt < afterReadFiveAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -2994,13 +2994,13 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.ok(readFourAt < afterReadFiveAt);
   assert.ok(readFiveAt < afterReadFiveAt);
   assert.ok(readSixAt < afterReadFiveAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
-  assert.ok(afterReadAt < rackAt);
-  assert.ok(afterReadTwoAt < rackAt);
-  assert.ok(afterReadThreeAt < rackAt);
-  assert.ok(afterReadFourAt < rackAt);
-  assert.ok(afterReadFiveAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
+  assert.ok(rackAt < afterReadAt);
+  assert.ok(rackAt < afterReadTwoAt);
+  assert.ok(rackAt < afterReadThreeAt);
+  assert.ok(rackAt < afterReadFourAt);
+  assert.ok(rackAt < afterReadFiveAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -3259,14 +3259,14 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.ok(readFourAt < afterReadSixAt);
   assert.ok(readFiveAt < afterReadSixAt);
   assert.ok(readSixAt < afterReadSixAt);
-  assert.ok(hopAt < rackAt);
-  assert.ok(afterSoldAt < rackAt);
-  assert.ok(afterReadAt < rackAt);
-  assert.ok(afterReadTwoAt < rackAt);
-  assert.ok(afterReadThreeAt < rackAt);
-  assert.ok(afterReadFourAt < rackAt);
-  assert.ok(afterReadFiveAt < rackAt);
-  assert.ok(afterReadSixAt < rackAt);
+  assert.ok(rackAt < hopAt);
+  assert.ok(rackAt < afterSoldAt);
+  assert.ok(rackAt < afterReadAt);
+  assert.ok(rackAt < afterReadTwoAt);
+  assert.ok(rackAt < afterReadThreeAt);
+  assert.ok(rackAt < afterReadFourAt);
+  assert.ok(rackAt < afterReadFiveAt);
+  assert.ok(rackAt < afterReadSixAt);
   assert.ok(rackAt < claimAt);
   assert.ok(soldAt < prizeAt);
   assert.equal((occupiedOpen.match(/data-sold-cover="true"/g) ?? []).length, 1);
@@ -3472,7 +3472,7 @@ test("occupied open / lets Cover · #1 read before $bid", () => {
   assert.match(occupiedOpen, /Widgets for the next issue/);
   assert.match(occupiedOpen, /#2/);
   assert.ok(occupiedOpen.indexOf('data-sold-cover="true"') < hopAt);
-  assert.ok(hopAt < occupiedOpen.indexOf('data-read-cover="true"'));
+  assert.ok(occupiedOpen.indexOf('data-read-cover="true"') < hopAt);
   assert.doesNotMatch(occupiedOpen, /data-claim-after-read-seven/);
   assert.doesNotMatch(occupiedOpen, /data-read-after-claim-seven/);
   assert.doesNotMatch(occupiedOpen, /subscriber/i);
@@ -3622,7 +3622,7 @@ test("occupied open / keeps later ranks quieter than Cover · #1", () => {
   assert.match(occupiedOpen, /Claim #1 for/);
   assert.match(occupiedOpen, /class="outbid"/);
   assert.ok(occupiedOpen.indexOf('data-sold-cover="true"') < hopAt);
-  assert.ok(hopAt < occupiedOpen.indexOf('data-read-cover="true"'));
+  assert.ok(occupiedOpen.indexOf('data-read-cover="true"') < hopAt);
   assert.doesNotMatch(occupiedOpen, /data-claim-after-read-seven/);
   assert.doesNotMatch(occupiedOpen, /data-read-after-claim-seven/);
   assert.doesNotMatch(occupiedOpen, /subscriber/i);
@@ -4170,7 +4170,7 @@ test("occupied open / keeps Cover · #1 prize before $bid — host path is a lat
     /class="cover-line"[^>]*data-later-fact/,
   );
   assert.ok(occupiedOpen.indexOf('data-sold-cover="true"') < hopAt);
-  assert.ok(hopAt < occupiedOpen.indexOf('data-read-cover="true"'));
+  assert.ok(occupiedOpen.indexOf('data-read-cover="true"') < hopAt);
   assert.doesNotMatch(occupiedOpen, /data-claim-after-read-seven/);
   assert.doesNotMatch(occupiedOpen, /data-read-after-claim-seven/);
   assert.doesNotMatch(occupiedOpen, /og:title/);
@@ -4476,7 +4476,7 @@ test("occupied open / keeps Claim the next cover quieter than Cover · #1 — pr
   assert.ok(laterFactAt < dekAt);
   assert.ok(dekAt < bidAt);
   assert.ok(hedAt < bidAt);
-  assert.ok(hopAt < rackAt);
+  assert.ok(rackAt < hopAt);
   assert.ok(rackAt < claimAt);
   assert.ok(coverFirstAt < claimAt);
   assert.equal((occupiedOpen.match(/data-cover-first="true"/g) ?? []).length, 1);
@@ -4503,12 +4503,12 @@ test("occupied open / keeps Claim the next cover quieter than Cover · #1 — pr
     occupiedCss,
     /\.week-open-sold \.cover-line\[data-named-prize\] \.hed a\[data-cover-first\]/,
   );
-  assert.match(occupiedCss, /\.week-open-sold \.flag a\[data-claim-cover\] \{\s*display: block;/);
+  assert.match(occupiedCss, /\.week-open-sold \.claim-after-listing a\[data-claim-cover\] \{\s*display: inline;/);
   assert.match(occupiedCss, /\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{\s*font-size: 1\.55rem/);
   const prizeHed = occupiedCss.match(
     /\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/,
   );
-  const claimHop = occupiedCss.match(/\.week-open-sold \.flag a\[data-claim-cover\] \{([^}]*)\}/);
+  const claimHop = occupiedCss.match(/\.week-open-sold \.claim-after-listing a\[data-claim-cover\] \{([^}]*)\}/);
   assert.ok(prizeHed);
   assert.ok(claimHop);
   const prizeSize = prizeHed[1].match(/font-size:\s*([\d.]+)rem/);
@@ -4750,7 +4750,7 @@ test("empty open / keeps Claim #1 the first click — cover URL is a later write
   const prizeHed = occupiedCss.match(
     /\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/,
   );
-  const claimHop = occupiedCss.match(/\.week-open-sold \.flag a\[data-claim-cover\] \{([^}]*)\}/);
+  const claimHop = occupiedCss.match(/\.week-open-sold \.claim-after-listing a\[data-claim-cover\] \{([^}]*)\}/);
   assert.ok(prizeHed);
   assert.ok(claimHop);
   const prizeSize = prizeHed[1].match(/font-size:\s*([\d.]+)rem/);
@@ -4901,7 +4901,7 @@ test("occupied open / keeps Cover · #1 as the paid name — later ranks cannot 
   assert.ok(laterFactAt < dekAt);
   assert.ok(hedAt < laterAt);
   assert.ok(laterAt < claimAt);
-  assert.ok(hopAt < occupiedOpen.indexOf('data-read-cover="true"'));
+  assert.ok(occupiedOpen.indexOf('data-read-cover="true"') < hopAt);
   assert.ok(laterListingAt > claimAt);
   assert.equal((occupiedOpen.match(/data-paid-name="true"/g) ?? []).length, 1);
   assert.equal((occupiedOpen.match(/data-cover-first="true"/g) ?? []).length, 1);
@@ -4978,7 +4978,7 @@ test("occupied open / keeps Cover · #1 as the paid name — later ranks cannot 
   const laterSlot = occupiedCss.match(
     /\.week-open-sold \.cover-line\[data-later-rank\] \.slot \{([^}]*)\}/,
   );
-  const claimHop = occupiedCss.match(/\.week-open-sold \.flag a\[data-claim-cover\] \{([^}]*)\}/);
+  const claimHop = occupiedCss.match(/\.week-open-sold \.claim-after-listing a\[data-claim-cover\] \{([^}]*)\}/);
   assert.ok(prizeHed);
   assert.ok(laterSlot);
   assert.ok(claimHop);
@@ -5293,6 +5293,173 @@ test("closed occupied / keeps frozen Cover · #1 — live claim cannot steal the
   assert.doesNotMatch(closedEmpty, /Cover · #1/);
   assert.doesNotMatch(closedEmpty, /id="claim"/);
   assert.doesNotMatch(closedEmpty, /Claim the next cover/);
+});
+
+test("occupied open / keeps Cover · #1 the first click — Claim the next cover stays after the listing", () => {
+  const occupiedOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_cover",
+        sponsorUrl: "https://sponsor.example/pitch",
+        blurb: "Widgets for the next issue",
+        bidUsd: 12,
+        clicks: 3,
+      },
+      {
+        rank: 2,
+        id: "lst_two",
+        sponsorUrl: "https://second.example/also",
+        blurb: "Also listed",
+        bidUsd: 6,
+        clicks: 0,
+      },
+    ],
+  });
+  const emptyOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const closedOccupied = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_won",
+        sponsorUrl: "https://won.example/cover",
+        blurb: "Frozen winner",
+        bidUsd: 20,
+        clicks: 1,
+      },
+    ],
+  });
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [],
+  });
+
+  const occupiedCss = occupiedOpen.slice(
+    occupiedOpen.indexOf("<style>"),
+    occupiedOpen.indexOf("</style>"),
+  );
+  const emptyCss = emptyOpen.slice(emptyOpen.indexOf("<style>"), emptyOpen.indexOf("</style>"));
+  const closedEmptyCss = closedEmpty.slice(
+    closedEmpty.indexOf("<style>"),
+    closedEmpty.indexOf("</style>"),
+  );
+  const closedOccupiedCss = closedOccupied.slice(
+    closedOccupied.indexOf("<style>"),
+    closedOccupied.indexOf("</style>"),
+  );
+  const mastheadEnd = occupiedOpen.indexOf("</header>");
+  const flagSlice = occupiedOpen.slice(0, mastheadEnd);
+
+  const coverKickerAt = occupiedOpen.indexOf(
+    'class="rank" data-cover-prize-line="true">Cover · #1<',
+  );
+  const coverFirstAt = occupiedOpen.indexOf('data-cover-first="true"');
+  const hedAt = occupiedOpen.indexOf(
+    'class="hed"><a href="/l/lst_cover" data-cover-first="true">Widgets for the next issue<',
+  );
+  const rackAt = occupiedOpen.indexOf('data-read-cover="true"');
+  const afterListingAt = occupiedOpen.indexOf('data-claim-after-listing="true"');
+  const hopAt = occupiedOpen.indexOf('data-claim-cover="true"');
+  const claimAt = occupiedOpen.indexOf('id="claim"');
+  assert.notEqual(coverKickerAt, -1);
+  assert.notEqual(coverFirstAt, -1);
+  assert.notEqual(hedAt, -1);
+  assert.notEqual(rackAt, -1);
+  assert.notEqual(afterListingAt, -1);
+  assert.notEqual(hopAt, -1);
+  assert.notEqual(claimAt, -1);
+  assert.ok(mastheadEnd !== -1);
+  assert.ok(coverKickerAt < hopAt);
+  assert.ok(coverFirstAt < hopAt);
+  assert.ok(hedAt < hopAt);
+  assert.ok(rackAt < afterListingAt);
+  assert.ok(afterListingAt < hopAt);
+  assert.ok(hopAt < claimAt);
+  assert.ok(coverFirstAt < claimAt);
+  assert.ok(mastheadEnd < coverKickerAt);
+  assert.ok(mastheadEnd < hopAt);
+  assert.doesNotMatch(flagSlice, /data-claim-cover="true"/);
+  assert.doesNotMatch(flagSlice, /href="#claim"/);
+  assert.doesNotMatch(flagSlice, /Claim the next cover/);
+  assert.equal((occupiedOpen.match(/data-claim-after-listing="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-claim-cover="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
+  assert.match(occupiedOpen, /class="claim-after-listing" data-claim-after-listing="true"/);
+  assert.match(
+    occupiedOpen,
+    /class="hed"><a href="\/l\/lst_cover" data-cover-first="true">Widgets for the next issue</,
+  );
+  assert.match(occupiedOpen, /class="rank" data-cover-prize-line="true">Cover · #1</);
+  assert.match(occupiedOpen, /Claim the next cover/);
+  assert.match(occupiedOpen, /Claim #1 for/);
+  assert.match(occupiedOpen, /class="outbid"/);
+  assert.match(occupiedOpen, /data-paid-name="true"/);
+  assert.match(occupiedOpen, /data-named-prize="true"/);
+  assert.match(occupiedOpen, /data-later-fact="true"/);
+  assert.match(occupiedCss, /\.week-open-sold \.claim-after-listing\[data-claim-after-listing\]/);
+  assert.match(
+    occupiedCss,
+    /\.week-open-sold \.claim-after-listing a\[data-claim-cover\] \{\s*display: inline;/,
+  );
+  const prizeHed = occupiedCss.match(
+    /\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/,
+  );
+  const claimHop = occupiedCss.match(
+    /\.week-open-sold \.claim-after-listing a\[data-claim-cover\] \{([^}]*)\}/,
+  );
+  assert.ok(prizeHed);
+  assert.ok(claimHop);
+  const prizeSize = prizeHed[1].match(/font-size:\s*([\d.]+)rem/);
+  const claimSize = claimHop[1].match(/font-size:\s*([\d.]+)rem/);
+  assert.ok(prizeSize);
+  assert.ok(claimSize);
+  assert.ok(
+    Number(claimSize[1]) < Number(prizeSize[1]),
+    "Claim the next cover must stay quieter than Cover · #1",
+  );
+  assert.match(claimHop[1], /color:\s*var\(--mute\)/);
+  assert.match(claimHop[1], /font-weight:\s*400/);
+  assert.match(claimHop[1], /text-transform:\s*none/);
+  assert.doesNotMatch(occupiedCss, /\.week-open-sold \.flag a\[data-claim-cover\]/);
+  assert.doesNotMatch(occupiedOpen, /data-claim-after-read-seven/);
+  assert.doesNotMatch(occupiedOpen, /data-read-after-claim-seven/);
+  assert.doesNotMatch(occupiedOpen, /subscriber/i);
+  assert.doesNotMatch(occupiedOpen, /article list/i);
+
+  assert.equal(emptyCss, `<style>${FOLIO_CSS}`);
+  assert.match(emptyOpen, /class="week week-open-empty"/);
+  assert.match(emptyOpen, /class="empty-stand"/);
+  assert.match(emptyOpen, /Claim #1 for/);
+  assert.match(emptyOpen, /data-later-write="true"/);
+  assert.doesNotMatch(emptyOpen, /data-claim-after-listing="true"/);
+  assert.doesNotMatch(emptyOpen, /data-claim-cover="true"/);
+  assert.doesNotMatch(emptyOpen, /Claim the next cover/);
+  assert.doesNotMatch(emptyCss, /data-claim-after-listing/);
+  assert.doesNotMatch(emptyCss, /a\[data-claim-cover\]/);
+
+  assert.equal(closedEmptyCss, `<style>${FOLIO_CSS}`);
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.match(closedEmpty, /data-closed-empty-issue="true"/);
+  assert.doesNotMatch(closedEmpty, /data-claim-after-listing="true"/);
+  assert.doesNotMatch(closedEmpty, /data-claim-cover="true"/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
+
+  assert.equal(closedOccupiedCss, `<style>${FOLIO_CSS}`);
+  assert.match(closedOccupied, /Cover · #1/);
+  assert.match(closedOccupied, /data-frozen-cover="true"/);
+  assert.doesNotMatch(closedOccupied, /data-claim-after-listing="true"/);
+  assert.doesNotMatch(closedOccupied, /data-claim-cover="true"/);
+  assert.doesNotMatch(closedOccupied, /Claim the next cover/);
+  assert.doesNotMatch(closedOccupied, /id="claim"/);
 });
 
 

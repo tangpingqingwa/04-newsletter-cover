@@ -348,6 +348,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 47
 - **Acceptance:** Closed occupied `/issue/:date` has one `data-frozen-cover="true"` Cover · #1 hed (listing blurb) before later ranks and before `data-open-cover`. No `id="claim"`, no Claim the next cover, no `action="/listings"`. Later ranks drop `class="hed"`. Empty closed keeps `class="empty-issue"`. Occupied open `/` keeps `data-paid-name`, `data-cover-first`, and one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 49: first-time reader — occupied folio keeps one first click: Cover · #1; Claim stays after the listing
+- **Description:** On occupied open `/`, Cover · #1 is the prize and the first occupied click. The listing blurb (`data-cover-first`) is that hop. **Claim the next cover** / Claim #1 is a later write after the listing (`data-claim-after-listing`), not a same-weight rail in the masthead flag above Cover · #1. Still one `#claim` hop. Empty open `/` stays empty stand + Claim #1. Closed empty stays empty-issue. Closed occupied stays frozen. Unpaid stays off the folio. Do not add another named hop. Do not stamp `claim-after-read-N`. Do not re-ship closed-frozen, paid-name, empty later-write, FOLIO vs ISSUE, or unpaid-off. Do not recolor. Do not rebuild the folio. Stamp-only = REJECT.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 48
+- **Acceptance:** Occupied open `/` has Cover · #1 / `data-cover-first` before `data-claim-cover`. The existing `#claim` hop is one `data-claim-cover` / `data-claim-after-listing` after the listing, not in the masthead flag. Empty open `/` and closed archives have no `data-claim-after-listing`. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)

@@ -152,7 +152,7 @@ function renderFlag(board: BoardView): string {
     return `<p class="flag">This issue is closed. It is not the next issue’s cover.</p>`;
   }
   if (board.listings.length > 0) {
-    return `<p class="flag"><span data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true" data-read-after-claim-five="true" data-read-after-claim-six="true">This issue’s cover is sold.</span> Rank is the bid. <a href="#claim" data-claim-cover="true" data-claim-after-sold="true" data-claim-after-read-sold="true" data-claim-after-read-two="true" data-claim-after-read-three="true" data-claim-after-read-four="true" data-claim-after-read-five="true" data-claim-after-read-six="true">Claim the next cover.</a></p>`;
+    return `<p class="flag"><span data-sold-cover="true" data-read-after-claim-sold="true" data-read-after-claim-two="true" data-read-after-claim-three="true" data-read-after-claim-four="true" data-read-after-claim-five="true" data-read-after-claim-six="true">This issue’s cover is sold.</span> Rank is the bid.</p>`;
   }
   return `<p class="flag" data-empty-open-stand="true">The next issue’s cover goes to whoever pays the most. Rank is the bid.</p>`;
 }
@@ -310,6 +310,9 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
         </li>`;
 }
 
+/** Occupied Claim the next cover is a later write after Cover · #1, not a masthead rail. */
+const OCCUPIED_CLAIM_HOP = `      <p class="claim-after-listing" data-claim-after-listing="true"><a href="#claim" data-claim-cover="true" data-claim-after-sold="true" data-claim-after-read-sold="true" data-claim-after-read-two="true" data-claim-after-read-three="true" data-claim-after-read-four="true" data-claim-after-read-five="true" data-claim-after-read-six="true">Claim the next cover.</a></p>`;
+
 function renderRack(board: BoardView): string {
   if (board.listings.length === 0) {
     if (board.status === "closed") {
@@ -329,9 +332,14 @@ function renderRack(board: BoardView): string {
   const attrs = readCover
     ? ' aria-label="This issue’s cover" data-read-cover="true"'
     : ' aria-label="This issue’s cover" data-frozen-board="true"';
-  return `      <ol class="cover-rack"${attrs}>
+  const rack = `      <ol class="cover-rack"${attrs}>
 ${board.listings.map((listing) => renderPitch(listing, board.status === "open")).join("\n")}
       </ol>`;
+  if (!readCover) {
+    return rack;
+  }
+  return `${rack}
+${OCCUPIED_CLAIM_HOP}`;
 }
 
 function weekShell(board: BoardView): { open: string; close: string } {
@@ -712,10 +720,16 @@ button { cursor: pointer; }
 }
 .form-hint { margin: 0.55rem 0 0; text-align: center; font-size: 0.78rem; color: var(--mute); }
 .cover-rack + .claim,
+.claim-after-listing + .claim,
 .empty-stand + .claim,
 .cover-rack + .form-hint[data-frozen-issue] {
   border-top: 1px solid var(--rule);
   border-bottom: 0;
+}
+.week-open-empty .claim-after-listing,
+.week-closed-empty .claim-after-listing,
+.week-closed-occupied .claim-after-listing {
+  display: none;
 }
 .empty-stand {
   margin: 1.1rem 0 0;
@@ -834,46 +848,31 @@ export const OCCUPIED_CSS = /* css */ `
   letter-spacing: -0.08em;
   line-height: 0.86;
 }
-.week-open-sold .flag a[data-claim-after-sold] {
-  display: block;
-  margin-top: 0.55rem;
+.week-open-sold .claim-after-listing[data-claim-after-listing] {
+  margin: 0.7rem 0 0;
+  padding: 0.65rem 0 0;
+  border-top: 1px dashed var(--hair);
 }
-.week-open-sold .flag a[data-claim-after-read-sold] {
-  font-weight: 700;
-}
-.week-open-sold .flag a[data-claim-after-read-two] {
-  font-family: var(--display);
-  font-size: 1.2rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 1.15;
-}
-.week-open-sold .flag a[data-claim-after-read-three] {
-  font-size: 1.42rem;
-  letter-spacing: 0.06em;
-  line-height: 1.08;
-  margin-top: 0.75rem;
-}
-.week-open-sold .flag a[data-claim-after-read-four] {
-  font-size: 1.72rem;
-  letter-spacing: 0.08em;
-  line-height: 1.02;
-  margin-top: 0.95rem;
-}
-.week-open-sold .flag a[data-claim-after-read-five] {
-  font-size: 2.02rem;
-  letter-spacing: 0.1em;
-  line-height: 0.96;
-  margin-top: 1.15rem;
-}
-.week-open-sold .flag a[data-claim-after-read-six] {
-  font-size: 2.32rem;
-  letter-spacing: 0.12em;
-  line-height: 0.9;
-  margin-top: 1.35rem;
+.week-open-sold .claim-after-listing a[data-claim-after-sold],
+.week-open-sold .claim-after-listing a[data-claim-after-read-sold],
+.week-open-sold .claim-after-listing a[data-claim-after-read-two],
+.week-open-sold .claim-after-listing a[data-claim-after-read-three],
+.week-open-sold .claim-after-listing a[data-claim-after-read-four],
+.week-open-sold .claim-after-listing a[data-claim-after-read-five],
+.week-open-sold .claim-after-listing a[data-claim-after-read-six] {
+  display: inline;
+  margin-top: 0;
+  font-family: var(--serif);
+  font-size: 0.92rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.45;
+  color: var(--mute);
 }
 .week-open-empty[data-empty-open-stand] [data-sold-cover],
 .week-open-empty[data-empty-open-stand] [data-claim-cover],
+.week-open-empty[data-empty-open-stand] [data-claim-after-listing],
 .week-open-empty[data-empty-open-stand] [data-named-prize],
 .week-open-empty[data-empty-open-stand] [data-later-fact],
 .week-open-empty[data-empty-open-stand] [data-cover-first],
@@ -881,6 +880,7 @@ export const OCCUPIED_CSS = /* css */ `
 .week-open-empty[data-empty-open-stand] [data-later-listing],
 .week-open-empty .cover-rack,
 .week-open-empty .cover-line,
+.week-open-empty .claim-after-listing,
 .week-open-sold .empty-stand,
 .week-open-sold .empty-issue {
   display: none;
@@ -992,9 +992,9 @@ export const OCCUPIED_CSS = /* css */ `
   font-size: 0.88rem;
   color: var(--mute);
 }
-.week-open-sold .flag a[data-claim-cover] {
-  display: block;
-  margin-top: 0.45rem;
+.week-open-sold .claim-after-listing a[data-claim-cover] {
+  display: inline;
+  margin-top: 0;
   font-family: var(--serif);
   font-size: 0.92rem;
   font-weight: 400;
@@ -1002,6 +1002,8 @@ export const OCCUPIED_CSS = /* css */ `
   text-transform: none;
   line-height: 1.45;
   color: var(--mute);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 `;
 

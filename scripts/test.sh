@@ -303,18 +303,24 @@ fi
 
 echo "== first-time sponsor: claim the next cover on occupied open / =="
 grep -qE '^### PR 18: first-time sponsor' BUILD.md || fail "BUILD.md missing ### PR 18: first-time sponsor"
-grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "occupied open flag must mark data-claim-cover"
-grep -q 'href="#claim"' src/views/skin.ts || fail "occupied open flag must hop to #claim"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "occupied open must mark data-claim-cover"
+grep -q 'href="#claim"' src/views/skin.ts || fail "occupied open must hop to #claim"
 grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop must say Claim the next cover"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-claim-cover="true"/ { found = 1 }
-  END { exit(found && saw_closed ? 0 : 1) }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_rack && /data-read-cover="true"/ { saw_cover = 1 }
+  in_rack && /OCCUPIED_CLAIM_HOP/ { saw_call = 1 }
+  in_hop && /data-claim-after-listing="true"/ { saw_after = 1 }
+  in_hop && /data-claim-cover="true"/ { found = 1 }
+  END { exit(found && saw_closed && saw_cover && saw_call && saw_after ? 0 : 1) }
 ' src/views/skin.ts; then
-  fail "claim hop must be occupied-open only, after the closed-archive flag"
+  fail "claim hop must be occupied-open only, after Cover · #1"
 fi
 grep -q 'data-claim-cover="true"' tests/product-ui.test.ts \
   || fail "tests/product-ui.test.ts must cover data-claim-cover"
@@ -449,13 +455,17 @@ if ! awk '
   fail "claim-after-stand hop must sit on the empty stand after the stand read"
 fi
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-claim-cover="true"/ { found = 1 }
-  END { exit(found ? 0 : 1) }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_rack && /data-read-cover="true"/ { saw_cover = 1 }
+  in_rack && /OCCUPIED_CLAIM_HOP/ { saw_call = 1 }
+  in_hop && /data-claim-after-listing="true"/ { saw_after = 1 }
+  in_hop && /data-claim-cover="true"/ { found = 1 }
+  END { exit(found && saw_cover && saw_call && saw_after ? 0 : 1) }
 ' src/views/skin.ts; then
-  fail "occupied Claim the next cover hop must stay on the flag"
+  fail "occupied Claim the next cover hop must stay after Cover · #1"
 fi
 grep -q 'data-claim-after-stand="true"' tests/product-ui.test.ts \
   || fail "tests/product-ui.test.ts must cover data-claim-after-stand"
@@ -481,12 +491,16 @@ grep -q 'data-read-stand="true"' src/views/skin.ts || fail "empty-stand-first mu
 grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-stand hop must stay"
 grep -q 'The next issue' src/views/skin.ts || fail "empty open board must keep the next-issue pitch"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-claim-cover="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_hop && saw_sold && /data-claim-cover="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "sold-cover mark must sit on the occupied-open flag before Claim the next cover"
@@ -525,15 +539,19 @@ grep -q 'data-read-cover="true"' src/views/skin.ts || fail "sold-cover-first mus
 grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 prize line must stay"
 grep -q 'data-read-stand="true"' src/views/skin.ts || fail "empty-stand-first must stay"
 grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-stand hop must stay"
-grep -q 'a\[data-claim-after-sold\]' src/views/skin.ts || fail "occupied claim hop must concentrate on the existing flag link"
+grep -q 'a\[data-claim-after-sold\]' src/views/skin.ts || fail "occupied claim hop must concentrate on the existing #claim hop after the listing"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_hop && saw_sold && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-claim-after-sold must concentrate the existing occupied-open Claim the next cover hop after the sold-cover line"
@@ -542,7 +560,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "occupied claim after sold must not add another #claim hop in the flag"
 fi
@@ -584,14 +602,18 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q '\[data-read-after-claim-sold\]' src/views/skin.ts \
   || fail "occupied sold-cover read must concentrate on the existing sold-cover span"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_hop && saw_read && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-read-after-claim-sold must concentrate the existing occupied-open sold-cover line before Claim the next cover"
@@ -600,7 +622,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "sold-cover read after claim must not add another #claim hop in the flag"
 fi
@@ -641,17 +663,21 @@ grep -q 'data-cover-prize-line="true"' src/views/skin.ts || fail "Cover · #1 pr
 grep -q 'data-read-stand="true"' src/views/skin.ts || fail "empty-stand-first must stay"
 grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-stand hop must stay"
 grep -q 'a\[data-claim-after-read-sold\]' src/views/skin.ts \
-  || fail "occupied claim hop must concentrate on the existing flag link after the sold-cover read"
+  || fail "occupied claim hop must concentrate on the existing #claim hop after the listing after the sold-cover read"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
-  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_hop && saw_read && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_hop && saw_after_sold && /data-claim-after-read-sold="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-claim-after-read-sold must concentrate the existing occupied-open Claim the next cover hop after the sold-cover read"
@@ -660,7 +686,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "claim after the sold-cover read must not add another #claim hop in the flag"
 fi
@@ -704,16 +730,20 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q '\[data-read-after-claim-two\]' src/views/skin.ts \
   || fail "occupied sold-cover read must re-concentrate on the existing sold-cover span"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
-  in_fn && saw_two && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
-  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_flag && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
+  in_hop && saw_two && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_hop && saw_after_sold && /data-claim-after-read-sold="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-read-after-claim-two must re-concentrate the existing occupied-open sold-cover line before Claim the next cover"
@@ -722,7 +752,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "sold-cover read after claim is re-concentrated must not add another #claim hop in the flag"
 fi
@@ -767,17 +797,21 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q 'a\[data-claim-after-read-two\]' src/views/skin.ts \
   || fail "occupied claim hop must re-concentrate on the existing flag link after the sold-cover read"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
-  in_fn && saw_two && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
-  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
-  in_fn && saw_after_read && /data-claim-after-read-two="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_flag && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
+  in_hop && saw_two && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_hop && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
+  in_hop && saw_after_read && /data-claim-after-read-two="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-claim-after-read-two must re-concentrate the existing occupied-open Claim the next cover hop after the sold-cover read"
@@ -786,7 +820,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "claim after the sold-cover read is re-concentrated must not add another #claim hop in the flag"
 fi
@@ -832,18 +866,22 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q '\[data-read-after-claim-three\]' src/views/skin.ts \
   || fail "occupied sold-cover read must concentrate again on the existing sold-cover span"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
-  in_fn && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
-  in_fn && saw_three && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
-  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
-  in_fn && saw_after_read && /data-claim-after-read-two="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_flag && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
+  in_flag && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
+  in_hop && saw_three && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_hop && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
+  in_hop && saw_after_read && /data-claim-after-read-two="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-read-after-claim-three must concentrate the existing occupied-open sold-cover line before Claim the next cover"
@@ -852,7 +890,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "sold-cover read after claim is re-concentrated again must not add another #claim hop in the flag"
 fi
@@ -899,19 +937,23 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q 'a\[data-claim-after-read-three\]' src/views/skin.ts \
   || fail "occupied claim hop must concentrate again on the existing flag link after the sold-cover read"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
-  in_fn && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
-  in_fn && saw_three && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
-  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
-  in_fn && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
-  in_fn && saw_after_two && /data-claim-after-read-three="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_flag && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
+  in_flag && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
+  in_hop && saw_three && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_hop && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
+  in_hop && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
+  in_hop && saw_after_two && /data-claim-after-read-three="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-claim-after-read-three must concentrate the existing occupied-open Claim the next cover hop after the sold-cover read"
@@ -920,7 +962,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "claim after the sold-cover read is re-concentrated again must not add another #claim hop in the flag"
 fi
@@ -968,20 +1010,24 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q '\[data-read-after-claim-four\]' src/views/skin.ts \
   || fail "occupied sold-cover read must concentrate a fourth time on the existing sold-cover span"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
-  in_fn && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
-  in_fn && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
-  in_fn && saw_four && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
-  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
-  in_fn && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
-  in_fn && saw_after_two && /data-claim-after-read-three="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_flag && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
+  in_flag && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
+  in_flag && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
+  in_hop && saw_four && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_hop && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
+  in_hop && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
+  in_hop && saw_after_two && /data-claim-after-read-three="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-read-after-claim-four must concentrate the existing occupied-open sold-cover line before Claim the next cover"
@@ -990,7 +1036,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "sold-cover read after claim is re-concentrated a fourth time must not add another #claim hop in the flag"
 fi
@@ -1039,21 +1085,25 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q 'a\[data-claim-after-read-four\]' src/views/skin.ts \
   || fail "occupied claim hop must concentrate a fourth time on the existing flag link after the sold-cover read"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
-  in_fn && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
-  in_fn && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
-  in_fn && saw_four && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
-  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
-  in_fn && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
-  in_fn && saw_after_two && /data-claim-after-read-three="true"/ { saw_after_three = 1 }
-  in_fn && saw_after_three && /data-claim-after-read-four="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_flag && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
+  in_flag && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
+  in_flag && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
+  in_hop && saw_four && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_hop && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
+  in_hop && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
+  in_hop && saw_after_two && /data-claim-after-read-three="true"/ { saw_after_three = 1 }
+  in_hop && saw_after_three && /data-claim-after-read-four="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-claim-after-read-four must concentrate the existing occupied-open Claim the next cover hop after the sold-cover read"
@@ -1062,7 +1112,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "claim after the sold-cover read is re-concentrated a fourth time must not add another #claim hop in the flag"
 fi
@@ -1112,22 +1162,26 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q '\[data-read-after-claim-five\]' src/views/skin.ts \
   || fail "occupied sold-cover read must concentrate a fifth time on the existing sold-cover span"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
-  in_fn && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
-  in_fn && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
-  in_fn && saw_four && /data-read-after-claim-five="true"/ { saw_five = 1 }
-  in_fn && saw_five && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
-  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
-  in_fn && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
-  in_fn && saw_after_two && /data-claim-after-read-three="true"/ { saw_after_three = 1 }
-  in_fn && saw_after_three && /data-claim-after-read-four="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_flag && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
+  in_flag && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
+  in_flag && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
+  in_flag && saw_four && /data-read-after-claim-five="true"/ { saw_five = 1 }
+  in_hop && saw_five && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_hop && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
+  in_hop && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
+  in_hop && saw_after_two && /data-claim-after-read-three="true"/ { saw_after_three = 1 }
+  in_hop && saw_after_three && /data-claim-after-read-four="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-read-after-claim-five must concentrate the existing occupied-open sold-cover line before Claim the next cover"
@@ -1136,7 +1190,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "sold-cover read after claim is re-concentrated a fifth time must not add another #claim hop in the flag"
 fi
@@ -1187,23 +1241,27 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q 'a\[data-claim-after-read-five\]' src/views/skin.ts \
   || fail "occupied claim hop must concentrate a fifth time on the existing flag link after the sold-cover read"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
-  in_fn && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
-  in_fn && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
-  in_fn && saw_four && /data-read-after-claim-five="true"/ { saw_five = 1 }
-  in_fn && saw_five && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
-  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
-  in_fn && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
-  in_fn && saw_after_two && /data-claim-after-read-three="true"/ { saw_after_three = 1 }
-  in_fn && saw_after_three && /data-claim-after-read-four="true"/ { saw_after_four = 1 }
-  in_fn && saw_after_four && /data-claim-after-read-five="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_flag && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
+  in_flag && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
+  in_flag && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
+  in_flag && saw_four && /data-read-after-claim-five="true"/ { saw_five = 1 }
+  in_hop && saw_five && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_hop && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
+  in_hop && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
+  in_hop && saw_after_two && /data-claim-after-read-three="true"/ { saw_after_three = 1 }
+  in_hop && saw_after_three && /data-claim-after-read-four="true"/ { saw_after_four = 1 }
+  in_hop && saw_after_four && /data-claim-after-read-five="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-claim-after-read-five must concentrate the existing occupied-open Claim the next cover hop after the sold-cover read"
@@ -1212,7 +1270,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "claim after the sold-cover read is re-concentrated a fifth time must not add another #claim hop in the flag"
 fi
@@ -1264,24 +1322,28 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q '\[data-read-after-claim-six\]' src/views/skin.ts \
   || fail "occupied sold-cover read must concentrate a sixth time on the existing sold-cover span"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
-  in_fn && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
-  in_fn && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
-  in_fn && saw_four && /data-read-after-claim-five="true"/ { saw_five = 1 }
-  in_fn && saw_five && /data-read-after-claim-six="true"/ { saw_six = 1 }
-  in_fn && saw_six && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
-  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
-  in_fn && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
-  in_fn && saw_after_two && /data-claim-after-read-three="true"/ { saw_after_three = 1 }
-  in_fn && saw_after_three && /data-claim-after-read-four="true"/ { saw_after_four = 1 }
-  in_fn && saw_after_four && /data-claim-after-read-five="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_flag && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
+  in_flag && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
+  in_flag && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
+  in_flag && saw_four && /data-read-after-claim-five="true"/ { saw_five = 1 }
+  in_flag && saw_five && /data-read-after-claim-six="true"/ { saw_six = 1 }
+  in_hop && saw_six && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_hop && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
+  in_hop && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
+  in_hop && saw_after_two && /data-claim-after-read-three="true"/ { saw_after_three = 1 }
+  in_hop && saw_after_three && /data-claim-after-read-four="true"/ { saw_after_four = 1 }
+  in_hop && saw_after_four && /data-claim-after-read-five="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-read-after-claim-six must concentrate the existing occupied-open sold-cover line before Claim the next cover"
@@ -1290,7 +1352,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "sold-cover read after claim is re-concentrated a sixth time must not add another #claim hop in the flag"
 fi
@@ -1343,25 +1405,29 @@ grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-s
 grep -q 'a\[data-claim-after-read-six\]' src/views/skin.ts \
   || fail "occupied claim hop must concentrate a sixth time on the existing flag link after the sold-cover read"
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
-  in_fn && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
-  in_fn && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
-  in_fn && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
-  in_fn && saw_four && /data-read-after-claim-five="true"/ { saw_five = 1 }
-  in_fn && saw_five && /data-read-after-claim-six="true"/ { saw_six = 1 }
-  in_fn && saw_six && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
-  in_fn && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
-  in_fn && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
-  in_fn && saw_after_two && /data-claim-after-read-three="true"/ { saw_after_three = 1 }
-  in_fn && saw_after_three && /data-claim-after-read-four="true"/ { saw_after_four = 1 }
-  in_fn && saw_after_four && /data-claim-after-read-five="true"/ { saw_after_five = 1 }
-  in_fn && saw_after_five && /data-claim-after-read-six="true"/ { found = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_flag && saw_sold && /data-read-after-claim-sold="true"/ { saw_read = 1 }
+  in_flag && saw_read && /data-read-after-claim-two="true"/ { saw_two = 1 }
+  in_flag && saw_two && /data-read-after-claim-three="true"/ { saw_three = 1 }
+  in_flag && saw_three && /data-read-after-claim-four="true"/ { saw_four = 1 }
+  in_flag && saw_four && /data-read-after-claim-five="true"/ { saw_five = 1 }
+  in_flag && saw_five && /data-read-after-claim-six="true"/ { saw_six = 1 }
+  in_hop && saw_six && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && saw_claim && /data-claim-after-sold="true"/ { saw_after_sold = 1 }
+  in_hop && saw_after_sold && /data-claim-after-read-sold="true"/ { saw_after_read = 1 }
+  in_hop && saw_after_read && /data-claim-after-read-two="true"/ { saw_after_two = 1 }
+  in_hop && saw_after_two && /data-claim-after-read-three="true"/ { saw_after_three = 1 }
+  in_hop && saw_after_three && /data-claim-after-read-four="true"/ { saw_after_four = 1 }
+  in_hop && saw_after_four && /data-claim-after-read-five="true"/ { saw_after_five = 1 }
+  in_hop && saw_after_five && /data-claim-after-read-six="true"/ { found = 1 }
   END { exit(found && saw_closed ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "data-claim-after-read-six must concentrate the existing occupied-open Claim the next cover hop after the sold-cover read"
@@ -1370,7 +1436,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "claim after the sold-cover read is re-concentrated a sixth time must not add another #claim hop in the flag"
 fi
@@ -1429,7 +1495,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "prize before price must not add another #claim hop in the flag"
 fi
@@ -1473,7 +1539,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "later-rank quiet must not add another #claim hop in the flag"
 fi
@@ -1541,7 +1607,7 @@ if ! awk '
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
   in_fn && /href="\/"/ { open_hops++ }
-  END { exit(hops == 1 && open_hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 && open_hops == 1 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "closed empty-issue must not add another named hop"
 fi
@@ -1610,7 +1676,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "named prize must not add another #claim hop in the flag"
 fi
@@ -1662,16 +1728,20 @@ if ! awk '
   fail "data-empty-open-stand must sit on the empty open stand; empty-issue stays closed-archive only"
 fi
 if ! awk '
-  /function renderFlag/ { in_fn = 1 }
-  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
-  in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && /listings.length > 0/ { saw_occupied = 1 }
-  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
-  in_fn && saw_sold && /data-claim-cover="true"/ { saw_claim = 1 }
-  in_fn && /The next issue/ { saw_next = 1 }
-  in_fn && saw_next && /data-empty-open-stand="true"/ { found = 1 }
-  in_fn && saw_next && /data-sold-cover="true"/ { leaked = 1 }
-  in_fn && saw_next && /data-claim-cover="true"/ { leaked = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_flag && /board.status === "closed"/ { saw_closed = 1 }
+  in_flag && /listings.length > 0/ { saw_occupied = 1 }
+  in_flag && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_hop && saw_sold && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_flag && /The next issue/ { saw_next = 1 }
+  in_flag && saw_next && /data-empty-open-stand="true"/ { found = 1 }
+  in_flag && saw_next && /data-sold-cover="true"/ { leaked = 1 }
+  in_flag && saw_next && /data-claim-cover="true"/ { leaked = 1 }
   END { exit(leaked ? 1 : (found && saw_closed && saw_claim ? 0 : 1)) }
 ' src/views/skin.ts; then
   fail "empty open flag must stamp data-empty-open-stand and must not leak sold-cover"
@@ -1688,7 +1758,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "empty open stand must not add another #claim hop in the flag"
 fi
@@ -1757,7 +1827,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "empty-open certainty must not add another #claim hop in the flag"
 fi
@@ -1832,7 +1902,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "prize before \$bid must not add another #claim hop in the flag"
 fi
@@ -1897,7 +1967,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "empty-open later-fact isolation must not add another #claim hop in the flag"
 fi
@@ -1938,14 +2008,14 @@ grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
   || fail "empty open / closed archives must still ship FOLIO_CSS only"
 grep -F -q '.week-open-sold .cover-line[data-named-prize] .hed a[data-cover-first]' src/views/skin.ts \
   || fail "Cover · #1 prize click must be the named hed"
-grep -F -q '.week-open-sold .flag a[data-claim-cover]' src/views/skin.ts \
+grep -F -q '.week-open-sold .claim-after-listing a[data-claim-cover]' src/views/skin.ts \
   || fail "Claim the next cover must stay quieter than Cover · #1"
 grep -F -q '.week-open-empty[data-empty-open-stand] [data-cover-first]' src/views/skin.ts \
   || fail "empty open shell must hide leaked cover-first chrome"
 if grep -E '^\.cover-line\[data-named-prize\] \.hed a\[data-cover-first\]' src/views/skin.ts; then
   fail "cover-first CSS must not apply outside week-open-sold"
 fi
-if grep -E '^\.flag a\[data-claim-cover\]' src/views/skin.ts; then
+if grep -E '^\.flag a\[data-claim-cover\]|^\.claim-after-listing a\[data-claim-cover\]' src/views/skin.ts; then
   fail "claim-cover quiet CSS must not apply outside week-open-sold"
 fi
 if ! awk '
@@ -1976,7 +2046,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "cover-first prize must not add another #claim hop in the flag"
 fi
@@ -1991,7 +2061,7 @@ const { readFileSync } = require("fs");
 const src = readFileSync("src/views/skin.ts", "utf8");
 const css = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
 const hed = css.match(/\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/);
-const claim = css.match(/\.week-open-sold \.flag a\[data-claim-cover\] \{([^}]*)\}/);
+const claim = css.match(/\.week-open-sold \.claim-after-listing a\[data-claim-cover\] \{([^}]*)\}/);
 if (!hed || !claim) {
   console.error("missing occupied Cover · #1 or Claim the next cover CSS");
   process.exit(1);
@@ -2061,7 +2131,7 @@ grep -F -q '.week-open-empty #claim.empty-claim-first[data-empty-claim-first] .c
   || fail "empty open Claim #1 first-click CSS must concentrate the claim hed"
 grep -F -q '.week-open-sold .cover-line[data-named-prize] .hed a[data-cover-first]' src/views/skin.ts \
   || fail "Cover · #1 prize click must stay the named hed"
-grep -F -q '.week-open-sold .flag a[data-claim-cover]' src/views/skin.ts \
+grep -F -q '.week-open-sold .claim-after-listing a[data-claim-cover]' src/views/skin.ts \
   || fail "Claim the next cover must stay quieter than Cover · #1"
 if grep -E '^\.cover-identity\[data-later-write\]' src/views/skin.ts; then
   fail "later-write CSS must not apply outside week-open-empty"
@@ -2105,7 +2175,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "empty-open later-write must not add another #claim hop in the flag"
 fi
@@ -2117,7 +2187,7 @@ const { readFileSync } = require("fs");
 const src = readFileSync("src/views/skin.ts", "utf8");
 const occupied = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
 const hed = occupied.match(/\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/);
-const claim = occupied.match(/\.week-open-sold \.flag a\[data-claim-cover\] \{([^}]*)\}/);
+const claim = occupied.match(/\.week-open-sold \.claim-after-listing a\[data-claim-cover\] \{([^}]*)\}/);
 if (!hed || !claim) {
   console.error("missing occupied Cover · #1 or Claim the next cover CSS");
   process.exit(1);
@@ -2191,7 +2261,7 @@ grep -F -q '.week-open-empty[data-empty-open-stand] [data-paid-name]' src/views/
   || fail "empty open shell must hide leaked paid-name chrome"
 grep -F -q '.week-open-sold .cover-line[data-named-prize] .hed a[data-cover-first]' src/views/skin.ts \
   || fail "Cover · #1 prize click must stay the named hed"
-grep -F -q '.week-open-sold .flag a[data-claim-cover]' src/views/skin.ts \
+grep -F -q '.week-open-sold .claim-after-listing a[data-claim-cover]' src/views/skin.ts \
   || fail "Claim the next cover must stay quieter than Cover · #1"
 if grep -E '^\.cover-line\[data-named-prize\]\[data-paid-name\]' src/views/skin.ts; then
   fail "paid-name CSS must not apply outside week-open-sold"
@@ -2248,7 +2318,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "paid-name identity must not add another #claim hop in the flag"
 fi
@@ -2263,7 +2333,7 @@ const { readFileSync } = require("fs");
 const src = readFileSync("src/views/skin.ts", "utf8");
 const occupied = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
 const hed = occupied.match(/\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/);
-const claim = occupied.match(/\.week-open-sold \.flag a\[data-claim-cover\] \{([^}]*)\}/);
+const claim = occupied.match(/\.week-open-sold \.claim-after-listing a\[data-claim-cover\] \{([^}]*)\}/);
 const slot = occupied.match(/\.week-open-sold \.cover-line\[data-later-rank\] \.slot \{([^}]*)\}/);
 if (!hed || !claim || !slot) {
   console.error("missing occupied Cover · #1, Claim the next cover, or later-rank slot CSS");
@@ -2414,7 +2484,7 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /href="#claim"/ { hops++ }
-  END { exit(hops == 1 ? 0 : 1) }
+  END { exit(hops == 0 ? 0 : 1) }
 ' src/views/skin.ts; then
   fail "closed occupied freeze must not add another #claim hop in the flag"
 fi
@@ -2480,6 +2550,126 @@ grep -q 'doesNotMatch(twoSlice.slice(0, 800), /class="hed"/)' tests/product-ui.t
   || fail "later ranks on closed occupied / must not wear class=hed"
 if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
   fail "closed occupied freeze UX must not invent subscribers, open rates, or an article list"
+fi
+
+echo "== first-time reader: occupied folio keeps one first click — Cover · #1; Claim stays after the listing =="
+grep -qE '^### PR 49: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 49: first-time reader"
+grep -q 'data-claim-after-listing="true"' src/views/skin.ts || fail "occupied Claim the next cover must mark data-claim-after-listing"
+grep -q 'class="claim-after-listing"' src/views/skin.ts || fail "occupied Claim the next cover must sit after the listing"
+grep -q 'data-cover-first="true"' src/views/skin.ts || fail "occupied Cover · #1 prize click must stay"
+grep -q 'Cover · #1' src/views/skin.ts || fail "occupied cover must still say Cover · #1"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'data-paid-name="true"' src/views/skin.ts || fail "do not re-ship paid-name identity"
+grep -q 'data-frozen-cover="true"' src/views/skin.ts || fail "do not re-ship closed occupied freeze"
+grep -q 'data-later-write="true"' src/views/skin.ts || fail "do not re-ship empty later-write"
+grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
+  || fail "do not re-ship FOLIO vs ISSUE"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "empty open stand must stay"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "closed empty archive must keep class empty-issue"
+grep -F -q '.week-open-sold .claim-after-listing[data-claim-after-listing]' src/views/skin.ts \
+  || fail "Claim the next cover must compose after Cover · #1, not above the rack"
+grep -F -q '.week-open-sold .claim-after-listing a[data-claim-cover]' src/views/skin.ts \
+  || fail "Claim the next cover must stay quieter than Cover · #1 after the listing"
+grep -F -q '.week-open-sold .cover-line[data-named-prize] .hed a[data-cover-first]' src/views/skin.ts \
+  || fail "Cover · #1 prize click must stay the named hed"
+grep -F -q '.week-open-empty[data-empty-open-stand] [data-claim-after-listing]' src/views/skin.ts \
+  || fail "empty open shell must hide leaked claim-after-listing chrome"
+if grep -E '^\.claim-after-listing\[|^\.claim-after-listing a\[' src/views/skin.ts; then
+  fail "claim-after-listing CSS must not apply outside week-open-sold"
+fi
+if grep -E '^\.flag a\[data-claim-cover\]' src/views/skin.ts; then
+  fail "Claim the next cover must not stay a masthead-flag hop"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  in_fn && /data-claim-cover="true"/ { leaked = 1 }
+  END { exit(hops == 0 && leaked != 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "occupied Claim the next cover must leave the masthead flag"
+fi
+if ! awk '
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_fn = 1 }
+  in_fn && /^function / && !/renderRack/ { in_fn = 0 }
+  /function renderPitch/ { in_pitch = 1 }
+  in_pitch && /^function / && !/renderPitch/ { in_pitch = 0 }
+  in_fn && /data-read-cover="true"/ { saw_cover = 1 }
+  in_fn && /OCCUPIED_CLAIM_HOP/ { saw_call = 1 }
+  in_pitch && /data-cover-first="true"/ { saw_first = 1 }
+  in_hop && /data-claim-after-listing="true"/ { saw_after = 1 }
+  in_hop && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_hop && /href="#claim"/ { hops++ }
+  END { exit(saw_cover && saw_first && saw_after && saw_claim && saw_call && hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "occupied Cover · #1 must be the first occupied click; Claim the next cover stays after the listing"
+fi
+if ! awk '
+  /const OCCUPIED_CLAIM_HOP/ { in_hop = 1 }
+  in_hop && /^function / && !/OCCUPIED_CLAIM_HOP/ { in_hop = 0 }
+  /function renderRack/ { in_fn = 1 }
+  in_fn && /^function / && !/renderRack/ { in_fn = 0 }
+  in_hop && /href="#claim"/ { hops++ }
+  in_fn && /data-claim-cover="true"/ { leaked = 1 }
+  END { exit(hops == 1 && leaked != 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "cover-before-claim must not add another #claim hop"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "cover-before-claim must not stamp claim-after-read-N / read-after-claim-N"
+fi
+if awk '/^export const FOLIO_CSS/{p=1} p{print} /^export const OCCUPIED_CSS/{exit}' src/views/skin.ts \
+  | grep -Eq 'data-claim-after-listing|a\[data-claim-cover\]'; then
+  fail "FOLIO_CSS must not swallow occupied claim-after-listing chrome"
+fi
+node -e '
+const { readFileSync } = require("fs");
+const src = readFileSync("src/views/skin.ts", "utf8");
+const occupied = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
+const hed = occupied.match(/\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/);
+const claim = occupied.match(/\.week-open-sold \.claim-after-listing a\[data-claim-cover\] \{([^}]*)\}/);
+if (!hed || !claim) {
+  console.error("missing occupied Cover · #1 or Claim the next cover CSS");
+  process.exit(1);
+}
+const hedSize = hed[1].match(/font-size:\s*([\d.]+)rem/);
+const claimSize = claim[1].match(/font-size:\s*([\d.]+)rem/);
+if (!hedSize || !claimSize) {
+  console.error("missing font-size on Cover · #1 or Claim the next cover");
+  process.exit(1);
+}
+if (Number(claimSize[1]) >= Number(hedSize[1])) {
+  console.error("Claim the next cover is not quieter than Cover · #1");
+  process.exit(1);
+}
+if (hed[1].includes("font-size: 1.55rem") === false) {
+  console.error("do not re-ship Cover-first size");
+  process.exit(1);
+}
+if (!claim[1].includes("color: var(--mute)")) {
+  console.error("Claim the next cover must use mute ink");
+  process.exit(1);
+}
+if (occupied.includes(".week-open-sold .flag a[data-claim-cover]")) {
+  console.error("Claim the next cover must not stay a masthead-flag hop");
+  process.exit(1);
+}
+' || fail "occupied Cover · #1 must stay the first click; Claim the next cover stays after the listing"
+grep -q 'data-claim-after-listing="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-claim-after-listing"
+grep -q 'occupied open / keeps Cover · #1 the first click' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing occupied Cover · #1 first-click case"
+grep -q 'doesNotMatch(emptyOpen, /data-claim-after-listing="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-claim-after-listing"
+grep -q 'doesNotMatch(closedEmpty, /data-claim-after-listing="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-claim-after-listing"
+grep -q 'doesNotMatch(closedOccupied, /data-claim-after-listing="true"/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not stamp data-claim-after-listing"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "cover-before-claim UX must not invent subscribers, open rates, or an article list"
 fi
 
 echo "== live-smoke stays operator-only =="
