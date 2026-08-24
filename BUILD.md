@@ -336,6 +336,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 45
 - **Acceptance:** Empty open `/` has one `data-first-click="claim"` on Claim #1, then Outbid, then one `data-later-write="true"` cover identity after “Then the cover URL”. Empty open has no `class="bid-row"`. Occupied open `/` keeps sponsor URL on the bid-row with Outbid, `data-cover-first`, and quieter Claim the next cover. Closed empty archives keep `class="empty-issue"` and have no later-write chrome. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 47: first-time reader — occupied Cover · #1 identity is the paid name
+- **Description:** On an occupied open `/`, Cover · #1 is the paid name (`data-paid-name`). Later ranks cannot wear that identity: they drop `class="hed"` and sit as quieter host/path + slot. The occupied claim rail cannot wear the cover pitch. Host/path stays a later fact. Empty open `/` stays empty stand + Claim #1. Closed empty archives stay empty-issue. Occupied Cover · #1 stays the first occupied click. Do not add another named hop. Do not stamp `*-after-*-N`. Do not re-ship FOLIO vs ISSUE, Cover-first size, or empty later-write. Do not recolor. Do not rebuild the folio. Stamp-only mute of later names = REJECT. Not a 24h lock on #1.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 46
+- **Acceptance:** Occupied open `/` has one `data-paid-name="true"` on rank 1. Cover · #1 hed is the listing blurb; ranks 2+ have no `class="hed"` and no `data-paid-name`. Occupied claim uses `data-later-listing` / “One-line listing”, not the cover-pitch placeholder. Empty open `/` and closed archives have no `data-paid-name`. `data-read-cover`, `data-claim-cover`, `data-cover-prize-line`, `data-prize-before-price`, `data-named-prize`, `data-later-fact`, `data-later-rank`, and `data-cover-first` stay. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
