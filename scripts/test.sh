@@ -1615,6 +1615,86 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "named-prize UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time sponsor: empty open stand stays honest =="
+grep -qE '^### PR 41: first-time sponsor' BUILD.md || fail "BUILD.md missing ### PR 41: first-time sponsor"
+grep -q 'data-empty-open-stand="true"' src/views/skin.ts || fail "empty open stand must mark data-empty-open-stand"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "empty open stand must keep class empty-stand"
+grep -q 'Claim #1 for' src/views/skin.ts || fail "empty open / must keep Claim #1"
+grep -q 'This issue’s cover is still open' src/views/skin.ts \
+  || fail "empty open stand must still say this issue’s cover is still open"
+grep -q 'data-read-stand="true"' src/views/skin.ts || fail "empty-stand-first must stay"
+grep -q 'data-claim-after-stand="true"' src/views/skin.ts || fail "claim-after-stand hop must stay"
+grep -q 'data-cover-prize="true"' src/views/skin.ts || fail "empty open \$5 prize mark must stay"
+grep -q 'data-sold-cover="true"' src/views/skin.ts || fail "occupied sold-cover name must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'data-claim-cover="true"' src/views/skin.ts || fail "Claim the next cover hop must stay"
+grep -q 'data-named-prize="true"' src/views/skin.ts || fail "occupied named prize must stay"
+grep -q 'data-closed-empty-issue="true"' src/views/skin.ts || fail "closed empty-issue must stay"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "closed empty archive must keep class empty-issue"
+if ! awk '
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /board.status === "closed"/ { saw_closed = 1 }
+  in_rack && saw_closed && /class="empty-issue"/ { saw_closed_slab = 1 }
+  in_rack && /class="empty-stand"/ { saw_open_stand = 1 }
+  in_rack && saw_open_stand && /data-read-stand="true"/ { saw_read = 1 }
+  in_rack && saw_read && /data-empty-open-stand="true"/ { found = 1 }
+  END { exit(found && saw_closed_slab ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "data-empty-open-stand must sit on the empty open stand; empty-issue stays closed-archive only"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /board.status === "closed"/ { saw_closed = 1 }
+  in_fn && /listings.length > 0/ { saw_occupied = 1 }
+  in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
+  in_fn && saw_sold && /data-claim-cover="true"/ { saw_claim = 1 }
+  in_fn && /The next issue/ { saw_next = 1 }
+  in_fn && saw_next && /data-empty-open-stand="true"/ { found = 1 }
+  in_fn && saw_next && /data-sold-cover/ { leaked = 1 }
+  END { exit(leaked ? 1 : (found && saw_closed && saw_claim ? 0 : 1)) }
+' src/views/skin.ts; then
+  fail "empty open flag must stamp data-empty-open-stand and must not leak sold-cover"
+fi
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /data-named-prize="true"/ { saw = 1 }
+  in_fn && /openPrize/ { saw_gate = 1 }
+  END { exit(saw && saw_gate ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "named-prize stamp must stay on occupied Cover · #1 only"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "empty open stand must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "empty open stand must not stamp claim-after-read-N / read-after-claim-N"
+fi
+grep -q 'data-empty-open-stand="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-empty-open-stand"
+grep -q 'empty open / stays the empty stand' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing empty-open-stand honesty case"
+grep -q 'doesNotMatch(emptyOpen, /data-sold-cover/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-sold-cover"
+grep -q 'doesNotMatch(emptyOpen, /data-named-prize="true"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp data-named-prize"
+grep -q 'doesNotMatch(emptyOpen, /Claim the next cover/)' tests/product-ui.test.ts \
+  || fail "empty open / must not say Claim the next cover"
+grep -q 'doesNotMatch(occupiedOpen, /data-empty-open-stand="true"/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not stamp data-empty-open-stand"
+grep -q 'doesNotMatch(closedEmpty, /data-empty-open-stand="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-empty-open-stand"
+grep -q 'doesNotMatch(closedOccupied, /data-empty-open-stand="true"/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not stamp data-empty-open-stand"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "empty-open-stand UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
