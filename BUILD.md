@@ -294,6 +294,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 38
 - **Acceptance:** Closed empty `/issue/:date` has `class="empty-issue"` and `data-closed-empty-issue="true"`. The only hop is one `data-open-cover="true"` `href="/"`. Closed occupied archives have no `data-sold-cover`, no Claim the next cover, and no `data-cover-prize` / `data-cover-prize-line` / `data-prize-before-price` / `data-later-rank`. Occupied open `/` keeps those prize marks and one `#claim` hop. Empty open `/` stays the empty stand. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 40: first-time reader — occupied Cover · #1 names the sponsor
+- **Description:** On an occupied open `/`, Cover · #1 names the sponsor from the listing’s existing blurb (`data-named-prize`). Host/path (`displaySponsor`) stays a later fact on the dek. Do not scrape a second title from the live web. Empty open `/` stays the empty stand + Claim #1. Closed empty archives stay the empty-issue slab. Closed occupied archives keep the frozen board and drop prize stamps. Do not add another named hop. Do not stamp `*-after-*-N`. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 39
+- **Acceptance:** Occupied open `/` has one `data-named-prize="true"` on rank 1. The Cover · #1 hed is the listing blurb; host/path stays quieter on the dek. Empty open `/` and closed archives have no `data-named-prize`. `data-read-cover`, `data-claim-cover`, `data-cover-prize-line`, `data-prize-before-price`, and `data-later-rank` stay. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
