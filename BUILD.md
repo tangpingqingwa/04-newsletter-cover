@@ -312,6 +312,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 41
 - **Acceptance:** Empty open `/` has `class="week week-open-empty"` wrapping the empty stand before `id="claim"`. Occupied sold-cover CSS is scoped to `.week-open-sold`. Empty open has no `data-sold-cover`, no Claim the next cover, and no `data-named-prize`. Occupied open `/` keeps those prize marks and one `#claim` hop. Closed empty archives keep `class="empty-issue"` / `data-closed-empty-issue` and have no `week-open-empty`. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 43: first-time reader — occupied Cover · #1 prize stays before $bid
+- **Description:** On an occupied open `/`, Cover · #1 names the listing blurb first. `$bid` + clicks and host/path drop out of the money column and sit as later facts under the hed (`data-later-fact`). Empty open `/` stays empty stand + Claim #1. Closed empty archives stay the empty-issue slab. Closed occupied archives keep the frozen three-column board and drop prize stamps. Do not add another named hop. Do not stamp `*-after-*-N`. Do not re-ship empty-open isolation. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 42
+- **Acceptance:** Occupied open `/` has one `data-later-fact="true"` on rank 1. The Cover · #1 hed is before host/path and `$bid`. Occupied `#1` has no `class="money"`. Empty open `/` and closed archives have no `data-later-fact`. `data-read-cover`, `data-claim-cover`, `data-cover-prize-line`, `data-prize-before-price`, `data-named-prize`, and `data-later-rank` stay. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
