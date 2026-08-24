@@ -1519,7 +1519,8 @@ if ! awk '
   /function renderFlag/ { in_fn = 1 }
   in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
-  in_fn && saw_closed && /data-open-cover="true"/ { found = 1 }
+  in_fn && saw_closed && /listings.length === 0/ { saw_empty = 1 }
+  in_fn && saw_empty && /data-open-cover="true"/ { found = 1 }
   in_fn && /listings.length > 0/ { saw_occupied = 1 }
   in_fn && saw_occupied && /data-sold-cover="true"/ { saw_sold = 1 }
   END { exit(found && saw_sold ? 0 : 1) }
@@ -2320,6 +2321,165 @@ grep -q 'doesNotMatch(occupiedOpen, /One-line cover pitch/)' tests/product-ui.te
   || fail "occupied claim rail must not wear the cover-pitch placeholder"
 if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
   fail "paid-name identity UX must not invent subscribers, open rates, or an article list"
+fi
+
+echo "== first-time reader: closed occupied keeps frozen Cover · #1 — live claim cannot steal the archive =="
+grep -qE '^### PR 48: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 48: first-time reader"
+grep -q 'data-frozen-cover="true"' src/views/skin.ts || fail "closed occupied Cover · #1 must mark data-frozen-cover"
+grep -q 'data-archive-name="true"' src/views/skin.ts || fail "closed occupied Cover · #1 must mark data-archive-name"
+grep -q 'data-frozen-board="true"' src/views/skin.ts || fail "closed occupied rack must mark data-frozen-board"
+grep -q 'data-frozen-issue="true"' src/views/skin.ts || fail "closed occupied freeze note must mark data-frozen-issue"
+grep -q 'Cover · #1' src/views/skin.ts || fail "closed occupied must still say Cover · #1"
+grep -q 'data-open-cover="true"' src/views/skin.ts || fail "closed archive must still hop to the open stand"
+grep -q 'The open cover is on the stand' src/views/skin.ts || fail "closed archive must still name the open stand"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "closed empty archive must keep class empty-issue"
+grep -q 'data-paid-name="true"' src/views/skin.ts || fail "occupied open Cover · #1 paid name must stay"
+grep -q 'data-cover-first="true"' src/views/skin.ts || fail "occupied Cover · #1 prize click must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'data-later-write="true"' src/views/skin.ts || fail "empty-open later-write must stay"
+grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
+  || fail "empty open / closed archives must still ship FOLIO_CSS only"
+grep -F -q '.week-closed-occupied .cover-line.cover[data-frozen-cover][data-archive-name]' src/views/skin.ts \
+  || fail "frozen Cover · #1 CSS must compose the paid name on the closed occupied board"
+grep -F -q '.week-closed-occupied .cover-line:not([data-frozen-cover]) .slot' src/views/skin.ts \
+  || fail "closed occupied later ranks must drop the hed and sit as a slot"
+grep -F -q '.week-closed-occupied .form-hint[data-frozen-issue] a[data-open-cover]' src/views/skin.ts \
+  || fail "live open-cover hop must sit after the frozen rack, not above Cover · #1"
+grep -F -q '.week-open-sold .cover-line[data-named-prize][data-paid-name] .hed' src/views/skin.ts \
+  || fail "do not re-ship paid-name identity"
+grep -F -q '.week-open-sold .cover-line[data-named-prize] .hed a[data-cover-first]' src/views/skin.ts \
+  || fail "do not re-ship Cover-first size"
+grep -F -q '.week-open-empty #claim.empty-claim-first[data-empty-claim-first] .cover-identity[data-later-write]' src/views/skin.ts \
+  || fail "do not re-ship empty later-write"
+if grep -E '^\.cover-line\.cover\[data-frozen-cover\]' src/views/skin.ts; then
+  fail "frozen-cover CSS must not apply outside week-closed-occupied"
+fi
+if grep -E '^\.form-hint\[data-frozen-issue\]' src/views/skin.ts; then
+  fail "frozen-issue CSS must not apply outside week-closed-occupied"
+fi
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /^function / && !/renderPitch/ { in_fn = 0 }
+  in_fn && /!openPrize && isCover/ { saw_cover = 1 }
+  in_fn && saw_cover && /data-frozen-cover="true"/ { saw_frozen = 1 }
+  in_fn && saw_frozen && /data-archive-name="true"/ { saw_paid = 1 }
+  in_fn && saw_paid && /class="hed"/ && /listing.blurb/ { saw_hed = 1 }
+  in_fn && /!openPrize && !isCover/ { saw_later = 1 }
+  in_fn && saw_later && /class="slot"/ && /listing.blurb/ { saw_slot = 1 }
+  in_fn && saw_later && /class="dek"/ && /displaySponsor/ { saw_dek = 1 }
+  END { exit(saw_hed && saw_slot && saw_dek ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "closed occupied Cover · #1 must keep the paid-name hed; later ranks must drop class=hed"
+fi
+if ! awk '
+  /export function renderBoardHtml/ { in_fn = 1 }
+  in_fn && /readFrozenCover/ { saw_gate = 1 }
+  in_fn && saw_gate && /\$\{rack\}/ { saw_rack = 1 }
+  in_fn && saw_gate && saw_rack && /\$\{claim\}/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "closed occupied / must render the frozen rack before the live open-cover hop"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn {
+    if ($0 ~ /board.status === "closed"/) closed = 1
+    if (closed && $0 ~ /listings.length === 0/) empty = 1
+    if (empty && $0 ~ /data-open-cover="true"/) empty_hop = 1
+    if (closed && empty && $0 ~ /return `<p class="flag">This issue is closed. It is not the next issue/) occupied_line = $0
+  }
+  END {
+    if (!empty_hop) exit 1
+    if (occupied_line == "") exit 1
+    if (occupied_line ~ /data-open-cover/) exit 1
+    exit 0
+  }
+' src/views/skin.ts; then
+  fail "closed occupied flag must drop the live open-cover hop so Cover · #1 stays first"
+fi
+if ! awk '
+  /function renderClaim/ { in_fn = 1 }
+  in_fn && /^function / && !/renderClaim/ { in_fn = 0 }
+  in_fn && /board.status === "closed"/ { saw_closed = 1 }
+  in_fn && saw_closed && /listings.length === 0/ { saw_empty = 1 }
+  in_fn && saw_empty && /No cover sold/ { empty_ok = 1 }
+  in_fn && saw_closed && /data-frozen-issue="true"/ { saw_frozen = 1 }
+  in_fn && saw_frozen && /data-open-cover="true"/ { found = 1 }
+  END { exit(empty_ok && found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "closed occupied live hop must sit after the frozen rack; empty closed stays empty-issue"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "closed occupied freeze must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "closed occupied freeze must not stamp claim-after-read-N / read-after-claim-N"
+fi
+if awk '/^export const OCCUPIED_CSS/{p=1} p{print} /^export const ISSUE_CSS/{exit}' src/views/skin.ts \
+  | grep -Eq 'data-frozen-cover|data-archive-name|data-frozen-board|data-frozen-issue'; then
+  fail "OCCUPIED_CSS must not swallow closed occupied freeze composition"
+fi
+if awk '/^export const FOLIO_CSS/{p=1} p{print} /^export const OCCUPIED_CSS/{exit}' src/views/skin.ts \
+  | grep -Eq 'data-paid-name|later-listing|One-line listing|data-cover-first'; then
+  fail "do not re-ship FOLIO vs ISSUE, Cover-first, or paid-name into FOLIO_CSS"
+fi
+node -e '
+const { readFileSync } = require("fs");
+const src = readFileSync("src/views/skin.ts", "utf8");
+const folio = src.slice(src.indexOf("export const FOLIO_CSS"), src.indexOf("export const OCCUPIED_CSS"));
+const occupied = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
+const frozenHed = folio.match(/\.week-closed-occupied \.cover-line\.cover\[data-frozen-cover\]\[data-archive-name\] \.hed \{([^}]*)\}/);
+const laterSlot = folio.match(/\.week-closed-occupied \.cover-line:not\(\[data-frozen-cover\]\) \.slot \{([^}]*)\}/);
+const liveHop = folio.match(/\.week-closed-occupied \.form-hint\[data-frozen-issue\] a\[data-open-cover\] \{([^}]*)\}/);
+const openHed = occupied.match(/\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/);
+if (!frozenHed || !laterSlot || !liveHop || !openHed) {
+  console.error("missing frozen Cover · #1, later slot, live hop, or occupied Cover · #1 CSS");
+  process.exit(1);
+}
+const frozenSize = frozenHed[1].match(/font-size:\s*([\d.]+)rem/);
+const slotSize = laterSlot[1].match(/font-size:\s*([\d.]+)rem/);
+const openSize = openHed[1].match(/font-size:\s*([\d.]+)rem/);
+if (!frozenSize || !slotSize || !openSize) {
+  console.error("missing font-size on frozen Cover · #1, later slot, or occupied Cover · #1");
+  process.exit(1);
+}
+if (Number(slotSize[1]) >= Number(frozenSize[1])) {
+  console.error("later frozen ranks still wear Cover · #1 size");
+  process.exit(1);
+}
+if (openHed[1].includes("font-size: 1.55rem") === false) {
+  console.error("do not re-ship Cover-first size");
+  process.exit(1);
+}
+if (!liveHop[1].includes("color: var(--mute)")) {
+  console.error("live open-cover hop on a frozen issue must stay quieter than Cover · #1");
+  process.exit(1);
+}
+' || fail "closed occupied Cover · #1 must stay the paid name; live claim must stay off the archive"
+grep -q 'data-frozen-cover="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-frozen-cover"
+grep -q 'closed occupied / keeps frozen Cover · #1' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing closed occupied frozen Cover · #1 case"
+grep -q 'doesNotMatch(closedOccupied, /id="claim"/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not stamp id=claim"
+grep -q 'doesNotMatch(closedOccupied, /Claim the next cover/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not say Claim the next cover"
+grep -q 'doesNotMatch(closedOccupied, /action="\\/listings"/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not keep the open checkout form"
+grep -q 'doesNotMatch(occupiedOpen, /data-frozen-cover="true"/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not stamp data-frozen-cover"
+grep -q 'doesNotMatch(closedEmpty, /data-frozen-cover="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-frozen-cover"
+grep -q 'doesNotMatch(twoSlice.slice(0, 800), /class="hed"/)' tests/product-ui.test.ts \
+  || fail "later ranks on closed occupied / must not wear class=hed"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "closed occupied freeze UX must not invent subscribers, open rates, or an article list"
 fi
 
 echo "== live-smoke stays operator-only =="
