@@ -306,6 +306,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 40
 - **Acceptance:** Empty open `/` has `class="empty-stand"` and `data-empty-open-stand="true"` before `id="claim"`. It has no `data-sold-cover`, no Claim the next cover, and no `data-named-prize`. Occupied open `/` keeps those prize marks and one `#claim` hop. Closed empty archives keep `class="empty-issue"` / `data-closed-empty-issue` and have no `data-empty-open-stand`. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 42: first-time reader — empty open stand stays certain
+- **Description:** On an empty open `/`, occupied sold-cover / Claim the next cover / named-prize chrome cannot leak. The week is its own shell (`week-open-empty`) so occupied CSS is scoped to `week-open-sold`. Empty open stays empty stand + Claim #1. Closed archives stay empty-issue. Do not add another named hop. Do not stamp `*-after-*-N`. Do not recolor. Do not rebuild the folio. A stamp without this CSS/markup isolation is REJECT.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 41
+- **Acceptance:** Empty open `/` has `class="week week-open-empty"` wrapping the empty stand before `id="claim"`. Occupied sold-cover CSS is scoped to `.week-open-sold`. Empty open has no `data-sold-cover`, no Claim the next cover, and no `data-named-prize`. Occupied open `/` keeps those prize marks and one `#claim` hop. Closed empty archives keep `class="empty-issue"` / `data-closed-empty-issue` and have no `week-open-empty`. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
