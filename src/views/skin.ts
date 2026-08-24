@@ -170,8 +170,26 @@ function renderClaim(board: BoardView): string {
     ? ""
     : `
           <p class="form-hint">Already on this issue? Enter the same sponsor URL and raise. You pay only the difference.</p>`;
-  return `      <section class="claim" id="claim">
-        <h2 class="claim-hed">
+  const claimAttrs = empty
+    ? ' class="claim empty-claim-first" id="claim" data-empty-claim-first="true" aria-label="Claim #1"'
+    : ' class="claim" id="claim"';
+  const claimHedAttrs = empty
+    ? ' class="claim-hed" data-first-click="claim"'
+    : ' class="claim-hed"';
+  const formFields = empty
+    ? `<button type="submit" class="outbid">Outbid</button>
+          <div class="cover-identity" data-cover-identity="true" data-later-write="true">
+            <p class="later-write-label">Then the cover URL</p>
+            <input name="sponsorUrl" type="url" required placeholder="Sponsor URL" autocomplete="url"/>
+            <input class="blurb-field" name="blurb" type="text" required maxlength="120" placeholder="One-line cover pitch"/>
+          </div>`
+    : `<div class="bid-row">
+            <input name="sponsorUrl" type="url" required placeholder="Sponsor URL" autocomplete="url"/>
+            <button type="submit" class="outbid">Outbid</button>
+          </div>
+          <input class="blurb-field" name="blurb" type="text" required maxlength="120" placeholder="One-line cover pitch"/>${raiseHint}`;
+  return `      <section${claimAttrs}>
+        <h2${claimHedAttrs}>
           <span>Claim #1 for</span>
           <span class="amount-stepper">
             <button type="button" class="step" data-bid-step="-1" aria-label="Decrease bid by one dollar">−</button>
@@ -184,11 +202,7 @@ function renderClaim(board: BoardView): string {
         </h2>
         ${note}
         <form id="bid-form" method="post" action="/listings">
-          <div class="bid-row">
-            <input name="sponsorUrl" type="url" required placeholder="Sponsor URL" autocomplete="url"/>
-            <button type="submit" class="outbid">Outbid</button>
-          </div>
-          <input class="blurb-field" name="blurb" type="text" required maxlength="120" placeholder="One-line cover pitch"/>${raiseHint}
+          ${formFields}
         </form>
       </section>
       <script>
@@ -523,6 +537,56 @@ button { cursor: pointer; }
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 700;
+}
+/* Empty open: Claim #1 is the only first click. Cover URL is a later write after Outbid. */
+.week-open-empty #claim.empty-claim-first[data-empty-claim-first] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.week-open-empty #claim.empty-claim-first[data-empty-claim-first] #bid-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.week-open-empty #claim.empty-claim-first[data-empty-claim-first] .claim-hed[data-first-click="claim"] {
+  font-size: clamp(1.85rem, 5vw, 2.55rem);
+}
+.week-open-empty #claim.empty-claim-first[data-empty-claim-first] .outbid {
+  width: auto;
+  min-width: 9rem;
+  margin: 0.85rem auto 0;
+}
+.week-open-empty #claim.empty-claim-first[data-empty-claim-first] .cover-identity[data-later-write] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 28rem;
+  margin: 0.85rem auto 0;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--hair);
+}
+.week-open-empty #claim.empty-claim-first[data-empty-claim-first] .later-write-label {
+  margin: 0;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.week-open-empty #claim.empty-claim-first[data-empty-claim-first] .cover-identity[data-later-write] input {
+  width: 100%;
+  min-width: 0;
+  flex: none;
+  height: 2.2rem;
+  font-size: 0.88rem;
+  color: var(--mute);
+}
+.week-open-empty #claim.empty-claim-first[data-empty-claim-first] .cover-identity[data-later-write] .blurb-field {
+  margin-top: 0;
 }
 .form-hint { margin: 0.55rem 0 0; text-align: center; font-size: 0.78rem; color: var(--mute); }
 .cover-rack + .claim,
