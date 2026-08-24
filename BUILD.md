@@ -330,6 +330,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 44
 - **Acceptance:** Occupied open `/` has one `data-cover-first="true"` `/l/:id` on the Cover · #1 hed before host/path and `$bid`. **Claim the next cover** stays one `data-claim-cover` `href="#claim"` and is quieter in CSS than Cover · #1. Empty open `/` and closed archives have no `data-cover-first`. `data-read-cover`, `data-claim-cover`, `data-cover-prize-line`, `data-prize-before-price`, `data-named-prize`, `data-later-fact`, and `data-later-rank` stay. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 46: first-time sponsor — empty open has one first click; cover URL is a later write
+- **Description:** On an empty open `/`, Claim #1 / Outbid is the only first click. Cover identity (sponsor URL + one-line pitch) is a later write after that hop (`data-later-write`, “Then the cover URL”), not same-weight fields fighting Outbid on the claim rail. Occupied Cover · #1 stays the first occupied click; Claim the next cover stays quieter. Closed empty archives stay empty-issue. Do not add another named hop. Do not stamp `*-after-*-N`. Do not re-ship FOLIO vs ISSUE or Cover-first size. Do not recolor. Do not rebuild the folio. Stamp-only = REJECT.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 45
+- **Acceptance:** Empty open `/` has one `data-first-click="claim"` on Claim #1, then Outbid, then one `data-later-write="true"` cover identity after “Then the cover URL”. Empty open has no `class="bid-row"`. Occupied open `/` keeps sponsor URL on the bid-row with Outbid, `data-cover-first`, and quieter Claim the next cover. Closed empty archives keep `class="empty-issue"` and have no later-write chrome. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)

@@ -2032,6 +2032,130 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "cover-first prize UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time sponsor: empty open has one first click — cover URL is a later write =="
+grep -qE '^### PR 46: first-time sponsor' BUILD.md || fail "BUILD.md missing ### PR 46: first-time sponsor"
+grep -q 'data-first-click="claim"' src/views/skin.ts || fail "empty open Claim #1 must mark data-first-click=claim"
+grep -q 'data-empty-claim-first="true"' src/views/skin.ts || fail "empty open claim must mark data-empty-claim-first"
+grep -q 'empty-claim-first' src/views/skin.ts || fail "empty open claim must use class empty-claim-first"
+grep -q 'data-later-write="true"' src/views/skin.ts || fail "empty open cover URL must mark data-later-write"
+grep -q 'data-cover-identity="true"' src/views/skin.ts || fail "empty open cover URL must wrap cover-identity"
+grep -q 'Then the cover URL' src/views/skin.ts || fail "empty open must name Then the cover URL"
+grep -q 'class="later-write-label"' src/views/skin.ts || fail "empty open later write must use later-write-label"
+grep -q 'Claim #1 for' src/views/skin.ts || fail "empty open / must keep Claim #1"
+grep -q 'Outbid' src/views/skin.ts || fail "empty open / must keep Outbid"
+grep -q 'name="sponsorUrl"' src/views/skin.ts || fail "cover URL field must stay sponsorUrl"
+grep -q 'name="blurb"' src/views/skin.ts || fail "cover pitch field must stay blurb"
+grep -q 'class="bid-row"' src/views/skin.ts || fail "occupied claim must keep the bid-row"
+grep -q 'data-cover-first="true"' src/views/skin.ts || fail "occupied Cover · #1 prize click must stay"
+grep -q 'Claim the next cover' src/views/skin.ts || fail "occupied hop Claim the next cover must stay"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "empty open stand must stay"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "closed empty archive must keep class empty-issue"
+grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
+  || fail "empty open / closed archives must still ship FOLIO_CSS only"
+grep -F -q '.week-open-empty #claim.empty-claim-first[data-empty-claim-first] .cover-identity[data-later-write]' src/views/skin.ts \
+  || fail "empty open later-write CSS must compose cover identity off the claim rail"
+grep -F -q '.week-open-empty #claim.empty-claim-first[data-empty-claim-first] .later-write-label' src/views/skin.ts \
+  || fail "empty open later-write CSS must name Then the cover URL"
+grep -F -q '.week-open-empty #claim.empty-claim-first[data-empty-claim-first] .claim-hed[data-first-click="claim"]' src/views/skin.ts \
+  || fail "empty open Claim #1 first-click CSS must concentrate the claim hed"
+grep -F -q '.week-open-sold .cover-line[data-named-prize] .hed a[data-cover-first]' src/views/skin.ts \
+  || fail "Cover · #1 prize click must stay the named hed"
+grep -F -q '.week-open-sold .flag a[data-claim-cover]' src/views/skin.ts \
+  || fail "Claim the next cover must stay quieter than Cover · #1"
+if grep -E '^\.cover-identity\[data-later-write\]' src/views/skin.ts; then
+  fail "later-write CSS must not apply outside week-open-empty"
+fi
+if grep -E '^\.claim-hed\[data-first-click="claim"\]' src/views/skin.ts; then
+  fail "first-click CSS must not apply outside week-open-empty"
+fi
+if ! awk '
+  /function renderClaim/ { in_fn = 1 }
+  in_fn && /^function / && !/renderClaim/ { in_fn = 0 }
+  in_fn && /const empty = board.listings.length === 0/ { saw_empty = 1 }
+  in_fn && saw_empty && /data-first-click="claim"/ { saw_first = 1 }
+  in_fn && saw_first && /class="outbid"/ { saw_outbid = 1 }
+  in_fn && saw_outbid && /data-later-write="true"/ { saw_later = 1 }
+  in_fn && saw_later && /Then the cover URL/ { saw_label = 1 }
+  in_fn && saw_label && /name="sponsorUrl"/ { saw_url = 1 }
+  in_fn && saw_url && /name="blurb"/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "empty open / must put Claim #1 then Outbid then the cover URL as a later write"
+fi
+if ! awk '
+  /function renderClaim/ { in_fn = 1 }
+  in_fn && /^function / && !/renderClaim/ { in_fn = 0 }
+  in_fn && /const formFields = empty/ { saw = 1 }
+  in_fn && saw && /class="bid-row"/ { bid++ }
+  END { exit(bid == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "class=bid-row must stay on occupied claim only, not empty open /"
+fi
+if ! awk '
+  /function renderClaim/ { in_fn = 1 }
+  in_fn && /^function / && !/renderClaim/ { in_fn = 0 }
+  in_fn && /data-first-click="claim"/ { first++ }
+  in_fn && /data-later-write="true"/ { later++ }
+  END { exit(first == 1 && later == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "data-first-click and data-later-write must stamp only the empty open claim"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "empty-open later-write must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "empty-open later-write must not stamp claim-after-read-N / read-after-claim-N"
+fi
+node -e '
+const { readFileSync } = require("fs");
+const src = readFileSync("src/views/skin.ts", "utf8");
+const occupied = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
+const hed = occupied.match(/\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/);
+const claim = occupied.match(/\.week-open-sold \.flag a\[data-claim-cover\] \{([^}]*)\}/);
+if (!hed || !claim) {
+  console.error("missing occupied Cover · #1 or Claim the next cover CSS");
+  process.exit(1);
+}
+const hedSize = hed[1].match(/font-size:\s*([\d.]+)rem/);
+const claimSize = claim[1].match(/font-size:\s*([\d.]+)rem/);
+if (!hedSize || !claimSize) {
+  console.error("missing font-size on Cover · #1 or Claim the next cover");
+  process.exit(1);
+}
+if (Number(claimSize[1]) >= Number(hedSize[1])) {
+  console.error("Claim the next cover is not quieter than Cover · #1");
+  process.exit(1);
+}
+if (hed[1].includes("font-size: 1.55rem") === false) {
+  console.error("do not re-ship Cover-first size");
+  process.exit(1);
+}
+' || fail "occupied Cover · #1 size and quieter Claim the next cover must stay"
+if awk '/^export const OCCUPIED_CSS/{p=1} p{print} /^export const ISSUE_CSS/{exit}' src/views/skin.ts \
+  | grep -Eq 'empty-claim-first|data-later-write|Then the cover URL|cover-identity'; then
+  fail "OCCUPIED_CSS must not swallow empty later-write composition"
+fi
+grep -q 'data-later-write="true"' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts must cover data-later-write"
+grep -q 'empty open / keeps Claim #1 the first click' tests/product-ui.test.ts \
+  || fail "tests/product-ui.test.ts missing empty-open Claim #1 then cover URL case"
+grep -q 'doesNotMatch(emptyOpen, /class="bid-row"/)' tests/product-ui.test.ts \
+  || fail "empty open / must not keep cover URL in bid-row with Outbid"
+grep -q 'doesNotMatch(occupiedOpen, /data-later-write="true"/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not stamp data-later-write"
+grep -q 'doesNotMatch(closedEmpty, /data-later-write="true"/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp data-later-write"
+grep -q 'doesNotMatch(occupiedOpen, /Then the cover URL/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not say Then the cover URL"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "empty-open later-write UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
