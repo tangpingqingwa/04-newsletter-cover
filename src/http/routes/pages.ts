@@ -27,7 +27,7 @@ export function renderAboutHtml(): string {
     `        <p>Newsletter Cover is a public auction for the next issue’s cover / first slot of one global English vertical newsletter. It is a clone of <a href="https://outbid.lol">outbid.lol</a> pay-to-rank mechanics.</p>
         <p>One-line pitch: the next issue’s cover goes to whoever pays the most. Rank is the bid — nothing else. Clicks, blurb, and URL never break a tie. First bid is at least <strong>$5</strong>.</p>
         <p>Cadence is a weekly issue. When the issue closes, the highest bid is the cover / issue #1. Readers watch the public board. There are no ads, no on-site chat, and no invented subscriber counts or editor’s-pick scores.</p>
-        <p>Money in is Polar. Readers never see an API key. Editor veto is off in v1: a paid listing appears on the board immediately.</p>
+        <p>Money in is Polar. Readers never see an API key. Editor veto is off in v1: a paid listing appears on the board immediately. Unpaid Polar checkout stays off the folio until Polar reports paid. An abandoned listing is not the cover.</p>
 `,
     "about",
   );
@@ -43,7 +43,7 @@ export function renderRulesHtml(): string {
           <li>Rank is the bid. Sort bid descending. A bid below #1 still lists at the rank that amount can take.</li>
           <li>Equal bids: the older listing wins the higher rank. Never break ties with blurb, URL, or clicks.</li>
           <li>Raise pays the difference only. Same cleaned sponsor URL on the same issue. New bid must be higher; Polar charges <code>new bid − current bid</code>. <code>createdAt</code> does not change.</li>
-          <li>Unpaid Polar checkout does not change bid or rank.</li>
+          <li>Unpaid Polar checkout does not change bid or rank. Unpaid Polar checkout stays off the folio until Polar reports paid. An abandoned listing is not the cover.</li>
           <li>Tracking and click-id query strings are stripped before store, display, or redirect.</li>
           <li>Chat-app links and NSFW are rejected. No on-site chat.</li>
           <li>Editor veto is off. <code>EDITOR_VETO</code> is not <code>1</code>. Paid listings are visible immediately. There is no pending gate and no admin re-rank.</li>

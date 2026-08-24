@@ -25,6 +25,8 @@ test("GET /about returns 200 HTML and states the product", async (t) => {
   assert.match(body, /outbid\.lol/);
   assert.match(body, /Newsletter Cover/);
   assert.match(body, /veto is off/i);
+  assert.match(body, /Unpaid Polar checkout stays off the folio until Polar reports paid/);
+  assert.match(body, /An abandoned listing is not the cover/);
   assert.doesNotMatch(body, /POLAR_LIVE/);
   assert.doesNotMatch(body, /api\.polar\.sh/);
 });
@@ -50,6 +52,8 @@ test("GET /rules returns 200 and states min $5, rank=bid, older wins, raise=diff
   assert.match(body, /Chat-app links and NSFW/);
   assert.match(body, /veto is off/i);
   assert.match(body, /EDITOR_VETO/);
+  assert.match(body, /Unpaid Polar checkout stays off the folio until Polar reports paid/);
+  assert.match(body, /An abandoned listing is not the cover/);
   assert.doesNotMatch(body, /POLAR_LIVE/);
   assert.doesNotMatch(body, /api\.polar\.sh/);
 });

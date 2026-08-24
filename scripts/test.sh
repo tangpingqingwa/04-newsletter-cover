@@ -2482,6 +2482,105 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "closed occupied freeze UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: unpaid stays off the folio — No Cover · #1 until Polar reports paid =="
+grep -qE '^### PR 49: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 49: first-time reader"
+grep -q 'export function isPolarPaidListing' src/rank.ts   || fail "rank.ts must export isPolarPaidListing"
+grep -q 'export function paidListings' src/rank.ts   || fail "rank.ts must drop unpaid Polar checkout before ranking"
+grep -q 'paidListings(listings)' src/rank.ts   || fail "rankListings must rank Polar-paid rows only"
+grep -q 'export function polarPaidBoard' src/views/skin.ts   || fail "folio compositor must export polarPaidBoard"
+grep -q 'polarPaidBoard(board)' src/views/skin.ts   || fail "renderBoardHtml must compose Polar-paid occupancy only"
+grep -q 'data-polar-paid="true"' src/views/skin.ts   || fail "paid Cover · #1 must stamp data-polar-paid"
+grep -q 'cover-line:not(\[data-polar-paid\])' src/views/skin.ts   || fail "folio CSS must hide unpaid leftover cover lines"
+grep -q 'Unpaid Polar checkout stays off the folio until Polar reports paid' src/views/skin.ts   || fail "folio must say unpaid Polar checkout stays off until Polar reports paid"
+grep -q 'An abandoned listing is not the cover' src/views/skin.ts   || fail "empty leftover stand must say an abandoned listing is not the cover"
+grep -q 'An abandoned listing is not the cover' src/views/skin.ts   || fail "occupied claim must say an abandoned listing is not the cover"
+grep -q 'Unpaid Polar checkout stays off the folio until Polar reports paid' src/http/routes/pages.ts   || fail "about/rules must say unpaid Polar checkout stays off the folio"
+grep -q 'An abandoned listing is not the cover' src/http/routes/pages.ts   || fail "about/rules must say an abandoned listing is not the cover"
+grep -q 'paidListings(rows.map(listingFromRow))' src/http/routes/board.ts   || fail "public board occupancy must load Polar-paid listings only"
+grep -q 'paidListings(rows.map(listingFromRow))' src/issues.ts   || fail "issue close occupancy must load Polar-paid listings only"
+if ! awk '
+  /function renderPitch/ { in_fn = 1 }
+  in_fn && /^function / && !/renderPitch/ { in_fn = 0 }
+  in_fn && /data-polar-paid="true"/ { paid++ }
+  END { exit(paid >= 4 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "every printed cover line must stamp data-polar-paid"
+fi
+if ! awk '
+  /export function polarPaidBoard/ { in_fn = 1 }
+  in_fn && /paidListings\(board.listings\)/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "polarPaidBoard must filter occupancy through paidListings"
+fi
+if ! awk '
+  /export function renderBoardHtml/ { in_fn = 1 }
+  in_fn && /polarPaidBoard\(board\)/ { found = 1 }
+  END { exit(found ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "renderBoardHtml must compose Polar-paid occupancy before Cover · #1"
+fi
+if ! awk '
+  /function renderFlag/ { in_fn = 1 }
+  in_fn && /^function / && !/renderFlag/ { in_fn = 0 }
+  in_fn && /href="#claim"/ { hops++ }
+  END { exit(hops == 1 ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "unpaid-off occupancy must not add another #claim hop in the flag"
+fi
+if grep -E 'data-claim-after-read-seven|data-read-after-claim-seven' src/views/skin.ts; then
+  fail "unpaid-off occupancy must not stamp claim-after-read-N / read-after-claim-N"
+fi
+if grep -E 'data-unpaid-off|data-unpaid-off-board' src/views/skin.ts src/rank.ts src/http/routes/board.ts; then
+  fail "unpaid-off occupancy must not add another named hop"
+fi
+node -e '
+const { readFileSync } = require("fs");
+const src = readFileSync("src/views/skin.ts", "utf8");
+const folio = src.slice(src.indexOf("export const FOLIO_CSS"), src.indexOf("export const OCCUPIED_CSS"));
+const hide = folio.match(/\.week-open-empty \.cover-line:not\(\[data-polar-paid\]\),\s*\.week-open-sold \.cover-line:not\(\[data-polar-paid\]\),\s*\.week-closed-empty \.cover-line:not\(\[data-polar-paid\]\),\s*\.week-closed-occupied \.cover-line:not\(\[data-polar-paid\]\) \{([^}]*)\}/);
+if (!hide) {
+  console.error("missing unpaid leftover hide rule");
+  process.exit(1);
+}
+if (!hide[1].includes("display: none")) {
+  console.error("unpaid leftover must hide unpaid cover lines");
+  process.exit(1);
+}
+if (hide[1].includes("background:") || hide[1].includes("var(--flag)")) {
+  console.error("do not recolor unpaid leftover");
+  process.exit(1);
+}
+const occupied = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
+if (!occupied.includes("font-size: 1.55rem")) {
+  console.error("do not re-ship Cover-first size");
+  process.exit(1);
+}
+' || fail "unpaid leftover CSS must hide unpaid Cover · #1, not recolor the folio"
+if awk '/^export const FOLIO_CSS/{p=1} p{print} /^export const OCCUPIED_CSS/{exit}' src/views/skin.ts   | grep -Eq 'data-paid-name|later-listing|One-line listing|data-cover-first'; then
+  fail "do not re-ship FOLIO vs ISSUE, Cover-first, or paid-name into FOLIO_CSS"
+fi
+if awk '/^export const OCCUPIED_CSS/{p=1} p{print} /^export const ISSUE_CSS/{exit}' src/views/skin.ts   | grep -Eq 'empty-claim-first|data-later-write|Then the cover URL|cover-identity|data-frozen-cover'; then
+  fail "OCCUPIED_CSS must not swallow empty later-write or closed-frozen composition"
+fi
+grep -q 'unpaid stays off the folio' tests/product-ui.test.ts   || fail "tests/product-ui.test.ts must cover unpaid occupancy off the folio"
+grep -q 'No Cover · #1 until Polar reports paid' tests/product-ui.test.ts   || fail "tests/product-ui.test.ts must wait for Polar paid before Cover · #1"
+grep -q 'unpaid stays off the folio' tests/rank.test.ts   || fail "rank tests must keep unpaid occupancy off Cover · #1"
+grep -q 'isPolarPaidListing' tests/rank.test.ts   || fail "rank tests must cover isPolarPaidListing"
+grep -q 'doesNotMatch(leftover, /Cover · #1/)' tests/product-ui.test.ts   || fail "empty leftover / must not print Cover · #1"
+grep -q 'doesNotMatch(leftover, /Abandoned Polar checkout/)' tests/product-ui.test.ts   || fail "empty leftover / must not print the abandoned listing"
+grep -q 'data-polar-paid="true"' tests/product-ui.test.ts   || fail "occupied Cover · #1 must stamp data-polar-paid"
+grep -q 'doesNotMatch(closedEmpty, /Abandoned Polar checkout/)' tests/product-ui.test.ts   || fail "closed empty leftover must not invent Cover · #1 from unpaid"
+grep -q 'doesNotMatch(closedOccupied, /Abandoned Polar checkout/)' tests/product-ui.test.ts   || fail "closed occupied leftover must drop unpaid Cover · #1"
+grep -q 'data-cover-first="true"' src/views/skin.ts   || fail "unpaid-off cut must keep occupied Cover · #1 as the first click"
+grep -q 'data-paid-name="true"' src/views/skin.ts   || fail "unpaid-off cut must keep occupied Cover · #1 as the paid name"
+grep -q 'data-frozen-cover="true"' src/views/skin.ts   || fail "unpaid-off cut must keep closed occupied freeze"
+grep -q 'data-later-write="true"' src/views/skin.ts   || fail "unpaid-off cut must keep empty later-write"
+grep -q 'Claim #1 for' src/views/skin.ts   || fail "unpaid-off cut must keep Claim #1"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "unpaid-off occupancy UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"

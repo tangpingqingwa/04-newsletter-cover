@@ -1,4 +1,5 @@
 import { MIN_BID_USD } from "../listings.js";
+import { paidListings } from "../rank.js";
 
 export type NavId = "cover" | "about" | "rules";
 
@@ -9,6 +10,9 @@ export type BoardViewListing = {
   blurb: string;
   bidUsd: number;
   clicks: number;
+  createdAt?: string;
+  paid?: boolean;
+  status?: "active" | "rejected" | string;
 };
 
 export type BoardView = {
@@ -16,6 +20,17 @@ export type BoardView = {
   status: "open" | "closed" | null;
   listings: BoardViewListing[];
 };
+
+/** Polar-paid occupancy only. Unpaid leftover never prints Cover · #1. */
+export function polarPaidBoard(board: BoardView): BoardView {
+  return {
+    ...board,
+    listings: paidListings(board.listings).map((listing, index) => ({
+      ...listing,
+      rank: index + 1,
+    })),
+  };
+}
 
 const WEEKDAYS = [
   "Sunday",
@@ -167,8 +182,8 @@ function renderClaim(board: BoardView): string {
   const top = board.listings[0]?.bidUsd ?? 0;
   const defaultBid = top > 0 ? top + 1 : MIN_BID_USD;
   const note = empty
-    ? `<p class="claim-note" data-empty-issue="true" data-cover-prize="true">No cover sold. No paid listings on this board. $${MIN_BID_USD} takes #1 — this issue’s cover.</p>`
-    : `<p class="claim-note">New spots start at $${MIN_BID_USD}. One prize: the cover. Paying less than #1 still lists at the rank that bid can take.</p>`;
+    ? `<p class="claim-note" data-empty-issue="true" data-cover-prize="true">No cover sold. No paid listings on this board. $${MIN_BID_USD} takes #1 — this issue’s cover. Unpaid Polar checkout stays off the folio until Polar reports paid. An abandoned listing is not the cover.</p>`
+    : `<p class="claim-note">New spots start at $${MIN_BID_USD}. One prize: the cover. Paying less than #1 still lists at the rank that bid can take. Unpaid Polar checkout stays off the folio until Polar reports paid. An abandoned listing is not the cover.</p>`;
   const raiseHint = empty
     ? ""
     : `
@@ -246,7 +261,7 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
   const stampedPaidName = openPrize ? paidName : "";
   const laterFact = openPrize && isCover;
   if (laterFact) {
-    return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}"${stampedNamedPrize}${stampedPaidName}>
+    return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}" data-polar-paid="true"${stampedNamedPrize}${stampedPaidName}>
           <span class="rank"${stampedPrizeLine}>${kicker}</span>
           <div>
             <p class="hed"><a href="${href}" data-cover-first="true">${escapeHtml(listing.blurb)}</a></p>
@@ -259,7 +274,7 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
         </li>`;
   }
   if (openPrize && !isCover) {
-    return `        <li class="cover-line"${stampedLaterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
+    return `        <li class="cover-line"${stampedLaterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}" data-polar-paid="true">
           <span class="rank">${kicker}</span>
           <div>
             <p class="dek"><a href="${href}">${escapeHtml(displaySponsor(listing.sponsorUrl))}</a></p>
@@ -272,7 +287,7 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
         </li>`;
   }
   if (!openPrize && isCover) {
-    return `        <li class="cover-line cover" data-frozen-cover="true" data-archive-name="true" data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
+    return `        <li class="cover-line cover" data-frozen-cover="true" data-archive-name="true" data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}" data-polar-paid="true">
           <span class="rank">${kicker}</span>
           <div>
             <p class="hed"><a href="${href}">${escapeHtml(listing.blurb)}</a></p>
@@ -285,7 +300,7 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
         </li>`;
   }
   if (!openPrize && !isCover) {
-    return `        <li class="cover-line" data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}">
+    return `        <li class="cover-line" data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}" data-polar-paid="true">
           <span class="rank">${kicker}</span>
           <div>
             <p class="dek"><a href="${href}">${escapeHtml(displaySponsor(listing.sponsorUrl))}</a></p>
@@ -297,7 +312,7 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
           </div>
         </li>`;
   }
-  return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore}${stampedLaterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}"${stampedNamedPrize}>
+  return `        <li class="cover-line${stampedCoverClass}"${stampedPrizeBefore}${stampedLaterRank} data-rank="${listing.rank}" data-id="${escapeHtml(listing.id)}" data-sponsor-url="${escapeHtml(listing.sponsorUrl)}" data-polar-paid="true"${stampedNamedPrize}>
           <span class="rank"${stampedPrizeLine}>${kicker}</span>
           <div>
             <p class="hed">${escapeHtml(listing.blurb)}</p>
@@ -321,7 +336,7 @@ function renderRack(board: BoardView): string {
     return `      <section class="empty-stand" aria-label="This issue’s cover" data-read-stand="true" data-empty-open-stand="true">
         <p class="empty-kicker">This issue’s cover</p>
         <p class="hed">No cover sold</p>
-        <p class="dek">No paid listings on this board. This issue’s cover is still open.</p>
+        <p class="dek">No paid listings on this board. This issue’s cover is still open. Unpaid Polar checkout stays off the folio until Polar reports paid. An abandoned listing is not the cover.</p>
         <p class="claim-after-stand"><a href="#claim" data-claim-after-stand="true">Claim this issue’s cover.</a></p>
       </section>`;
   }
@@ -360,13 +375,14 @@ function boardCss(board: BoardView): string {
 }
 
 export function renderBoardHtml(board: BoardView): string {
-  const masthead = renderMasthead(board);
-  const claim = renderClaim(board);
-  const rack = renderRack(board);
-  const week = weekShell(board);
-  const readSoldCover = board.status === "open" && board.listings.length > 0;
-  const readEmptyStand = board.status !== "closed" && board.listings.length === 0;
-  const readFrozenCover = board.status === "closed" && board.listings.length > 0;
+  const folio = polarPaidBoard(board);
+  const masthead = renderMasthead(folio);
+  const claim = renderClaim(folio);
+  const rack = renderRack(folio);
+  const week = weekShell(folio);
+  const readSoldCover = folio.status === "open" && folio.listings.length > 0;
+  const readEmptyStand = folio.status !== "closed" && folio.listings.length === 0;
+  const readFrozenCover = folio.status === "closed" && folio.listings.length > 0;
   const inner = readSoldCover || readEmptyStand || readFrozenCover
     ? `${masthead}
 ${rack}
@@ -381,7 +397,7 @@ ${week.close}`;
     title: "The Cover · Newsletter Cover",
     active: "cover",
     body,
-    css: boardCss(board),
+    css: boardCss(folio),
   });
 }
 
@@ -739,7 +755,11 @@ button { cursor: pointer; }
 .week-open-empty [data-archive-name],
 .week-open-sold [data-frozen-cover],
 .week-open-sold [data-frozen-board],
-.week-open-sold [data-archive-name] {
+.week-open-sold [data-archive-name],
+.week-open-empty .cover-line:not([data-polar-paid]),
+.week-open-sold .cover-line:not([data-polar-paid]),
+.week-closed-empty .cover-line:not([data-polar-paid]),
+.week-closed-occupied .cover-line:not([data-polar-paid]) {
   display: none;
 }
 .week-open-empty .empty-stand {

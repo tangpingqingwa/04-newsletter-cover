@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { AppDb, Issue, Listing } from "../../db.js";
-import { rankListings, type RankedListing } from "../../rank.js";
+import { paidListings, rankListings, type RankedListing } from "../../rank.js";
 import { renderBoardHtml } from "../../views/skin.js";
 
 export { renderBoardHtml };
@@ -104,7 +104,7 @@ export function loadListingsForIssue(db: AppDb, issueDate: string): Listing[] {
        WHERE issue_date = ?`,
     )
     .all(issueDate);
-  return rows.map(listingFromRow);
+  return paidListings(rows.map(listingFromRow));
 }
 
 export function toPublicListing(listing: RankedListing): PublicListing {

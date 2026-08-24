@@ -1,15 +1,20 @@
 import type { FastifyInstance } from "fastify";
 import type { AppDb, Listing } from "../../db.js";
 import { findListingById, ListingError } from "../../listings.js";
+import { isPolarPaidListing } from "../../rank.js";
 import { redirectTarget } from "../../url.js";
 
 export const CLICK_PATH = "/l/:id" as const;
 
 /**
- * Public outbound hop. Paid + active listings only.
+ * Public outbound hop. Polar-paid + active listings only.
  * Missing, unpaid, rejected, or unpublished rows 404 and do not increment.
  */
 export function incrementPublicClick(db: AppDb, listingId: string): Listing {
+  const listing = findListingById(db, listingId);
+  if (!listing || listing.status !== "active" || !isPolarPaidListing(listing)) {
+    throw new ListingError("unknown_listing", "listing not found", 404);
+  }
   const result = db
     .prepare(
       `UPDATE listings SET clicks = clicks + 1
@@ -19,11 +24,11 @@ export function incrementPublicClick(db: AppDb, listingId: string): Listing {
   if (result.changes !== 1) {
     throw new ListingError("unknown_listing", "listing not found", 404);
   }
-  const listing = findListingById(db, listingId);
-  if (!listing) {
+  const updated = findListingById(db, listingId);
+  if (!updated || !isPolarPaidListing(updated)) {
     throw new ListingError("unknown_listing", "listing not found", 404);
   }
-  return listing;
+  return updated;
 }
 
 export function registerClickRoutes(app: FastifyInstance): void {

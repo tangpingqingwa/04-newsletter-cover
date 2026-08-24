@@ -3,6 +3,8 @@ import { test } from "node:test";
 import type { AppDb, Listing } from "../src/db.js";
 import { renderBoardHtml } from "../src/http/routes/board.js";
 import { buildApp } from "../src/server.js";
+import { completeCheckout, findCheckout } from "../src/billing/create.js";
+import { FixturePolar } from "../src/billing/fixture.js";
 import { FOLIO_CSS, OCCUPIED_CSS, spokenIssueDate } from "../src/views/skin.js";
 
 const ISSUE = "2099-01-05";
@@ -5296,3 +5298,244 @@ test("closed occupied / keeps frozen Cover · #1 — live claim cannot steal the
 });
 
 
+
+test("unpaid stays off the folio — No Cover · #1 until Polar reports paid", async (t) => {
+  const leftover = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_ghost",
+        sponsorUrl: "https://ghost.example/cover",
+        blurb: "Abandoned Polar checkout",
+        bidUsd: 99,
+        clicks: 9,
+        paid: false,
+        createdAt: "2026-08-01T00:00:00.000Z",
+      },
+      {
+        rank: 2,
+        id: "lst_vapor",
+        sponsorUrl: "https://vapor.example/cover",
+        blurb: "Epoch createdAt is not Polar paid",
+        bidUsd: 80,
+        clicks: 4,
+        createdAt: "1970-01-01T00:00:00.000Z",
+      },
+    ],
+  });
+  const leftoverCss = leftover.slice(leftover.indexOf("<style>"), leftover.indexOf("</style>"));
+  const emptyOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const occupiedOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_cover",
+        sponsorUrl: "https://sponsor.example/pitch",
+        blurb: "Widgets for the next issue",
+        bidUsd: 12,
+        clicks: 3,
+        createdAt: "2026-08-01T00:00:05.000Z",
+      },
+      {
+        rank: 2,
+        id: "lst_two",
+        sponsorUrl: "https://second.example/also",
+        blurb: "Also listed",
+        bidUsd: 6,
+        clicks: 0,
+        createdAt: "2026-08-01T00:10:00.000Z",
+      },
+    ],
+  });
+  const occupiedCss = occupiedOpen.slice(
+    occupiedOpen.indexOf("<style>"),
+    occupiedOpen.indexOf("</style>"),
+  );
+  const closedOccupied = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_won",
+        sponsorUrl: "https://won.example/cover",
+        blurb: "Frozen winner",
+        bidUsd: 20,
+        clicks: 1,
+        createdAt: "2026-08-01T00:00:05.000Z",
+      },
+      {
+        rank: 2,
+        id: "lst_ghost_closed",
+        sponsorUrl: "https://ghost.example/cover",
+        blurb: "Abandoned Polar checkout",
+        bidUsd: 99,
+        clicks: 9,
+        paid: false,
+        createdAt: "2026-08-01T00:00:00.000Z",
+      },
+    ],
+  });
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_ghost_archive",
+        sponsorUrl: "https://ghost.example/cover",
+        blurb: "Abandoned Polar checkout",
+        bidUsd: 99,
+        clicks: 9,
+        createdAt: "1970-01-01T00:00:00.000Z",
+      },
+    ],
+  });
+
+  const standAt = leftover.indexOf('data-read-stand="true"');
+  const claimAt = leftover.indexOf('id="claim"');
+  const laterWriteAt = leftover.indexOf('data-later-write="true"');
+  const firstClickAt = leftover.indexOf('data-first-click="claim"');
+  assert.notEqual(standAt, -1);
+  assert.notEqual(claimAt, -1);
+  assert.notEqual(laterWriteAt, -1);
+  assert.notEqual(firstClickAt, -1);
+  assert.ok(standAt < claimAt);
+  assert.ok(firstClickAt < laterWriteAt);
+  assert.match(leftover, /class="week week-open-empty"/);
+  assert.match(leftover, /class="empty-stand"/);
+  assert.match(leftover, /No cover sold/);
+  assert.match(leftover, /No paid listings on this board/);
+  assert.match(leftover, /This issue’s cover is still open/);
+  assert.match(leftover, /Claim #1 for/);
+  assert.match(leftover, /data-first-click="claim"/);
+  assert.match(leftover, /Then the cover URL/);
+  assert.match(leftover, /class="outbid"/);
+  assert.match(leftover, /\$5 takes #1 — this issue’s cover/);
+  assert.match(leftover, /Unpaid Polar checkout stays off the folio until Polar reports paid/);
+  assert.match(leftover, /An abandoned listing is not the cover/);
+  assert.match(leftoverCss, /\.week-open-empty \.cover-line:not\(\[data-polar-paid\]\)/);
+  assert.match(leftoverCss, /display:\s*none/);
+  assert.doesNotMatch(leftover, /Abandoned Polar checkout/);
+  assert.doesNotMatch(leftover, /Epoch createdAt is not Polar paid/);
+  assert.doesNotMatch(leftover, /ghost\.example/);
+  assert.doesNotMatch(leftover, /vapor\.example/);
+  assert.doesNotMatch(leftover, /\$99/);
+  assert.doesNotMatch(leftover, /Cover · #1/);
+  assert.doesNotMatch(leftover, /data-cover-first="true"/);
+  assert.doesNotMatch(leftover, /data-paid-name="true"/);
+  assert.doesNotMatch(leftover, /data-sold-cover="true"/);
+  assert.doesNotMatch(leftover, /This issue’s cover is sold/);
+  assert.doesNotMatch(leftover, /data-claim-cover="true"/);
+  assert.doesNotMatch(leftover, /Claim the next cover/);
+  assert.doesNotMatch(leftover, /class="cover-rack"/);
+  assert.doesNotMatch(leftover, /class="cover-line"/);
+  assert.doesNotMatch(leftover, /class="week week-open-sold"/);
+  assert.doesNotMatch(leftover, /data-unpaid-off/);
+  assert.doesNotMatch(leftover, /data-claim-after-read-seven/);
+  assert.doesNotMatch(leftover, /data-read-after-claim-seven/);
+  assert.doesNotMatch(leftover, /subscriber/i);
+  assert.doesNotMatch(leftover, /article list/i);
+
+  assert.match(emptyOpen, /class="empty-stand"/);
+  assert.match(emptyOpen, /Claim #1 for/);
+  assert.match(emptyOpen, /Unpaid Polar checkout stays off the folio until Polar reports paid/);
+  assert.doesNotMatch(emptyOpen, /Cover · #1/);
+  assert.doesNotMatch(emptyOpen, /data-sold-cover="true"/);
+
+  const coverFirstAt = occupiedOpen.indexOf('data-cover-first="true"');
+  const paidNameAt = occupiedOpen.indexOf('data-paid-name="true"');
+  const hopAt = occupiedOpen.indexOf('data-claim-cover="true"');
+  const occupiedClaimAt = occupiedOpen.indexOf('id="claim"');
+  assert.notEqual(coverFirstAt, -1);
+  assert.notEqual(paidNameAt, -1);
+  assert.notEqual(hopAt, -1);
+  assert.notEqual(occupiedClaimAt, -1);
+  assert.ok(coverFirstAt < occupiedClaimAt);
+  assert.ok(hopAt < occupiedClaimAt);
+  assert.equal((occupiedOpen.match(/data-cover-first="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
+  assert.match(occupiedOpen, /class="week week-open-sold"/);
+  assert.match(
+    occupiedOpen,
+    /class="hed"><a href="\/l\/lst_cover" data-cover-first="true">Widgets for the next issue/,
+  );
+  assert.match(occupiedOpen, /data-polar-paid="true"/);
+  assert.match(occupiedOpen, /data-paid-name="true"/);
+  assert.match(occupiedOpen, /Cover · #1/);
+  assert.match(occupiedOpen, /Claim the next cover/);
+  assert.match(occupiedOpen, /Unpaid Polar checkout stays off the folio until Polar reports paid/);
+  assert.match(occupiedOpen, /An abandoned listing is not the cover/);
+  assert.match(occupiedCss, /\.week-open-sold \.cover-line:not\(\[data-polar-paid\]\)/);
+  assert.doesNotMatch(occupiedOpen, /Abandoned Polar checkout/);
+  assert.doesNotMatch(occupiedOpen, /data-unpaid-off/);
+  assert.doesNotMatch(occupiedOpen, /data-claim-after-read-seven/);
+  assert.doesNotMatch(occupiedOpen, /data-read-after-claim-seven/);
+
+  assert.match(closedOccupied, /data-frozen-cover="true"/);
+  assert.match(closedOccupied, /Frozen winner/);
+  assert.match(closedOccupied, /data-polar-paid="true"/);
+  assert.doesNotMatch(closedOccupied, /Abandoned Polar checkout/);
+  assert.doesNotMatch(closedOccupied, /id="claim"/);
+  assert.doesNotMatch(closedOccupied, /Claim the next cover/);
+
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.match(closedEmpty, /data-closed-empty-issue="true"/);
+  assert.doesNotMatch(closedEmpty, /Abandoned Polar checkout/);
+  assert.doesNotMatch(closedEmpty, /Cover · #1/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
+
+  const polar = new FixturePolar();
+  const app = await buildApp({ polar });
+  t.after(() => app.close());
+  insertIssue(app.db, ISSUE, "open");
+  const created = await app.inject({
+    method: "POST",
+    url: "/listings",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      accept: "text/html",
+    },
+    payload:
+      "sponsorUrl=https%3A%2F%2Fghost.example%2Fcover&blurb=Abandoned%20Polar%20checkout&bidUsd=99",
+  });
+  assert.equal(created.statusCode, 303);
+  const leftoverHtml = await app.inject({ method: "GET", url: "/" });
+  assert.equal(leftoverHtml.statusCode, 200);
+  assert.match(leftoverHtml.body, /class="empty-stand"/);
+  assert.match(leftoverHtml.body, /Claim #1 for/);
+  assert.match(leftoverHtml.body, /Unpaid Polar checkout stays off the folio until Polar reports paid/);
+  assert.doesNotMatch(leftoverHtml.body, /Abandoned Polar checkout/);
+  assert.doesNotMatch(leftoverHtml.body, /ghost\.example/);
+  assert.doesNotMatch(leftoverHtml.body, /Cover · #1/);
+  assert.doesNotMatch(leftoverHtml.body, /data-cover-first="true"/);
+  assert.doesNotMatch(leftoverHtml.body, /data-sold-cover="true"/);
+  const ghostClick = await app.inject({ method: "GET", url: "/l/lst_ghost" });
+  assert.equal(ghostClick.statusCode, 404);
+
+  const polarId = new URL(
+    created.headers.location ?? "",
+    "http://localhost",
+  ).searchParams.get("checkoutId");
+  assert.ok(polarId);
+  const pending = findCheckout(app.db, polarId);
+  assert.ok(pending);
+  await completeCheckout(app.db, polar, polarId);
+  const paidHtml = await app.inject({ method: "GET", url: "/" });
+  assert.equal(paidHtml.statusCode, 200);
+  assert.match(paidHtml.body, /Cover · #1/);
+  assert.match(paidHtml.body, /Abandoned Polar checkout/);
+  assert.match(paidHtml.body, /data-cover-first="true"/);
+  assert.match(paidHtml.body, /data-polar-paid="true"/);
+  assert.match(paidHtml.body, /data-paid-name="true"/);
+  assert.match(paidHtml.body, /Claim the next cover/);
+  assert.doesNotMatch(paidHtml.body, /class="empty-stand"/);
+});

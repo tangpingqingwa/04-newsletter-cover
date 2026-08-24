@@ -1,5 +1,5 @@
 import type { AppDb, Issue, Listing } from "./db.js";
-import { rankListings, type RankedListing } from "./rank.js";
+import { paidListings, rankListings, type RankedListing } from "./rank.js";
 
 export const ISSUE_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export const WEEK_DAYS = 7;
@@ -162,7 +162,7 @@ export function loadListingsForIssue(db: AppDb, issueDate: string): Listing[] {
        WHERE issue_date = ?`,
     )
     .all(issueDate);
-  return rows.map(listingFromRow);
+  return paidListings(rows.map(listingFromRow));
 }
 
 export type ClosedIssue = {

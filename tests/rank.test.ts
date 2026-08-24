@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { AppDb, Listing } from "../src/db.js";
 import { renderBoardHtml } from "../src/http/routes/board.js";
-import { rankListings, type RankableListing } from "../src/rank.js";
+import {
+  isPolarPaidListing,
+  paidListings,
+  rankListings,
+  type RankableListing,
+} from "../src/rank.js";
 import { buildApp } from "../src/server.js";
 
 const ISSUE = "2099-01-05";
@@ -95,6 +100,65 @@ test("rejected and unpaid rows do not rank", () => {
   assert.deepEqual(
     ranked.map((row) => row.id),
     ["live"],
+  );
+});
+
+test("unpaid stays off the folio — No Cover · #1 until Polar reports paid", () => {
+  const unpaid = listing({
+    id: "ghost",
+    bidUsd: 99,
+    createdAt: "2026-08-01T00:00:00.000Z",
+    paid: false,
+    blurb: "Abandoned Polar checkout",
+    sponsorUrl: "https://ghost.example/cover",
+  });
+  const abandoned = listing({
+    id: "vapor",
+    bidUsd: 80,
+    createdAt: "1970-01-01T00:00:00.000Z",
+    blurb: "Epoch createdAt is not Polar paid",
+    sponsorUrl: "https://vapor.example/cover",
+  });
+  const emptyCreated = listing({
+    id: "blank",
+    bidUsd: 70,
+    createdAt: "   ",
+    blurb: "Blank createdAt is leftover",
+    sponsorUrl: "https://blank.example/cover",
+  });
+  const zeroBid = listing({
+    id: "zero",
+    bidUsd: 0,
+    createdAt: "2026-08-01T00:00:00.000Z",
+    blurb: "Waiting on Polar",
+    sponsorUrl: "https://zero.example/cover",
+  });
+  const paid = listing({
+    id: "paid-only",
+    bidUsd: 5,
+    createdAt: "2026-08-01T00:00:05.000Z",
+    blurb: "Widgets for the next issue",
+    sponsorUrl: "https://sponsor.example/pitch",
+  });
+
+  assert.equal(isPolarPaidListing(unpaid), false);
+  assert.equal(isPolarPaidListing(abandoned), false);
+  assert.equal(isPolarPaidListing(emptyCreated), false);
+  assert.equal(isPolarPaidListing(zeroBid), false);
+  assert.equal(isPolarPaidListing(paid), true);
+  assert.equal(isPolarPaidListing({ bidUsd: 12 }), true);
+  assert.deepEqual(
+    paidListings([unpaid, abandoned, emptyCreated, zeroBid, paid]).map((row) => row.id),
+    ["paid-only"],
+  );
+  assert.deepEqual(rankListings([unpaid, abandoned, emptyCreated, zeroBid]), []);
+  const mixed = rankListings([unpaid, abandoned, emptyCreated, zeroBid, paid]);
+  assert.equal(mixed.length, 1);
+  assert.equal(mixed[0]?.id, "paid-only");
+  assert.equal(mixed[0]?.rank, 1);
+  assert.doesNotMatch(
+    mixed.map((row) => row.id).join(","),
+    /ghost|vapor|blank|zero/,
   );
 });
 

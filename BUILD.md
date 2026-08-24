@@ -348,6 +348,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 47
 - **Acceptance:** Closed occupied `/issue/:date` has one `data-frozen-cover="true"` Cover · #1 hed (listing blurb) before later ranks and before `data-open-cover`. No `id="claim"`, no Claim the next cover, no `action="/listings"`. Later ranks drop `class="hed"`. Empty closed keeps `class="empty-issue"`. Occupied open `/` keeps `data-paid-name`, `data-cover-first`, and one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 49: first-time reader — unpaid stays off the folio; No Cover · #1 until Polar reports paid
+- **Description:** Walk occupied `/` as a first-time reader after an abandoned checkout. Unpaid leftover must not print as Cover · #1. Polar-paid occupancy is the only prize. Occupied Cover · #1 stays the prize only when paid. The listing blurb stays the first occupied click. Empty stand stays empty. Closed empty stays empty-issue. Closed occupied stays frozen. Do not add another named hop. Do not stamp `*-after-*-N`. Do not re-ship closed-frozen, paid-name, empty later-write, or FOLIO vs ISSUE. Do not recolor. Do not rebuild the folio. Stamp-only = REJECT.
+- **Files:** `src/rank.ts`, `src/views/skin.ts`, `src/http/routes/board.ts`, `src/issues.ts`, `src/http/routes/pages.ts`, `src/http/routes/click.ts`, `tests/product-ui.test.ts`, `tests/rank.test.ts`, `tests/pages.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 48
+- **Acceptance:** Unpaid or abandoned listing stays off `/`. Empty leftover `/` stays empty stand + Claim #1 and does not stamp Cover · #1. Occupied Cover · #1 is Polar-paid (`data-polar-paid`) and the listing blurb stays the first occupied click. Closed empty stays empty-issue. Closed occupied stays frozen. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
