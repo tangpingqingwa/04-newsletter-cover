@@ -170,7 +170,7 @@ function renderFlag(board: BoardView): string {
 function renderClaim(board: BoardView): string {
   if (board.status === "closed") {
     return board.listings.length === 0
-      ? `      <p class="form-hint">This issue is frozen. No cover sold.</p>`
+      ? `      <p class="form-hint" data-empty-freeze="true">No last-7-days cover sold. This empty close is not a freeze of a live week.</p>`
       : `      <p class="form-hint" data-frozen-issue="true" data-frozen-hint="true">This issue is a frozen last-7-days rank snapshot. The cover is whoever paid the most in that window. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
   }
   const empty = board.listings.length === 0;
@@ -674,6 +674,17 @@ button { cursor: pointer; }
   display: none;
 }
 .week-closed-empty .form-hint[data-frozen-issue] {
+  display: none;
+}
+/* Closed empty freeze line names no last-7-days cover sold. Not a freeze of a live week. Not a hop. */
+.week-closed-empty .form-hint[data-empty-freeze] {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.week-closed-empty .form-hint:not([data-empty-freeze]),
+.week-open-empty [data-empty-freeze],
+.week-open-sold [data-empty-freeze],
+.week-closed-occupied [data-empty-freeze] {
   display: none;
 }
 .claim {
