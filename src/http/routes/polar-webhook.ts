@@ -37,7 +37,12 @@ export function registerPolarWebhookRoutes(app: FastifyInstance): void {
       return reply.code(400).send({ error: "invalid_webhook" });
     }
     try {
-      const checkout = await completeCheckout(app.db, app.polar, checkoutId);
+      const checkout = await completeCheckout(
+        app.db,
+        app.polar,
+        checkoutId,
+        app.now(),
+      );
       return { ok: true, status: checkout.status };
     } catch (err) {
       if (err instanceof ListingError) {

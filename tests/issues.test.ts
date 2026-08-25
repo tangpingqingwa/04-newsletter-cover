@@ -11,6 +11,7 @@ import { FixturePolar } from "../src/billing/fixture.js";
 import { catchUpIssues, closeIssue } from "../src/close.js";
 import type { AppDb, Listing } from "../src/db.js";
 import { openDatabase } from "../src/db.js";
+import { getBoard } from "../src/http/routes/board.js";
 import {
   addUtcDays,
   followingOpenIssueDate,
@@ -23,10 +24,12 @@ import {
 } from "../src/issues.js";
 import { createListing, ListingError, openIssueDate } from "../src/listings.js";
 import { buildApp } from "../src/server.js";
+import { ROLLING_WEEK_MS } from "../src/week.js";
 
 const ISSUE = "2026-08-24";
 const NEXT_ISSUE = "2026-08-31";
 const BEFORE_CLOSE = new Date("2026-08-23T23:59:59.999Z");
+const PAID_AT = new Date("2026-08-23T12:00:00.000Z");
 const AT_CLOSE = new Date("2026-08-24T00:00:00.000Z");
 const AFTER_CLOSE = new Date("2026-08-24T00:00:00.001Z");
 const MID_NEXT_WEEK = new Date("2026-08-27T12:00:00.000Z");
@@ -136,9 +139,9 @@ test("weekly UTC close is issueDate 00:00:00 UTC; next cover is +7 days", () => 
   assert.equal(nextMondayIssueDate(new Date("2026-08-24T00:00:00.000Z")), "2026-08-31");
 });
 
-test("close freezes the highest paid listing as issue #1; next issue is empty", async (t) => {
+test("occupied close is 7 days from paid placement; Monday 00:00 UTC does not drop issue #1", async (t) => {
   const polar = new FixturePolar();
-  const app = await buildApp({ polar, now: BEFORE_CLOSE });
+  const app = await buildApp({ polar, now: PAID_AT });
   t.after(() => app.close());
   insertIssue(app.db, ISSUE, "open");
 
@@ -150,7 +153,7 @@ test("close freezes the highest paid listing as issue #1; next issue is empty", 
       blurb: "Older five dollars",
       bidUsd: 5,
     },
-    BEFORE_CLOSE,
+    PAID_AT,
   );
   const first = await payListing(
     app,
@@ -160,15 +163,30 @@ test("close freezes the highest paid listing as issue #1; next issue is empty", 
       blurb: "Highest bid wins the cover",
       bidUsd: 12,
     },
-    BEFORE_CLOSE,
+    PAID_AT,
   );
 
-  const closed = catchUpIssues(app.db, AT_CLOSE);
+  const monday = catchUpIssues(app.db, AT_CLOSE);
+  assert.equal(monday.closed.length, 0);
+  assert.equal(loadIssue(app.db, ISSUE)?.status, "open");
+  const mondayBoard = getBoard(app.db, undefined, AT_CLOSE);
+  assert.equal(mondayBoard.issueDate, ISSUE);
+  assert.equal(mondayBoard.status, "open");
+  assert.equal(mondayBoard.listings[0]?.id, first.listingId);
+  assert.equal(mondayBoard.listings[0]?.rank, 1);
+  assert.equal(mondayBoard.listings[1]?.id, second.listingId);
+
+  const expiry = new Date(PAID_AT.getTime() + ROLLING_WEEK_MS);
+  const stillIn = new Date(expiry.getTime() - 1);
+  const afterExpiry = new Date(expiry.getTime() + 1);
+  assert.equal(catchUpIssues(app.db, stillIn).closed.length, 0);
+
+  const closed = catchUpIssues(app.db, afterExpiry);
   assert.equal(closed.closed.length, 1);
   const snapshot = closed.closed[0];
   assert.ok(snapshot);
   assert.equal(snapshot.issue.status, "closed");
-  assert.equal(snapshot.issue.closedAt, "2026-08-24T00:00:00.000Z");
+  assert.equal(snapshot.issue.closedAt, expiry.toISOString());
   assert.ok(snapshot.winner);
   assert.equal(snapshot.winner.id, first.listingId);
   assert.equal(snapshot.winner.rank, 1);
@@ -186,7 +204,7 @@ test("close freezes the highest paid listing as issue #1; next issue is empty", 
   assert.equal(archive.listings[0]?.bidUsd, 12);
   assert.equal(archive.listings.length, 2);
 
-  const live = await boardJson(app);
+  const live = getBoard(app.db, undefined, afterExpiry);
   assert.equal(live.issueDate, NEXT_ISSUE);
   assert.equal(live.status, "open");
   assert.deepEqual(live.listings, []);
@@ -268,7 +286,7 @@ test("closed archive is frozen: new bids stamp the next issue, not the winner bo
   );
   assert.equal(archive.listings[0]?.bidUsd, 9);
 
-  const live = await boardJson(app);
+  const live = getBoard(app.db, undefined, AFTER_CLOSE);
   assert.equal(live.issueDate, NEXT_ISSUE);
   assert.equal(live.listings[0]?.id, after.listingId);
   assert.equal(live.listings[0]?.rank, 1);
@@ -344,7 +362,7 @@ test("boot catch-up freezes a due open issue before the next issue takes bids", 
   const frozen = loadIssue(app.db, ISSUE);
   assert.ok(frozen);
   assert.equal(frozen.status, "closed");
-  assert.equal(frozen.closedAt, "2026-08-24T00:00:00.000Z");
+  assert.equal(frozen.closedAt, "2026-08-27T00:00:00.000Z");
 
   const open = loadOpenIssue(app.db, MID_NEXT_WEEK);
   assert.ok(open);

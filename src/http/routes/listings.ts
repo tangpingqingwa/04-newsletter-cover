@@ -49,6 +49,7 @@ export function registerListingRoutes(app: FastifyInstance): void {
         app.db,
         app.polar,
         request.body,
+        app.now(),
       );
       if (wantsHtml(request)) {
         return reply.redirect(started.url, 303);

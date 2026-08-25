@@ -35,7 +35,7 @@ v1 is **one** English-language vertical newsletter (one board). Architecture may
 - Polar checkout for money in. Tests use a fixture Polar port. No ads, no API keys for readers, no revenue share.
 - `/about` and `/rules` exist and match this SPEC.
 - Clicks on the sponsor URL are public (count + redirect).
-- Cadence is **per issue**. Default close is **weekly**.
+- Cadence is **per issue**. Default close is **weekly**. Occupied live rank is rolling last 7 days from paid placement, not Monday 00:00 UTC.
 
 ### Non-goals
 
@@ -93,9 +93,9 @@ An **issue** is one auction window that ends in one cover.
 | Field | Rule |
 |---|---|
 | `issueDate` | UTC date the issue is identified by (cover date). |
-| Cadence | **Weekly** default. Close at `issueDate 00:00:00 UTC`. |
+| Cadence | **Weekly** default. Empty issues close at `issueDate 00:00:00 UTC`. Occupied live rank is the **rolling last 7 days** from paid placement (`createdAt`). Not Monday 00:00 UTC. Not a 24h lock on #1. |
 | Open issue | The next `issueDate` strictly after `now` (UTC). Exactly one open issue accepts bids. |
-| Close | Freeze ranking. Winner (rank 1) is issue #1. Do not accept bids or raises after close. |
+| Close | Occupied: freeze when every paid placement is outside the rolling last-7-days window. Empty: freeze at `issueDate 00:00:00 UTC`. Winner (rank 1) is issue #1. Do not accept bids or raises after close. |
 | Next | Opening the following weekly `issueDate` is automatic. Empty open boards are allowed. |
 | Empty close | If the issue has zero **paid** listings, there is no cover. Archive shows an empty board. Do not invent a winner. |
 | Archive | `GET /issue/YYYY-MM-DD` stays readable. Ranking is the close snapshot. |
@@ -241,7 +241,7 @@ type Checkout = {
 | 9 | NSFW URL or blurb | `rejected_content`, no row |
 | 10 | Unpaid Polar checkout | Board unchanged |
 | 11 | `GET /l/:id` | 302 to cleaned URL; `clicks` +1; public count updates |
-| 12 | Issue close with a winner | Frozen; that listing is #1; new open issue is empty |
+| 12 | Occupied issue at Monday 00:00 UTC after a Sunday paid placement | Still live; expires 7 days after paid placement. Not a 24h lock. |
 | 13 | Issue close with no paid listings | Empty archive; no invented cover |
 | 14 | `GET /about` and `GET /rules` | 200, state min $5, rank=bid, veto off |
 | 15 | `EDITOR_VETO` unset | Paid listing visible immediately |

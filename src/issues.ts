@@ -1,5 +1,12 @@
 import type { AppDb, Issue, Listing } from "./db.js";
 import { rankListings, type RankedListing } from "./rank.js";
+import {
+  bidInRollingWeek,
+  occupancyExpiresAt,
+  ROLLING_WEEK_MS,
+} from "./week.js";
+
+export { bidInRollingWeek, occupancyExpiresAt, ROLLING_WEEK_MS };
 
 export const ISSUE_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export const WEEK_DAYS = 7;
@@ -35,13 +42,45 @@ export function utcCalendarDate(now: Date = new Date()): string {
   return now.toISOString().slice(0, 10);
 }
 
-/** Close instant is `issueDate 00:00:00 UTC` (SPEC §5). */
+/** Empty-issue close instant is `issueDate 00:00:00 UTC` (SPEC §5). Occupied live rank is rolling last 7 days from paid placement. */
 export function issueCloseAt(issueDate: string): Date {
   return new Date(`${issueDate}T00:00:00.000Z`);
 }
 
+/** Empty calendar close. Occupied issues use `issueIsDueToClose`. */
 export function isDueToClose(issueDate: string, now: Date = new Date()): boolean {
   return now.getTime() >= issueCloseAt(issueDate).getTime();
+}
+
+function paidActiveListings(db: AppDb, issueDate: string): Listing[] {
+  return loadListingsForIssue(db, issueDate).filter(
+    (listing) => listing.bidUsd > 0 && listing.status === "active",
+  );
+}
+
+/**
+ * Empty issues close at Monday `issueDate 00:00:00 UTC`.
+ * Occupied issues close when every paid placement is outside the rolling
+ * last-7-days window — not at Monday midnight, and not a 24h lock on #1.
+ */
+export function issueIsDueToClose(
+  db: AppDb,
+  issue: Issue,
+  now: Date = new Date(),
+): boolean {
+  const paid = paidActiveListings(db, issue.issueDate);
+  if (paid.length === 0) {
+    return isDueToClose(issue.issueDate, now);
+  }
+  return paid.every((listing) => !bidInRollingWeek(listing.createdAt, now));
+}
+
+function occupiedCloseStamp(paid: Listing[]): string {
+  const expiry = paid.reduce((latest, listing) => {
+    const at = occupancyExpiresAt(listing.createdAt).getTime();
+    return Number.isFinite(at) && at > latest ? at : latest;
+  }, 0);
+  return new Date(expiry).toISOString();
 }
 
 export function addUtcDays(issueDate: string, days: number): string {
@@ -103,29 +142,39 @@ export function loadIssue(db: AppDb, issueDate: string): Issue | null {
   return row ? issueFromRow(row) : null;
 }
 
-/** Open issue is the next issueDate strictly after now (SPEC §5). */
+/**
+ * Live open issue: the earliest open row that is not due to close.
+ * Occupied issues stay live across Monday 00:00 UTC while paid placement
+ * is still inside the rolling last 7 days.
+ */
 export function loadOpenIssue(db: AppDb, now: Date = new Date()): Issue | null {
-  const row = db
-    .prepare<[string], IssueRow>(
+  const rows = db
+    .prepare<[], IssueRow>(
       `SELECT issue_date, status, closed_at
        FROM issues
-       WHERE status = 'open' AND issue_date > ?
-       ORDER BY issue_date ASC
-       LIMIT 1`,
+       WHERE status = 'open'
+       ORDER BY issue_date ASC`,
     )
-    .get(utcCalendarDate(now));
-  return row ? issueFromRow(row) : null;
+    .all();
+  for (const row of rows) {
+    const issue = issueFromRow(row);
+    if (!issueIsDueToClose(db, issue, now)) {
+      return issue;
+    }
+  }
+  return null;
 }
 
 /** Only a still-open, not-yet-due issue accepts bids or raises. */
 export function issueIsOpenForBids(
+  db: AppDb,
   issue: Issue | null,
   now: Date = new Date(),
 ): boolean {
   return (
     issue !== null &&
     issue.status === "open" &&
-    !isDueToClose(issue.issueDate, now)
+    !issueIsDueToClose(db, issue, now)
   );
 }
 
@@ -141,17 +190,19 @@ export function loadLatestIssue(db: AppDb): Issue | null {
   return row ? issueFromRow(row) : null;
 }
 
-/** Open issues whose close instant is at or before `now`. */
+/** Open issues whose occupied rolling window (or empty Monday close) is due. */
 export function loadDueOpenIssues(db: AppDb, now: Date = new Date()): Issue[] {
   const rows = db
-    .prepare<[string], IssueRow>(
+    .prepare<[], IssueRow>(
       `SELECT issue_date, status, closed_at
        FROM issues
-       WHERE status = 'open' AND issue_date <= ?
+       WHERE status = 'open'
        ORDER BY issue_date ASC`,
     )
-    .all(utcCalendarDate(now));
-  return rows.map(issueFromRow);
+    .all();
+  return rows
+    .map(issueFromRow)
+    .filter((issue) => issueIsDueToClose(db, issue, now));
 }
 
 export function loadListingsForIssue(db: AppDb, issueDate: string): Listing[] {
@@ -273,11 +324,12 @@ export function closeIssue(
   if (existing.status === "closed") {
     return snapshotClosedIssue(db, existing);
   }
-  const closed = markIssueClosed(
-    db,
-    issueDate,
-    issueCloseAt(issueDate).toISOString(),
-  );
+  const paid = paidActiveListings(db, issueDate);
+  const closedAt =
+    paid.length === 0
+      ? issueCloseAt(issueDate).toISOString()
+      : occupiedCloseStamp(paid);
+  const closed = markIssueClosed(db, issueDate, closedAt);
   ensureFollowingOpenIssue(db, closed.issueDate, now);
   return snapshotClosedIssue(db, closed);
 }

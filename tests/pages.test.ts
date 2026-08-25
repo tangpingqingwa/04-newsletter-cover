@@ -17,6 +17,8 @@ test("GET /about returns 200 HTML and states the product", async (t) => {
   assert.match(body, /Rank is the bid/);
   assert.match(body, /\$5/);
   assert.match(body, /weekly issue/i);
+  assert.match(body, /rolling last 7 days/i);
+  assert.match(body, /Monday 00:00 UTC/);
   assert.match(body, /cover/);
   assert.match(body, /#1/);
   assert.match(body, /no ads/i);
@@ -50,6 +52,8 @@ test("GET /rules returns 200 and states min $5, rank=bid, older wins, raise=diff
   assert.match(body, /Chat-app links and NSFW/);
   assert.match(body, /veto is off/i);
   assert.match(body, /EDITOR_VETO/);
+  assert.match(body, /rolling last 7 days/i);
+  assert.match(body, /Monday 00:00 UTC/);
   assert.doesNotMatch(body, /POLAR_LIVE/);
   assert.doesNotMatch(body, /api\.polar\.sh/);
 });

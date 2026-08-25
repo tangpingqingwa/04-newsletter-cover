@@ -1,4 +1,5 @@
 import type { Listing } from "./db.js";
+import { bidInRollingWeek } from "./week.js";
 
 export type RankableListing = Pick<
   Listing,
@@ -21,6 +22,11 @@ export type RankedListing = RankableListing & {
 
 export type RankOptions = {
   issueDate?: string;
+  /**
+   * Occupied live `/` passes `now` so rank is the rolling last 7 days from
+   * paid placement. Closed archives omit it and keep every paid row frozen.
+   */
+  now?: Date;
 };
 
 /** SPEC §7: anything other than exactly `1` leaves the pending gate off. */
@@ -33,6 +39,7 @@ export function editorVetoEnabled(
 /**
  * Paid + active listings for the open or requested issue.
  * Sort is bidUsd DESC, createdAt ASC. Clicks, blurb, and URL are not keys.
+ * Occupied live `/` ranks only paid placement still inside the rolling last 7 days.
  */
 export function rankListings(
   listings: readonly RankableListing[],
@@ -51,6 +58,12 @@ export function rankListings(
       return false;
     }
     if (options.issueDate !== undefined && listing.issueDate !== options.issueDate) {
+      return false;
+    }
+    if (
+      options.now !== undefined &&
+      !bidInRollingWeek(listing.createdAt, options.now)
+    ) {
       return false;
     }
     // SPEC §7: unless EDITOR_VETO is exactly 1, do not apply a pending gate.

@@ -14,6 +14,7 @@ declare module "fastify" {
   interface FastifyInstance {
     db: AppDb;
     polar: PolarPort;
+    now: () => Date;
   }
 }
 
@@ -43,6 +44,7 @@ export async function buildApp(
   catchUpIssues(db, clock());
   app.decorate("db", db);
   app.decorate("polar", polar);
+  app.decorate("now", clock);
   if (ownsDb) {
     app.addHook("onClose", async () => {
       db.close();
