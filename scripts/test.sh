@@ -2868,6 +2868,115 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "empty rolling-copy UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time sponsor: empty open ear does not tax live rank as Weekly · UTC Monday =="
+grep -q 'data-empty-ear="true"' src/views/skin.ts \
+  || fail "empty open nameplate ear must stamp data-empty-ear"
+grep -q 'Last 7 days · UTC' src/views/skin.ts \
+  || fail "empty open ear must name last 7 days · UTC, not Monday week"
+grep -q 'Weekly · UTC' src/views/skin.ts \
+  || fail "occupied and closed mastheads must still print Weekly · UTC"
+grep -F -q '.week-open-empty .nameplate .ear-right[data-empty-ear]' src/views/skin.ts \
+  || fail "empty ear copy must be composed in FOLIO_CSS, not stamp-only"
+grep -F -q '.week-open-sold [data-empty-ear]' src/views/skin.ts \
+  || fail "occupied sold week must hide leaked empty-ear chrome"
+grep -F -q '.week-closed-empty [data-empty-ear]' src/views/skin.ts \
+  || fail "closed empty archive must hide leaked empty-ear chrome"
+grep -F -q '.week-open-empty .nameplate .ear-right:not([data-empty-ear])' src/views/skin.ts \
+  || fail "empty open must hide a leaked Weekly · UTC ear"
+grep -q 'data-fair-window="true"' src/views/skin.ts \
+  || fail "empty ear cut must keep empty stand data-fair-window"
+grep -q 'Live rank is rolling last 7 days from paid placement' src/views/skin.ts \
+  || fail "empty ear cut must keep empty stand fair-window copy"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "empty ear cut must keep the empty stand"
+grep -q 'This issue’s cover is still open' src/views/skin.ts \
+  || fail "empty ear cut must keep honest empty copy"
+grep -q 'data-read-stand="true"' src/views/skin.ts || fail "empty ear cut must keep empty-stand-first"
+grep -q 'data-claim-after-stand="true"' src/views/skin.ts \
+  || fail "empty ear cut must keep the existing claim-after-stand hop"
+grep -q 'Claim #1 for' src/views/skin.ts || fail "empty ear cut must keep Claim #1"
+grep -q 'class="amount-field"' src/views/skin.ts || fail "empty ear cut must keep the dashed amount"
+grep -q 'data-bid-step="-1"' src/views/skin.ts || fail "empty ear cut must keep − stepper"
+grep -q 'class="outbid"' src/views/skin.ts || fail "empty ear cut must keep Outbid"
+grep -q 'data-cover-first="true"' src/views/skin.ts \
+  || fail "empty ear cut must keep occupied Cover · #1 the first click"
+grep -q 'class="week-window"' src/views/skin.ts || fail "empty ear cut must keep occupied week-window"
+grep -q 'data-rolling-week="true"' src/views/skin.ts \
+  || fail "empty ear cut must keep occupied rolling-week stamp"
+grep -q 'data-claim-after-listing="true"' src/views/skin.ts \
+  || fail "empty ear cut must keep Claim after the listing"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "empty ear cut must keep closed empty-issue"
+grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
+  || fail "empty ear cut must not re-ship FOLIO vs ISSUE"
+grep -q 'empty open ear does not tax live rank' tests/product-ui.test.ts \
+  || fail "product-ui tests must cover empty open ear rolling copy"
+grep -q 'doesNotMatch(emptyMarkup, /Weekly · UTC/)' tests/product-ui.test.ts \
+  || fail "empty open / must not print Weekly · UTC on the nameplate ear"
+grep -q 'doesNotMatch(occupiedMarkup, /data-empty-ear=/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not stamp empty-ear"
+grep -q 'doesNotMatch(closedEmptyMarkup, /data-empty-ear=/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not stamp empty-ear"
+grep -q 'class="ear ear-right">Weekly · UTC' tests/product-ui.test.ts \
+  || fail "occupied and closed must still print Weekly · UTC"
+if ! awk '
+  /function renderMasthead/ { in_head = 1 }
+  in_head && /data-empty-ear="true"/ { saw_ear = 1 }
+  in_head && /Last 7 days · UTC/ { saw_copy = 1 }
+  in_head && /Weekly · UTC/ { saw_weekly = 1 }
+  in_head && /function renderFlag/ { in_head = 0 }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /class="empty-stand"/ { in_stand = 1 }
+  in_stand && /data-fair-window="true"/ { saw_fair = 1 }
+  in_stand && /data-empty-ear/ { leaked = 1 }
+  in_stand && /<\/section>/ { in_stand = 0 }
+  END { exit(leaked ? 1 : (saw_ear && saw_copy && saw_weekly && saw_fair ? 0 : 1)) }
+' src/views/skin.ts; then
+  fail "empty-ear must live on the open nameplate, keep Weekly on occupied/closed, and leave the stand fair-window"
+fi
+if grep -nE 'data-claim-after-read-seven|data-read-after-claim-seven|data-ear-after|empty-ear-after-N' \
+  src/views/skin.ts src/http/routes/board.ts >/dev/null; then
+  fail "do not stamp another named hop; change the empty open nameplate ear only"
+fi
+node -e '
+const { readFileSync } = require("fs");
+const src = readFileSync("src/views/skin.ts", "utf8");
+const folio = src.slice(src.indexOf("export const FOLIO_CSS"), src.indexOf("export const OCCUPIED_CSS"));
+const occupied = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
+const earRule = folio.match(/\.week-open-empty \.nameplate \.ear-right\[data-empty-ear\] \{([^}]*)\}/);
+const nameplate = folio.match(/\.nameplate h1 \{([^}]*)\}/);
+if (!earRule || !nameplate) {
+  console.error("missing empty-ear or nameplate h1 CSS");
+  process.exit(1);
+}
+const earSize = earRule[1].match(/font-size:\s*([\d.]+)rem/);
+if (!earSize) {
+  console.error("missing font-size on empty ear");
+  process.exit(1);
+}
+if (Number(earSize[1]) >= 2.6) {
+  console.error("empty ear is not quieter than The Cover nameplate");
+  process.exit(1);
+}
+if (earRule[1].includes("background:")) {
+  console.error("empty ear must name the window, not recolor the folio");
+  process.exit(1);
+}
+if (!folio.includes(".week-open-sold [data-empty-ear]") || !folio.includes(".week-closed-empty [data-empty-ear]")) {
+  console.error("FOLIO_CSS must hide leaked empty-ear chrome on occupied/closed");
+  process.exit(1);
+}
+if (!folio.includes(".week-open-empty .nameplate .ear-right:not([data-empty-ear])")) {
+  console.error("FOLIO_CSS must hide a leaked Weekly · UTC ear on empty open");
+  process.exit(1);
+}
+if (occupied.includes("data-empty-ear") || occupied.includes(".ear-right[data-empty-ear]")) {
+  console.error("occupied CSS must not own empty-ear chrome");
+  process.exit(1);
+}
+' || fail "empty ear must be composed on the nameplate, not stamp-only"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "empty-ear UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
@@ -2937,6 +3046,8 @@ if [[ -f package.json ]]; then
     || fail "occupied rolling last-7-days leftover test did not run"
   grep -q 'empty open stand names rolling last-7-days' "$test_log" \
     || fail "empty stand rolling last-7-days leftover test did not run"
+  grep -q 'empty open ear does not tax live rank' "$test_log" \
+    || fail "empty open ear leftover test did not run"
   grep -Fq 'rolling last-7-days window is 7 * 24h' "$test_log" \
     || fail "week tests must cover rolling last-7-days window"
   grep -q 'Monday 00:00 UTC does not drop a bid still inside the rolling week' "$test_log" \
