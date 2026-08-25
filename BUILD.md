@@ -378,6 +378,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 57
 - **Acceptance:** Closed occupied `/issue/:date` has one `data-frozen-hint="true"` after-rack hint that names frozen last-7-days rank snapshot and does not say before close. Closed empty keeps `This issue is frozen. No cover sold.` / Weekly · UTC / `empty-issue`. Occupied open `/` keeps Last 7 days, Cover · #1 first click, and week-window. Frozen last 7 days ear and freeze-flag copy stay. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 59: first-time reader — closed empty freeze line names no last-7-days cover, not a freeze of a live week
+- **Description:** On a closed empty `/issue/:date`, the freeze line names that no last-7-days cover sold (`data-empty-freeze`), not “this issue is frozen.” Empty midnight close must not read as the same freeze as occupied last-7-days rank. Closed empty stays empty-issue / Weekly · UTC. Occupied freeze-hint / flag / Frozen last 7 days ear stay. Occupied Cover · #1 first click stays. Occupied week-window stays. Do not add another named hop. Do not stamp `*-after-*-N`. Do not restamp the frozen ear, freeze flag, occupied freeze-hint, occupied open Last 7 days, or occupied Cover · #1. Do not recolor. Do not rebuild the folio. Stamp-only = REJECT.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 58
+- **Acceptance:** Closed empty `/issue/:date` has one `data-empty-freeze="true"` freeze line that names no last-7-days cover sold and does not say this issue is frozen. Closed empty keeps Weekly · UTC / `empty-issue`. Occupied closed `/issue/:date` keeps frozen last-7-days freeze-hint / flag / ear. Occupied open `/` keeps Last 7 days, Cover · #1 first click, and week-window. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)

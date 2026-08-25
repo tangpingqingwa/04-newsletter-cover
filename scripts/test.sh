@@ -2476,7 +2476,7 @@ if ! awk '
   in_fn && /^function / && !/renderClaim/ { in_fn = 0 }
   in_fn && /board.status === "closed"/ { saw_closed = 1 }
   in_fn && saw_closed && /listings.length === 0/ { saw_empty = 1 }
-  in_fn && saw_empty && /No cover sold/ { empty_ok = 1 }
+  in_fn && saw_empty && /No last-7-days cover sold/ { empty_ok = 1 }
   in_fn && saw_closed && /data-frozen-issue="true"/ { saw_frozen = 1 }
   in_fn && saw_frozen && /data-open-cover="true"/ { found = 1 }
   END { exit(empty_ok && found ? 0 : 1) }
@@ -3465,8 +3465,8 @@ grep -q 'data-empty-ear="true">Last 7 days · UTC' src/views/skin.ts \
   || fail "empty open ear last-7-days must stay"
 grep -q 'class="ear ear-right">Weekly · UTC' src/views/skin.ts \
   || fail "closed empty must still print Weekly · UTC"
-grep -q 'This issue is frozen. No cover sold' src/views/skin.ts \
-  || fail "closed empty after-rack hint must still say this issue is frozen / no cover sold"
+grep -q 'data-empty-freeze="true">No last-7-days cover sold' src/views/skin.ts \
+  || fail "closed empty freeze line must name no last-7-days cover sold"
 grep -q 'This issue is closed. It is not the next issue' src/views/skin.ts \
   || fail "closed empty flag must still say this issue is closed"
 grep -F -q '.week-closed-occupied .form-hint[data-frozen-issue][data-frozen-hint]' src/views/skin.ts \
@@ -3519,15 +3519,17 @@ grep -q 'class="ear ear-right" data-empty-ear="true">Last 7 days · UTC' tests/p
   || fail "empty open ear last-7-days must stay"
 grep -q 'class="ear ear-right">Weekly · UTC' tests/product-ui.test.ts \
   || fail "closed empty must still print Weekly · UTC"
-grep -F -q 'This issue is frozen\. No cover sold' tests/product-ui.test.ts \
-  || fail "closed empty must still say this issue is frozen / no cover sold"
+grep -F -q 'No last-7-days cover sold\. This empty close is not a freeze of a live week' tests/product-ui.test.ts \
+  || fail "closed empty must name no last-7-days cover sold, not a freeze of a live week"
 if ! awk '
   /function renderClaim/ { in_claim = 1 }
   in_claim && /^function / && !/renderClaim/ { in_claim = 0 }
   in_claim && /data-frozen-hint="true"/ { saw_hint = 1 }
   in_claim && /frozen last-7-days rank snapshot/ { saw_copy = 1 }
   in_claim && /before close/ { before_close = 1 }
-  in_claim && /No cover sold/ { saw_empty = 1 }
+  in_claim && /data-empty-freeze="true"/ { saw_empty = 1 }
+  in_claim && /No last-7-days cover sold/ { saw_empty_copy = 1 }
+  in_claim && /This issue is frozen. No cover sold/ { old_empty = 1 }
   in_claim && /href="#claim"/ { hops++ }
   /function renderFlag/ { in_flag = 1 }
   in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
@@ -3539,9 +3541,9 @@ if ! awk '
   /class="week-window"/ { saw_window = 1 }
   /data-cover-first="true"/ { saw_cover = 1 }
   /data-frozen-cover="true"/ { saw_archive = 1 }
-  END { exit(before_close || hops ? 1 : (saw_hint && saw_copy && saw_empty && saw_flag && saw_empty_closed && saw_ear && saw_window && saw_cover && saw_archive ? 0 : 1)) }
+  END { exit(before_close || hops || old_empty ? 1 : (saw_hint && saw_copy && saw_empty && saw_empty_copy && saw_flag && saw_empty_closed && saw_ear && saw_window && saw_cover && saw_archive ? 0 : 1)) }
 ' src/views/skin.ts; then
-  fail "closed occupied after-rack hint must name the freeze snapshot, keep closed-empty freeze copy, frozen flag, frozen ear, and leave Cover · #1 / week-window"
+  fail "closed occupied after-rack hint must name the freeze snapshot, keep closed-empty last-7-days empty freeze copy, frozen flag, frozen ear, and leave Cover · #1 / week-window"
 fi
 if grep -nE 'data-claim-after-read-seven|data-read-after-claim-seven|data-hint-after|frozen-hint-after-N' \
   src/views/skin.ts src/http/routes/board.ts >/dev/null; then
@@ -3600,6 +3602,175 @@ if (!folio.includes(".week-open-empty .nameplate .ear-right[data-empty-ear]")) {
 ' || fail "frozen after-rack hint must be composed on the closed occupied freeze note, not stamp-only"
 if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
   fail "frozen last-7-days after-rack hint UX must not invent subscribers, open rates, or an article list"
+fi
+
+echo "== first-time reader: closed empty freeze line names no last-7-days cover, not a freeze of a live week =="
+grep -qE '^### PR 59: first-time reader' BUILD.md \
+  || fail "BUILD.md missing ### PR 59: first-time reader"
+grep -q 'data-empty-freeze="true"' src/views/skin.ts \
+  || fail "closed empty freeze line must stamp data-empty-freeze"
+grep -q 'No last-7-days cover sold' src/views/skin.ts \
+  || fail "closed empty freeze line must name no last-7-days cover sold"
+grep -q 'This empty close is not a freeze of a live week' src/views/skin.ts \
+  || fail "closed empty freeze line must say this empty close is not a freeze of a live week"
+if grep -q 'This issue is frozen. No cover sold' src/views/skin.ts; then
+  fail "closed empty freeze line must not say this issue is frozen / no cover sold"
+fi
+if grep -q 'data-empty-freeze="true">This issue is frozen' src/views/skin.ts; then
+  fail "closed empty freeze line must not read as the occupied freeze"
+fi
+grep -q 'data-frozen-hint="true">This issue is a frozen last-7-days rank snapshot' src/views/skin.ts \
+  || fail "occupied freeze-hint copy must stay"
+grep -q 'data-frozen-flag="true">This issue is a frozen last-7-days rank snapshot' src/views/skin.ts \
+  || fail "frozen flag copy must stay"
+grep -q 'data-frozen-ear="true">Frozen last 7 days · UTC' src/views/skin.ts \
+  || fail "frozen last 7 days ear copy must stay"
+grep -q 'data-occupied-ear="true">Last 7 days · UTC' src/views/skin.ts \
+  || fail "occupied open Last 7 days must stay"
+grep -q 'data-empty-ear="true">Last 7 days · UTC' src/views/skin.ts \
+  || fail "empty open ear last-7-days must stay"
+grep -q 'class="ear ear-right">Weekly · UTC' src/views/skin.ts \
+  || fail "closed empty must still print Weekly · UTC"
+grep -q 'This issue is closed. It is not the next issue' src/views/skin.ts \
+  || fail "closed empty flag must still say this issue is closed"
+grep -F -q '.week-closed-empty .form-hint[data-empty-freeze]' src/views/skin.ts \
+  || fail "closed empty freeze line must be composed in FOLIO_CSS, not stamp-only"
+grep -F -q '.week-open-empty [data-empty-freeze]' src/views/skin.ts \
+  || fail "empty open must hide leaked empty-freeze chrome"
+grep -F -q '.week-open-sold [data-empty-freeze]' src/views/skin.ts \
+  || fail "occupied open must hide leaked empty-freeze chrome"
+grep -F -q '.week-closed-occupied [data-empty-freeze]' src/views/skin.ts \
+  || fail "closed occupied archive must hide leaked empty-freeze chrome"
+grep -F -q '.week-closed-empty .form-hint:not([data-empty-freeze])' src/views/skin.ts \
+  || fail "closed empty must hide a leaked frozen live-week freeze line"
+grep -q 'data-cover-first="true"' src/views/skin.ts \
+  || fail "closed empty freeze cut must keep occupied Cover · #1 the first click"
+grep -q 'class="week-window"' src/views/skin.ts \
+  || fail "closed empty freeze cut must keep occupied week-window"
+grep -q 'data-rolling-week="true"' src/views/skin.ts \
+  || fail "closed empty freeze cut must keep occupied rolling-week stamp"
+grep -q 'data-claim-after-listing="true"' src/views/skin.ts \
+  || fail "closed empty freeze cut must keep Claim after the listing"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "closed empty freeze cut must keep the empty stand"
+grep -q 'data-fair-window="true"' src/views/skin.ts \
+  || fail "closed empty freeze cut must keep empty stand data-fair-window"
+grep -q 'Claim #1 for' src/views/skin.ts || fail "closed empty freeze cut must keep Claim #1"
+grep -q 'class="amount-field"' src/views/skin.ts || fail "closed empty freeze cut must keep the dashed amount"
+grep -q 'data-bid-step="-1"' src/views/skin.ts || fail "closed empty freeze cut must keep − stepper"
+grep -q 'class="outbid"' src/views/skin.ts || fail "closed empty freeze cut must keep Outbid"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "closed empty freeze cut must keep closed empty-issue"
+grep -q 'data-frozen-cover="true"' src/views/skin.ts \
+  || fail "closed empty freeze cut must keep frozen Cover · #1"
+grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
+  || fail "closed empty freeze cut must not rebuild the print folio"
+grep -q 'closed empty freeze line names no last-7-days cover' tests/product-ui.test.ts \
+  || fail "product-ui tests must cover closed empty last-7-days freeze line"
+grep -q 'doesNotMatch(closedEmptyMarkup, /This issue is frozen/)' tests/product-ui.test.ts \
+  || fail "closed empty /issue must not keep this issue is frozen"
+grep -q 'doesNotMatch(occupiedMarkup, /data-empty-freeze=/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not stamp empty-freeze"
+grep -q 'doesNotMatch(emptyMarkup, /data-empty-freeze=/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp empty-freeze"
+grep -q 'doesNotMatch(closedOccupiedMarkup, /data-empty-freeze=/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not stamp empty-freeze"
+grep -q 'class="ear ear-right" data-frozen-ear="true">Frozen last 7 days · UTC' tests/product-ui.test.ts \
+  || fail "frozen last 7 days ear copy must stay"
+grep -q 'class="flag" data-frozen-flag="true">This issue is a frozen last-7-days rank snapshot' tests/product-ui.test.ts \
+  || fail "frozen flag copy must stay"
+grep -q 'data-frozen-hint="true">This issue is a frozen last-7-days rank snapshot' tests/product-ui.test.ts \
+  || fail "occupied freeze-hint copy must stay"
+grep -q 'class="ear ear-right" data-occupied-ear="true">Last 7 days · UTC' tests/product-ui.test.ts \
+  || fail "occupied open ear last-7-days must stay"
+grep -q 'class="ear ear-right" data-empty-ear="true">Last 7 days · UTC' tests/product-ui.test.ts \
+  || fail "empty open ear last-7-days must stay"
+grep -q 'class="ear ear-right">Weekly · UTC' tests/product-ui.test.ts \
+  || fail "closed empty must still print Weekly · UTC"
+if ! awk '
+  /function renderClaim/ { in_claim = 1 }
+  in_claim && /^function / && !/renderClaim/ { in_claim = 0 }
+  in_claim && /data-empty-freeze="true"/ { saw_empty = 1 }
+  in_claim && /No last-7-days cover sold/ { saw_copy = 1 }
+  in_claim && /not a freeze of a live week/ { saw_not_live = 1 }
+  in_claim && /This issue is frozen. No cover sold/ { old_empty = 1 }
+  in_claim && /data-frozen-hint="true"/ { saw_hint = 1 }
+  in_claim && /frozen last-7-days rank snapshot/ { saw_occupied = 1 }
+  in_claim && /href="#claim"/ { hops++ }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  in_flag && /data-frozen-flag="true">This issue is a frozen last-7-days rank snapshot/ { saw_flag = 1 }
+  in_flag && /This issue is closed/ { saw_empty_closed = 1 }
+  /function renderMasthead/ { in_head = 1 }
+  in_head && /data-frozen-ear="true">Frozen last 7 days · UTC/ { saw_ear = 1 }
+  in_head && /function renderFlag/ { in_head = 0 }
+  /class="week-window"/ { saw_window = 1 }
+  /data-cover-first="true"/ { saw_cover = 1 }
+  /data-frozen-cover="true"/ { saw_archive = 1 }
+  /class="empty-issue"/ { saw_slab = 1 }
+  END { exit(old_empty || hops ? 1 : (saw_empty && saw_copy && saw_not_live && saw_hint && saw_occupied && saw_flag && saw_empty_closed && saw_ear && saw_window && saw_cover && saw_archive && saw_slab ? 0 : 1)) }
+' src/views/skin.ts; then
+  fail "closed empty freeze line must name no last-7-days cover, keep occupied freeze-hint / flag / ear, empty-issue, and leave Cover · #1 / week-window"
+fi
+if grep -nE 'data-claim-after-read-seven|data-read-after-claim-seven|data-empty-freeze-after-N|freeze-after-N' \
+  src/views/skin.ts src/http/routes/board.ts >/dev/null; then
+  fail "do not stamp another named hop; change the closed empty freeze line only"
+fi
+node -e '
+const { readFileSync } = require("fs");
+const src = readFileSync("src/views/skin.ts", "utf8");
+const folio = src.slice(src.indexOf("export const FOLIO_CSS"), src.indexOf("export const OCCUPIED_CSS"));
+const occupied = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
+const emptyRule = folio.match(/\.week-closed-empty \.form-hint\[data-empty-freeze\] \{([^}]*)\}/);
+if (!emptyRule) {
+  console.error("missing empty-freeze CSS");
+  process.exit(1);
+}
+if (!emptyRule[1].includes("font-weight:")) {
+  console.error("empty-freeze must be composed, not stamp-only");
+  process.exit(1);
+}
+if (emptyRule[1].includes("background:")) {
+  console.error("empty-freeze must name the leftover, not recolor the folio");
+  process.exit(1);
+}
+if (!folio.includes(".week-open-empty [data-empty-freeze]") || !folio.includes(".week-open-sold [data-empty-freeze]") || !folio.includes(".week-closed-occupied [data-empty-freeze]")) {
+  console.error("FOLIO_CSS must hide leaked empty-freeze chrome on empty/open/closed-occupied");
+  process.exit(1);
+}
+if (!folio.includes(".week-closed-empty .form-hint:not([data-empty-freeze])")) {
+  console.error("FOLIO_CSS must hide a leaked frozen live-week freeze line on closed empty");
+  process.exit(1);
+}
+if (occupied.includes("data-empty-freeze") || occupied.includes(".form-hint[data-empty-freeze]")) {
+  console.error("occupied CSS must not own empty-freeze chrome");
+  process.exit(1);
+}
+if (!folio.includes(".week-closed-occupied .form-hint[data-frozen-issue][data-frozen-hint]")) {
+  console.error("do not restamp the occupied freeze-hint out of FOLIO_CSS");
+  process.exit(1);
+}
+if (!folio.includes(".week-closed-occupied .flag[data-frozen-flag]")) {
+  console.error("do not restamp the frozen flag out of FOLIO_CSS");
+  process.exit(1);
+}
+if (!folio.includes(".week-closed-occupied .nameplate .ear-right[data-frozen-ear]")) {
+  console.error("do not restamp the frozen ear out of FOLIO_CSS");
+  process.exit(1);
+}
+if (folio.includes(".week-open-sold .nameplate .ear-right[data-occupied-ear]")) {
+  console.error("do not restamp occupied-ear composition into FOLIO_CSS");
+  process.exit(1);
+}
+if (!occupied.includes(".week-open-sold .nameplate .ear-right[data-occupied-ear]")) {
+  console.error("occupied-ear composition must stay in OCCUPIED_CSS");
+  process.exit(1);
+}
+if (!folio.includes(".week-open-empty .nameplate .ear-right[data-empty-ear]")) {
+  console.error("empty-ear composition must stay in FOLIO_CSS");
+  process.exit(1);
+}
+' || fail "empty freeze line must be composed on the closed empty freeze note, not stamp-only"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "closed empty last-7-days freeze UX must not invent subscribers, open rates, or an article list"
 fi
 
 echo "== live-smoke stays operator-only =="
@@ -3681,6 +3852,8 @@ if [[ -f package.json ]]; then
     || fail "closed occupied frozen last-7-days flag leftover test did not run"
   grep -q 'closed occupied after-rack hint names frozen last-7-days snapshot' "$test_log" \
     || fail "closed occupied frozen last-7-days after-rack hint leftover test did not run"
+  grep -q 'closed empty freeze line names no last-7-days cover' "$test_log" \
+    || fail "closed empty last-7-days freeze leftover test did not run"
   grep -Fq 'rolling last-7-days window is 7 * 24h' "$test_log" \
     || fail "week tests must cover rolling last-7-days window"
   grep -q 'Monday 00:00 UTC does not drop a bid still inside the rolling week' "$test_log" \
