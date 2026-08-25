@@ -3233,6 +3233,72 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "frozen-ear UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: closed occupied ear names frozen last-7-days, not live Last 7 days =="
+grep -q 'data-frozen-ear="true">Frozen last 7 days · UTC' src/views/skin.ts \
+  || fail "closed occupied ear must name Frozen last 7 days · UTC"
+if grep -q 'data-frozen-ear="true">Last 7 days · UTC' src/views/skin.ts; then
+  fail "closed occupied ear must not print live Last 7 days · UTC"
+fi
+grep -q 'data-occupied-ear="true">Last 7 days · UTC' src/views/skin.ts \
+  || fail "occupied open Last 7 days must stay"
+grep -q 'data-empty-ear="true">Last 7 days · UTC' src/views/skin.ts \
+  || fail "empty open ear last-7-days must stay"
+grep -q 'class="ear ear-right">Weekly · UTC' src/views/skin.ts \
+  || fail "closed empty must still print Weekly · UTC"
+grep -q 'data-cover-first="true"' src/views/skin.ts \
+  || fail "frozen last-7-days ear cut must keep occupied Cover · #1 the first click"
+grep -q 'class="week-window"' src/views/skin.ts \
+  || fail "frozen last-7-days ear cut must keep occupied week-window"
+grep -q 'data-rolling-week="true"' src/views/skin.ts \
+  || fail "frozen last-7-days ear cut must keep occupied rolling-week stamp"
+grep -q 'Claim #1 for' src/views/skin.ts || fail "frozen last-7-days ear cut must keep Claim #1"
+grep -q 'class="amount-field"' src/views/skin.ts || fail "frozen last-7-days ear cut must keep the dashed amount"
+grep -q 'data-bid-step="-1"' src/views/skin.ts || fail "frozen last-7-days ear cut must keep − stepper"
+grep -q 'class="outbid"' src/views/skin.ts || fail "frozen last-7-days ear cut must keep Outbid"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "frozen last-7-days ear cut must keep closed empty-issue"
+grep -q 'data-frozen-cover="true"' src/views/skin.ts \
+  || fail "frozen last-7-days ear cut must keep frozen Cover · #1"
+grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
+  || fail "frozen last-7-days ear cut must not rebuild the print folio"
+grep -q 'closed occupied ear names frozen last-7-days' tests/product-ui.test.ts \
+  || fail "product-ui tests must cover frozen last-7-days closed occupied ear copy"
+grep -q 'doesNotMatch(closedOccupiedMarkup, /data-frozen-ear="true">Last 7 days · UTC</)' tests/product-ui.test.ts \
+  || fail "closed occupied /issue must not print live Last 7 days on the frozen ear"
+grep -q 'doesNotMatch(occupiedMarkup, /Frozen last 7 days/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not print Frozen last 7 days"
+grep -q 'doesNotMatch(emptyMarkup, /Frozen last 7 days/)' tests/product-ui.test.ts \
+  || fail "empty open / must not print Frozen last 7 days"
+grep -q 'doesNotMatch(closedEmptyMarkup, /Frozen last 7 days/)' tests/product-ui.test.ts \
+  || fail "closed empty archive must not print Frozen last 7 days"
+grep -q 'class="ear ear-right" data-occupied-ear="true">Last 7 days · UTC' tests/product-ui.test.ts \
+  || fail "occupied open ear last-7-days must stay"
+grep -q 'class="ear ear-right" data-empty-ear="true">Last 7 days · UTC' tests/product-ui.test.ts \
+  || fail "empty open ear last-7-days must stay"
+grep -q 'class="ear ear-right">Weekly · UTC' tests/product-ui.test.ts \
+  || fail "closed empty must still print Weekly · UTC"
+if ! awk '
+  /function renderMasthead/ { in_head = 1 }
+  in_head && /data-frozen-ear="true">Frozen last 7 days · UTC/ { saw_frozen = 1 }
+  in_head && /data-frozen-ear="true">Last 7 days · UTC/ { live_on_archive = 1 }
+  in_head && /data-occupied-ear="true">Last 7 days · UTC/ { saw_occupied = 1 }
+  in_head && /data-empty-ear="true">Last 7 days · UTC/ { saw_empty = 1 }
+  in_head && />Weekly · UTC</ { saw_weekly = 1 }
+  in_head && /function renderFlag/ { in_head = 0 }
+  /class="week-window"/ { saw_window = 1 }
+  /data-cover-first="true"/ { saw_cover = 1 }
+  /data-frozen-cover="true"/ { saw_archive = 1 }
+  END { exit(live_on_archive ? 1 : (saw_frozen && saw_occupied && saw_empty && saw_weekly && saw_window && saw_cover && saw_archive ? 0 : 1)) }
+' src/views/skin.ts; then
+  fail "closed occupied ear must name Frozen last 7 days, keep occupied/empty Last 7 days and closed-empty Weekly, and leave Cover · #1 / week-window"
+fi
+if grep -nE 'data-claim-after-read-seven|data-read-after-claim-seven|data-ear-after|frozen-ear-after-N' \
+  src/views/skin.ts src/http/routes/board.ts >/dev/null; then
+  fail "do not stamp another named hop; change the closed occupied nameplate ear copy only"
+fi
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "frozen last-7-days ear UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
@@ -3306,6 +3372,8 @@ if [[ -f package.json ]]; then
     || fail "empty open ear leftover test did not run"
   grep -q 'occupied open ear does not tax live rank' "$test_log" \
     || fail "occupied open ear leftover test did not run"
+  grep -q 'closed occupied ear names frozen last-7-days' "$test_log" \
+    || fail "closed occupied frozen last-7-days ear leftover test did not run"
   grep -Fq 'rolling last-7-days window is 7 * 24h' "$test_log" \
     || fail "week tests must cover rolling last-7-days window"
   grep -q 'Monday 00:00 UTC does not drop a bid still inside the rolling week' "$test_log" \
