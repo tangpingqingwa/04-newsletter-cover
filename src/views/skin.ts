@@ -127,6 +127,10 @@ function issueState(status: BoardView["status"]): { label: string; attr: string 
 
 function renderMasthead(board: BoardView): string {
   const state = issueState(board.status);
+  const emptyOpen = board.status === "open" && board.listings.length === 0;
+  const rightEar = emptyOpen
+    ? `<p class="ear ear-right" data-empty-ear="true">Last 7 days · UTC</p>`
+    : `<p class="ear ear-right">Weekly · UTC</p>`;
   const dateBlock = board.issueDate
     ? `<time datetime="${escapeHtml(board.issueDate)}" data-issue-date="${escapeHtml(board.issueDate)}">${escapeHtml(spokenIssueDate(board.issueDate))}</time>`
     : `<span data-issue-date="">No issue on the stand</span>`;
@@ -138,7 +142,7 @@ function renderMasthead(board: BoardView): string {
         <div class="nameplate">
           <p class="ear">Vol. I · One prize</p>
           <h1>The Cover</h1>
-          <p class="ear ear-right">Weekly · UTC</p>
+          ${rightEar}
         </div>
         ${renderFlag(board)}
       </header>`;
@@ -513,6 +517,21 @@ button { cursor: pointer; }
   color: var(--mute);
 }
 .ear-right { text-align: right; }
+/* Empty open ear names the fair live-rank window. Not Monday UTC. Not a hop. */
+.week-open-empty .nameplate .ear-right[data-empty-ear] {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute);
+  text-align: right;
+}
+.week-open-empty .nameplate .ear-right:not([data-empty-ear]),
+.week-open-sold [data-empty-ear],
+.week-closed-empty [data-empty-ear],
+.week-closed-occupied [data-empty-ear] {
+  display: none;
+}
 .nameplate h1 {
   margin: 0;
   font-family: var(--display);
