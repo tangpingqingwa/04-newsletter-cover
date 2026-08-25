@@ -88,6 +88,11 @@ test("open board is a print masthead: folio OPEN, Claim #1, dashed amount, ±, O
   assert.match(body, /no cover sold/i);
   assert.match(body, /No paid listings on this board/);
   assert.match(body, /This issue’s cover is still open/);
+  assert.match(body, /data-fair-window="true"/);
+  assert.match(body, /Live rank is rolling last 7 days from paid placement/);
+  assert.match(body, /Not Monday 00:00 UTC/);
+  assert.doesNotMatch(body, /data-rolling-week=/);
+  assert.doesNotMatch(body, /class="week-window"/);
   assert.match(body, /\$5 takes #1/);
   assert.match(body, /this issue’s cover/);
   assert.ok(body.indexOf('data-read-stand="true"') < body.indexOf('data-claim-after-stand="true"'));
@@ -3990,6 +3995,10 @@ test("empty open / stays the empty stand — no sold-cover, Claim the next cover
   assert.match(emptyOpen, /class="claim-note" data-empty-issue="true" data-cover-prize="true"/);
   assert.match(emptyOpen, /The next issue’s cover goes to whoever pays the most/);
   assert.match(emptyOpen, /This issue’s cover is still open/);
+  assert.match(emptyOpen, /data-fair-window="true"/);
+  assert.match(emptyOpen, /Live rank is rolling last 7 days from paid placement/);
+  assert.doesNotMatch(emptyOpen.slice(emptyOpen.indexOf("</style>")), /data-rolling-week=/);
+  assert.doesNotMatch(emptyOpen.slice(emptyOpen.indexOf("</style>")), /class="week-window"/);
   assert.match(emptyOpen, /No cover sold/);
   assert.match(emptyOpen, /No paid listings on this board/);
   assert.match(emptyOpen, /class="claim-note" data-empty-issue="true" data-cover-prize="true"/);
@@ -4032,6 +4041,7 @@ test("empty open / stays the empty stand — no sold-cover, Claim the next cover
   assert.doesNotMatch(occupiedOpen, /data-empty-open-stand="true"/);
   assert.doesNotMatch(occupiedOpen, /class="week week-open-empty"/);
   assert.doesNotMatch(occupiedOpen, /class="empty-stand"/);
+  assert.doesNotMatch(occupiedOpen.slice(occupiedOpen.indexOf("</style>")), /data-fair-window=/);
   assert.doesNotMatch(occupiedOpen, /goes to whoever pays the most/);
 
   assert.match(closedEmpty, /class="week week-closed-empty"/);
@@ -5581,9 +5591,12 @@ test("occupied week window is rolling last-7-days — not Monday 00:00 UTC", () 
   assert.match(emptyOpen, /class="empty-stand"/);
   assert.match(emptyOpen, /Claim #1 for/);
   assert.match(emptyCss, /\[data-rolling-week\]/);
+  assert.match(emptyCss, /\.week-open-empty \.empty-stand \.fair-window\[data-fair-window\]/);
   const emptyMarkup = emptyOpen.slice(emptyOpen.indexOf("</style>"));
   assert.doesNotMatch(emptyMarkup, /data-rolling-week=/);
-  assert.doesNotMatch(emptyMarkup, /Rolling last 7 days/);
+  assert.doesNotMatch(emptyMarkup, /class="week-window"/);
+  assert.match(emptyOpen, /data-fair-window="true"/);
+  assert.match(emptyOpen, /Live rank is rolling last 7 days from paid placement/);
   assert.doesNotMatch(emptyOpen, /data-claim-after-listing="true"/);
   assert.doesNotMatch(emptyCss, /\.week-open-sold \.cover-rack\[data-rolling-week\]/);
 
@@ -5599,7 +5612,158 @@ test("occupied week window is rolling last-7-days — not Monday 00:00 UTC", () 
   const closedEmptyMarkup = closedEmpty.slice(closedEmpty.indexOf("</style>"));
   assert.match(closedEmpty, /class="empty-issue"/);
   assert.doesNotMatch(closedEmptyMarkup, /data-rolling-week=/);
+  assert.doesNotMatch(closedEmptyMarkup, /data-fair-window=/);
   assert.doesNotMatch(closedEmpty, /id="claim"/);
+});
+
+test("empty open stand names rolling last-7-days — not Monday issue close as live rank", () => {
+  const emptyOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const occupiedOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_cover",
+        sponsorUrl: "https://sponsor.example/pitch",
+        blurb: "Widgets for the next issue",
+        bidUsd: 12,
+        clicks: 3,
+      },
+    ],
+  });
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [],
+  });
+  const closedOccupied = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_won",
+        sponsorUrl: "https://won.example/cover",
+        blurb: "Frozen winner",
+        bidUsd: 20,
+        clicks: 1,
+      },
+    ],
+  });
+
+  const emptyCss = emptyOpen.slice(emptyOpen.indexOf("<style>"), emptyOpen.indexOf("</style>"));
+  const occupiedCss = occupiedOpen.slice(
+    occupiedOpen.indexOf("<style>"),
+    occupiedOpen.indexOf("</style>"),
+  );
+  const emptyMarkup = emptyOpen.slice(emptyOpen.indexOf("</style>"));
+  const occupiedMarkup = occupiedOpen.slice(occupiedOpen.indexOf("</style>"));
+  const closedEmptyMarkup = closedEmpty.slice(closedEmpty.indexOf("</style>"));
+  const closedOccupiedMarkup = closedOccupied.slice(closedOccupied.indexOf("</style>"));
+
+  const standAt = emptyOpen.indexOf('class="empty-stand"');
+  const fairAt = emptyOpen.indexOf('data-fair-window="true"');
+  const hopAt = emptyOpen.indexOf('data-claim-after-stand="true"');
+  const claimAt = emptyOpen.indexOf('id="claim"');
+  assert.notEqual(standAt, -1);
+  assert.notEqual(fairAt, -1);
+  assert.notEqual(hopAt, -1);
+  assert.notEqual(claimAt, -1);
+  assert.ok(standAt < fairAt);
+  assert.ok(fairAt < hopAt);
+  assert.ok(hopAt < claimAt);
+  assert.equal((emptyOpen.match(/data-fair-window="true"/g) ?? []).length, 1);
+  assert.equal((emptyOpen.match(/href="#claim"/g) ?? []).length, 1);
+  assert.match(emptyOpen, /class="empty-stand"/);
+  assert.match(emptyOpen, /data-read-stand="true"/);
+  assert.match(emptyOpen, /data-empty-open-stand="true"/);
+  assert.match(emptyOpen, /No cover sold/);
+  assert.match(emptyOpen, /No paid listings on this board/);
+  assert.match(emptyOpen, /This issue’s cover is still open/);
+  assert.match(
+    emptyOpen,
+    /class="fair-window" data-fair-window="true">Live rank is rolling last 7 days from paid placement\. Not Monday 00:00 UTC\./,
+  );
+  assert.match(emptyOpen, /Claim #1 for/);
+  assert.match(emptyOpen, /class="amount-field"/);
+  assert.match(emptyOpen, /data-bid-step="-1"/);
+  assert.match(emptyOpen, /class="outbid"/);
+  assert.match(emptyOpen, /\$5 takes #1 — this issue’s cover/);
+  assert.doesNotMatch(emptyMarkup, /data-rolling-week=/);
+  assert.doesNotMatch(emptyMarkup, /class="week-window"/);
+  assert.doesNotMatch(emptyOpen, /data-sold-cover="true"/);
+  assert.doesNotMatch(emptyOpen, /Claim the next cover/);
+  assert.doesNotMatch(emptyOpen, /data-named-prize="true"/);
+  assert.doesNotMatch(emptyOpen, /Cover · #1/);
+  assert.doesNotMatch(emptyOpen, /data-claim-after-listing="true"/);
+  assert.doesNotMatch(emptyOpen, /24h lock/);
+  assert.doesNotMatch(emptyOpen, /data-claim-after-read-seven/);
+  assert.doesNotMatch(emptyOpen, /subscriber/i);
+  assert.doesNotMatch(emptyOpen, /article list/i);
+
+  assert.equal(emptyCss, `<style>${FOLIO_CSS}`);
+  assert.match(
+    emptyCss,
+    /\.week-open-empty \.empty-stand \.fair-window\[data-fair-window\]/,
+  );
+  const fairRule = emptyCss.match(
+    /\.week-open-empty \.empty-stand \.fair-window\[data-fair-window\] \{([^}]*)\}/,
+  );
+  assert.ok(fairRule);
+  const fairSize = fairRule[1].match(/font-size:\s*([\d.]+)rem/);
+  const emptyHed = emptyCss.match(/\n\.hed \{([^}]*)\}/);
+  assert.ok(fairSize);
+  assert.ok(emptyHed);
+  const hedSize = emptyHed[1].match(/font-size:\s*([\d.]+)rem/);
+  assert.ok(hedSize);
+  assert.ok(
+    Number(fairSize[1]) < Number(hedSize[1]),
+    "empty fair-window copy must stay quieter than No cover sold",
+  );
+  assert.match(fairRule[1], /color:\s*var\(--mute\)/);
+  assert.doesNotMatch(fairRule[1], /background:/);
+  assert.doesNotMatch(emptyCss, /\.week-open-sold \.cover-rack\[data-rolling-week\]/);
+
+  const coverFirstAt = occupiedOpen.indexOf('data-cover-first="true"');
+  const windowAt = occupiedOpen.indexOf('class="week-window" data-rolling-week="true"');
+  const hopOccupiedAt = occupiedOpen.indexOf('data-claim-cover="true"');
+  assert.notEqual(coverFirstAt, -1);
+  assert.notEqual(windowAt, -1);
+  assert.notEqual(hopOccupiedAt, -1);
+  assert.ok(coverFirstAt < windowAt);
+  assert.ok(windowAt < hopOccupiedAt);
+  assert.match(occupiedOpen, /Cover · #1/);
+  assert.match(occupiedOpen, /data-cover-first="true"/);
+  assert.match(occupiedOpen, /data-rolling-week="true"/);
+  assert.match(occupiedOpen, /class="week-window"/);
+  assert.match(occupiedOpen, /Rolling last 7 days from paid placement\. Not Monday 00:00 UTC\./);
+  assert.doesNotMatch(occupiedMarkup, /data-fair-window=/);
+  assert.doesNotMatch(occupiedMarkup, /class="empty-stand"/);
+  assert.match(occupiedCss, /\.week-open-sold \.fair-window/);
+  assert.match(
+    occupiedCss,
+    /\.week-open-sold \.cover-rack\[data-rolling-week\] \+ \.week-window\[data-rolling-week\]/,
+  );
+  assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
+
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.match(closedEmpty, /data-closed-empty-issue="true"/);
+  assert.doesNotMatch(closedEmptyMarkup, /data-fair-window=/);
+  assert.doesNotMatch(closedEmptyMarkup, /data-rolling-week=/);
+  assert.doesNotMatch(closedEmpty, /Live rank is rolling last 7 days/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
+
+  assert.match(closedOccupied, /Cover · #1/);
+  assert.match(closedOccupied, /data-frozen-cover="true"/);
+  assert.doesNotMatch(closedOccupiedMarkup, /data-fair-window=/);
+  assert.doesNotMatch(closedOccupiedMarkup, /data-rolling-week=/);
+  assert.doesNotMatch(closedOccupied, /id="claim"/);
+  assert.doesNotMatch(closedOccupied, /Claim the next cover/);
 });
 
 
