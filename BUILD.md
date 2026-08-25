@@ -384,6 +384,11 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 58
 - **Acceptance:** Closed empty `/issue/:date` has one `data-empty-freeze="true"` freeze line that names no last-7-days cover sold and does not say this issue is frozen. Closed empty keeps Weekly · UTC / `empty-issue`. Occupied closed `/issue/:date` keeps frozen last-7-days freeze-hint / flag / ear. Occupied open `/` keeps Last 7 days, Cover · #1 first click, and week-window. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 60: first-time reader — closed empty empty-issue kicker names no last-7-days cover
+- **Description:** On a closed empty `/issue/:date`, the empty-issue kicker names that no last-7-days cover sold (`data-empty-slab`), not a generic “No cover sold” / “Nobody bought the cover” next to the last-7-days freeze line. The slab must not read as a generic empty live week. Closed empty stays empty-issue / Weekly · UTC. Occupied freeze-hint / flag / Frozen last 7 days ear stay. Occupied Cover · #1 first click stays. Occupied week-window stays. Closed empty freeze line stays. Do not add another named hop. Do not stamp `*-after-*-N`. Do not restamp the frozen ear, freeze flag, occupied freeze-hint, occupied open Last 7 days, occupied Cover · #1, or the closed empty freeze line. Do not recolor. Do not rebuild the folio. Stamp-only = REJECT.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `tests/issues.test.ts`, `scripts/test.sh`
+- **Acceptance:** Closed empty `/issue/:date` has one `data-empty-slab="true"` empty-issue kicker that names no last-7-days cover sold and does not say generic No cover sold / Nobody bought the cover. Closed empty keeps Weekly · UTC / `empty-issue` and the last-7-days freeze line. Occupied closed `/issue/:date` keeps frozen last-7-days freeze-hint / flag / ear. Occupied open `/` keeps Last 7 days, Cover · #1 first click, and week-window. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
