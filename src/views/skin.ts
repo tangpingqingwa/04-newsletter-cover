@@ -330,8 +330,8 @@ function renderRack(board: BoardView): string {
   if (board.listings.length === 0) {
     if (board.status === "closed") {
       return `      <section class="empty-issue" data-empty-issue="true" data-closed-empty-issue="true">
-        <p class="empty-kicker">No cover sold</p>
-        <p>No paid listings on this board. Nobody bought the cover. The folio stays blank.</p>
+        <p class="empty-kicker" data-empty-slab="true">No last-7-days cover sold</p>
+        <p>No paid listings on this board. Nobody bought a last-7-days cover. The folio stays blank.</p>
       </section>`;
     }
     return `      <section class="empty-stand" aria-label="This issue’s cover" data-read-stand="true" data-empty-open-stand="true">
@@ -875,6 +875,17 @@ button { cursor: pointer; }
   letter-spacing: 0.2em;
   text-transform: uppercase;
   font-size: 0.78rem;
+}
+/* Closed empty empty-issue kicker names no last-7-days cover. Not a generic empty live week. Not a hop. */
+.week-closed-empty .empty-issue .empty-kicker[data-empty-slab] {
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+.week-closed-empty .empty-issue .empty-kicker:not([data-empty-slab]),
+.week-open-empty [data-empty-slab],
+.week-open-sold [data-empty-slab],
+.week-closed-occupied [data-empty-slab] {
+  display: none;
 }
 .cover-rack { list-style: none; margin: 1.1rem 0 0; padding: 0; }
 .cover-line {
