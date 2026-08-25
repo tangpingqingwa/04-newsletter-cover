@@ -135,7 +135,7 @@ function renderMasthead(board: BoardView): string {
     : occupiedOpen
       ? `<p class="ear ear-right" data-occupied-ear="true">Last 7 days · UTC</p>`
       : occupiedClosed
-        ? `<p class="ear ear-right" data-frozen-ear="true">Last 7 days · UTC</p>`
+        ? `<p class="ear ear-right" data-frozen-ear="true">Frozen last 7 days · UTC</p>`
         : `<p class="ear ear-right">Weekly · UTC</p>`;
   const dateBlock = board.issueDate
     ? `<time datetime="${escapeHtml(board.issueDate)}" data-issue-date="${escapeHtml(board.issueDate)}">${escapeHtml(spokenIssueDate(board.issueDate))}</time>`
@@ -532,7 +532,7 @@ button { cursor: pointer; }
   color: var(--mute);
   text-align: right;
 }
-/* Closed occupied ear names the frozen last-7-days window. Not Monday UTC. Not a hop. */
+/* Closed occupied ear names frozen last-7-days rank. Not live Last 7 days. Not Monday UTC. Not a hop. */
 .week-closed-occupied .nameplate .ear-right[data-frozen-ear] {
   margin: 0;
   font-size: 0.68rem;
