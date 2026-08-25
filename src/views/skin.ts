@@ -129,11 +129,14 @@ function renderMasthead(board: BoardView): string {
   const state = issueState(board.status);
   const emptyOpen = board.status === "open" && board.listings.length === 0;
   const occupiedOpen = board.status === "open" && board.listings.length > 0;
+  const occupiedClosed = board.status === "closed" && board.listings.length > 0;
   const rightEar = emptyOpen
     ? `<p class="ear ear-right" data-empty-ear="true">Last 7 days · UTC</p>`
     : occupiedOpen
       ? `<p class="ear ear-right" data-occupied-ear="true">Last 7 days · UTC</p>`
-      : `<p class="ear ear-right">Weekly · UTC</p>`;
+      : occupiedClosed
+        ? `<p class="ear ear-right" data-frozen-ear="true">Last 7 days · UTC</p>`
+        : `<p class="ear ear-right">Weekly · UTC</p>`;
   const dateBlock = board.issueDate
     ? `<time datetime="${escapeHtml(board.issueDate)}" data-issue-date="${escapeHtml(board.issueDate)}">${escapeHtml(spokenIssueDate(board.issueDate))}</time>`
     : `<span data-issue-date="">No issue on the stand</span>`;
@@ -529,12 +532,25 @@ button { cursor: pointer; }
   color: var(--mute);
   text-align: right;
 }
+/* Closed occupied ear names the frozen last-7-days window. Not Monday UTC. Not a hop. */
+.week-closed-occupied .nameplate .ear-right[data-frozen-ear] {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute);
+  text-align: right;
+}
 .week-open-empty .nameplate .ear-right:not([data-empty-ear]),
 .week-open-sold .nameplate .ear-right:not([data-occupied-ear]),
+.week-closed-occupied .nameplate .ear-right:not([data-frozen-ear]),
 .week-open-sold [data-empty-ear],
 .week-open-empty [data-occupied-ear],
+.week-open-empty [data-frozen-ear],
+.week-open-sold [data-frozen-ear],
 .week-closed-empty [data-empty-ear],
 .week-closed-empty [data-occupied-ear],
+.week-closed-empty [data-frozen-ear],
 .week-closed-occupied [data-empty-ear],
 .week-closed-occupied [data-occupied-ear] {
   display: none;
