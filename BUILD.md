@@ -395,6 +395,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 60
 - **Acceptance:** Closed empty `/issue/:date` has one `data-empty-week="true"` empty-issue body that names no last-7-days cover / closed empty week and does not say No paid listings on this board. Closed empty keeps Weekly · UTC / `empty-issue`, the last-7-days freeze line, and the last-7-days kicker. Occupied closed `/issue/:date` keeps frozen last-7-days freeze-hint / flag / ear. Occupied open `/` keeps Last 7 days, Cover · #1 first click, and week-window. Empty open `/` keeps `No paid listings on this board.` Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 62: first-time reader — closed empty flag names last-7-days / closed empty week
+- **Description:** On a closed empty `/issue/:date`, the masthead flag names last-7-days / closed empty week (`data-empty-flag`), not “This issue is closed.” The page must not rhyme with a generic closed archive above the last-7-days empty week. Closed empty stays empty-issue / Weekly · UTC. Occupied freeze-hint / flag / Frozen last 7 days ear stay. Occupied Cover · #1 first click stays. Occupied week-window stays. Closed empty freeze line stays. Closed empty last-7-days kicker stays. Closed empty empty-issue body stays. Do not add another named hop. Do not stamp `*-after-*-N`. Do not restamp the frozen ear, freeze flag, occupied freeze-hint, occupied open Last 7 days, occupied Cover · #1, the closed empty freeze line, the closed empty last-7-days kicker, or the closed empty empty-issue body. Do not recolor. Do not rebuild the folio. Stamp-only = REJECT.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 61
+- **Acceptance:** Closed empty `/issue/:date` has one `data-empty-flag="true"` flag that names last-7-days / closed empty week and does not say This issue is closed. Closed empty keeps Weekly · UTC / `empty-issue`, the last-7-days freeze line, the last-7-days kicker, and the last-7-days empty-issue body. Occupied closed `/issue/:date` keeps frozen last-7-days freeze-hint / flag / ear. Occupied open `/` keeps Last 7 days, Cover · #1 first click, and week-window. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)

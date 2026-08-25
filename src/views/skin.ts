@@ -157,7 +157,7 @@ function renderMasthead(board: BoardView): string {
 function renderFlag(board: BoardView): string {
   if (board.status === "closed") {
     if (board.listings.length === 0) {
-      return `<p class="flag">This issue is closed. It is not the next issue’s cover. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
+      return `<p class="flag" data-empty-flag="true">This issue is a closed empty week. No last-7-days cover. It is not the next issue’s cover. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
     }
     return `<p class="flag" data-frozen-flag="true">This issue is a frozen last-7-days rank snapshot. It is not the next issue’s cover.</p>`;
   }
@@ -576,6 +576,18 @@ button { cursor: pointer; }
   display: block;
   font-weight: 700;
   margin-top: 0.55rem;
+}
+/* Closed empty flag names last-7-days / closed empty week. Not a generic closed archive. Not a hop. */
+.week-closed-empty .flag[data-empty-flag] {
+  display: block;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.week-closed-empty .flag:not([data-empty-flag]),
+.week-open-empty [data-empty-flag],
+.week-open-sold [data-empty-flag],
+.week-closed-occupied [data-empty-flag] {
+  display: none;
 }
 /* Closed occupied flag names frozen last-7-days rank snapshot. Not a live close line. Not a hop. */
 .week-closed-occupied .flag[data-frozen-flag] {
