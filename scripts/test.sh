@@ -3962,6 +3962,215 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "closed empty last-7-days empty-issue kicker UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: closed empty empty-issue body names no last-7-days cover / closed empty week, not the live empty stand line =="
+grep -qE '^### PR 61: first-time reader' BUILD.md \
+  || fail "BUILD.md missing ### PR 61: first-time reader"
+grep -q 'data-empty-week="true"' src/views/skin.ts \
+  || fail "closed empty empty-issue body must stamp data-empty-week"
+grep -q 'dek" data-empty-week="true">This closed week has no last-7-days cover' src/views/skin.ts \
+  || fail "closed empty empty-issue body must name no last-7-days cover / closed empty week"
+grep -q 'Nobody bought a last-7-days cover' src/views/skin.ts \
+  || fail "closed empty empty-issue dek must still name nobody bought a last-7-days cover"
+if awk '
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_rack && /status === "closed"/ { in_closed = 1 }
+  in_closed && /class="empty-stand"/ { in_closed = 0 }
+  in_closed && /No paid listings on this board/ { leaked = 1 }
+  END { exit(leaked ? 0 : 1) }
+' src/views/skin.ts; then
+  fail "closed empty empty-issue body must not lead with No paid listings on this board"
+fi
+grep -q 'empty-kicker" data-empty-slab="true">No last-7-days cover sold' src/views/skin.ts \
+  || fail "closed empty last-7-days kicker copy must stay"
+grep -q 'data-empty-freeze="true">No last-7-days cover sold' src/views/skin.ts \
+  || fail "closed empty freeze line copy must stay"
+grep -q 'This empty close is not a freeze of a live week' src/views/skin.ts \
+  || fail "closed empty freeze line must still say this empty close is not a freeze of a live week"
+grep -q 'data-frozen-hint="true">This issue is a frozen last-7-days rank snapshot' src/views/skin.ts \
+  || fail "occupied freeze-hint copy must stay"
+grep -q 'data-frozen-flag="true">This issue is a frozen last-7-days rank snapshot' src/views/skin.ts \
+  || fail "frozen flag copy must stay"
+grep -q 'data-frozen-ear="true">Frozen last 7 days · UTC' src/views/skin.ts \
+  || fail "frozen last 7 days ear copy must stay"
+grep -q 'data-occupied-ear="true">Last 7 days · UTC' src/views/skin.ts \
+  || fail "occupied open Last 7 days must stay"
+grep -q 'data-empty-ear="true">Last 7 days · UTC' src/views/skin.ts \
+  || fail "empty open ear last-7-days must stay"
+grep -q 'class="ear ear-right">Weekly · UTC' src/views/skin.ts \
+  || fail "closed empty must still print Weekly · UTC"
+grep -q 'This issue is closed. It is not the next issue' src/views/skin.ts \
+  || fail "closed empty flag must still say this issue is closed"
+grep -q 'dek">No paid listings on this board. This issue’s cover is still open' src/views/skin.ts \
+  || fail "empty open stand must keep No paid listings on this board"
+grep -F -q '.week-closed-empty .empty-issue .dek[data-empty-week]' src/views/skin.ts \
+  || fail "closed empty empty-issue body must be composed in FOLIO_CSS, not stamp-only"
+grep -F -q '.week-open-empty [data-empty-week]' src/views/skin.ts \
+  || fail "empty open must hide leaked empty-week chrome"
+grep -F -q '.week-open-sold [data-empty-week]' src/views/skin.ts \
+  || fail "occupied open must hide leaked empty-week chrome"
+grep -F -q '.week-closed-occupied [data-empty-week]' src/views/skin.ts \
+  || fail "closed occupied archive must hide leaked empty-week chrome"
+grep -F -q '.week-closed-empty .empty-issue p:not(.empty-kicker):not([data-empty-week])' src/views/skin.ts \
+  || fail "closed empty must hide a leaked live empty stand line"
+grep -F -q '.week-closed-empty .empty-issue .empty-kicker[data-empty-slab]' src/views/skin.ts \
+  || fail "closed empty last-7-days kicker composition must stay"
+grep -F -q '.week-closed-empty .form-hint[data-empty-freeze]' src/views/skin.ts \
+  || fail "closed empty freeze line composition must stay"
+grep -q 'data-cover-first="true"' src/views/skin.ts \
+  || fail "closed empty body cut must keep occupied Cover · #1 the first click"
+grep -q 'class="week-window"' src/views/skin.ts \
+  || fail "closed empty body cut must keep occupied week-window"
+grep -q 'data-rolling-week="true"' src/views/skin.ts \
+  || fail "closed empty body cut must keep occupied rolling-week stamp"
+grep -q 'data-claim-after-listing="true"' src/views/skin.ts \
+  || fail "closed empty body cut must keep Claim after the listing"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "closed empty body cut must keep the empty stand"
+grep -q 'data-fair-window="true"' src/views/skin.ts \
+  || fail "closed empty body cut must keep empty stand data-fair-window"
+grep -q 'empty-kicker">This issue’s cover' src/views/skin.ts \
+  || fail "closed empty body cut must keep the empty-stand kicker"
+grep -q 'Claim #1 for' src/views/skin.ts || fail "closed empty body cut must keep Claim #1"
+grep -q 'class="amount-field"' src/views/skin.ts || fail "closed empty body cut must keep the dashed amount"
+grep -q 'data-bid-step="-1"' src/views/skin.ts || fail "closed empty body cut must keep − stepper"
+grep -q 'class="outbid"' src/views/skin.ts || fail "closed empty body cut must keep Outbid"
+grep -q 'class="empty-issue"' src/views/skin.ts || fail "closed empty body cut must keep closed empty-issue"
+grep -q 'data-frozen-cover="true"' src/views/skin.ts \
+  || fail "closed empty body cut must keep frozen Cover · #1"
+grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
+  || fail "closed empty body cut must not rebuild the print folio"
+grep -q 'closed empty empty-issue body names no last-7-days cover' tests/product-ui.test.ts \
+  || fail "product-ui tests must cover closed empty last-7-days empty-issue body"
+grep -q 'doesNotMatch(closedEmptyMarkup, /No paid listings on this board/)' tests/product-ui.test.ts \
+  || fail "closed empty /issue must not keep No paid listings on this board"
+grep -q 'doesNotMatch(occupiedMarkup, /data-empty-week=/)' tests/product-ui.test.ts \
+  || fail "occupied open / must not stamp empty-week"
+grep -q 'doesNotMatch(emptyMarkup, /data-empty-week=/)' tests/product-ui.test.ts \
+  || fail "empty open / must not stamp empty-week"
+grep -q 'doesNotMatch(closedOccupiedMarkup, /data-empty-week=/)' tests/product-ui.test.ts \
+  || fail "closed occupied archive must not stamp empty-week"
+grep -q 'class="ear ear-right" data-frozen-ear="true">Frozen last 7 days · UTC' tests/product-ui.test.ts \
+  || fail "frozen last 7 days ear copy must stay"
+grep -q 'class="flag" data-frozen-flag="true">This issue is a frozen last-7-days rank snapshot' tests/product-ui.test.ts \
+  || fail "frozen flag copy must stay"
+grep -q 'data-frozen-hint="true">This issue is a frozen last-7-days rank snapshot' tests/product-ui.test.ts \
+  || fail "occupied freeze-hint copy must stay"
+grep -q 'class="form-hint" data-empty-freeze="true">No last-7-days cover sold' tests/product-ui.test.ts \
+  || fail "closed empty freeze line copy must stay in tests"
+grep -q 'class="empty-kicker" data-empty-slab="true">No last-7-days cover sold' tests/product-ui.test.ts \
+  || fail "closed empty last-7-days kicker copy must stay in tests"
+grep -q 'class="ear ear-right" data-occupied-ear="true">Last 7 days · UTC' tests/product-ui.test.ts \
+  || fail "occupied open ear last-7-days must stay"
+grep -q 'class="ear ear-right" data-empty-ear="true">Last 7 days · UTC' tests/product-ui.test.ts \
+  || fail "empty open ear last-7-days must stay"
+grep -q 'class="ear ear-right">Weekly · UTC' tests/product-ui.test.ts \
+  || fail "closed empty must still print Weekly · UTC"
+if ! awk '
+  /function renderClaim/ { in_claim = 1 }
+  in_claim && /^function / && !/renderClaim/ { in_claim = 0 }
+  in_claim && /data-empty-freeze="true"/ { saw_freeze = 1 }
+  in_claim && /No last-7-days cover sold/ { saw_freeze_copy = 1 }
+  in_claim && /not a freeze of a live week/ { saw_not_live = 1 }
+  in_claim && /This issue is frozen. No cover sold/ { old_empty = 1 }
+  in_claim && /data-frozen-hint="true"/ { saw_hint = 1 }
+  in_claim && /frozen last-7-days rank snapshot/ { saw_occupied = 1 }
+  in_claim && /href="#claim"/ { hops++ }
+  /function renderRack/ { in_rack = 1 }
+  in_rack && /^function / && !/renderRack/ { in_rack = 0 }
+  in_rack && /status === "closed"/ { in_closed = 1 }
+  in_closed && /class="empty-stand"/ { in_closed = 0 }
+  in_closed && /data-empty-week="true">This closed week has no last-7-days cover/ { saw_body = 1 }
+  in_closed && /Nobody bought a last-7-days cover/ { saw_dek = 1 }
+  in_closed && /No paid listings on this board/ { leaked_stand = 1 }
+  in_rack && /data-empty-slab="true">No last-7-days cover sold/ { saw_kicker = 1 }
+  in_rack && /empty-kicker">No cover sold/ { old_kicker = 1 }
+  in_rack && /Nobody bought the cover/ { old_dek = 1 }
+  /function renderFlag/ { in_flag = 1 }
+  in_flag && /^function / && !/renderFlag/ { in_flag = 0 }
+  in_flag && /data-frozen-flag="true">This issue is a frozen last-7-days rank snapshot/ { saw_flag = 1 }
+  in_flag && /This issue is closed/ { saw_empty_closed = 1 }
+  /function renderMasthead/ { in_head = 1 }
+  in_head && /data-frozen-ear="true">Frozen last 7 days · UTC/ { saw_ear = 1 }
+  in_head && /function renderFlag/ { in_head = 0 }
+  /class="week-window"/ { saw_window = 1 }
+  /data-cover-first="true"/ { saw_cover = 1 }
+  /data-frozen-cover="true"/ { saw_archive = 1 }
+  /class="empty-issue"/ { saw_slab = 1 }
+  END { exit(old_empty || old_kicker || old_dek || leaked_stand || hops ? 1 : (saw_freeze && saw_freeze_copy && saw_not_live && saw_body && saw_dek && saw_kicker && saw_hint && saw_occupied && saw_flag && saw_empty_closed && saw_ear && saw_window && saw_cover && saw_archive && saw_slab ? 0 : 1)) }
+' src/views/skin.ts; then
+  fail "closed empty empty-issue body must name no last-7-days cover / closed empty week, keep kicker / freeze line / occupied freeze-hint / flag / ear, empty-issue, and leave Cover · #1 / week-window"
+fi
+if grep -nE 'data-claim-after-read-seven|data-read-after-claim-seven|data-empty-slab-after-N|data-empty-week-after-N|slab-after-N' \
+  src/views/skin.ts src/http/routes/board.ts >/dev/null; then
+  fail "do not stamp another named hop; change the closed empty empty-issue body only"
+fi
+node -e '
+const { readFileSync } = require("fs");
+const src = readFileSync("src/views/skin.ts", "utf8");
+const folio = src.slice(src.indexOf("export const FOLIO_CSS"), src.indexOf("export const OCCUPIED_CSS"));
+const occupied = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
+const weekRule = folio.match(/\.week-closed-empty \.empty-issue \.dek\[data-empty-week\] \{([^}]*)\}/);
+if (!weekRule) {
+  console.error("missing empty-week CSS");
+  process.exit(1);
+}
+if (!weekRule[1].includes("font-weight:")) {
+  console.error("empty-week must be composed, not stamp-only");
+  process.exit(1);
+}
+if (weekRule[1].includes("background:")) {
+  console.error("empty-week must name the leftover, not recolor the folio");
+  process.exit(1);
+}
+if (!folio.includes(".week-open-empty [data-empty-week]") || !folio.includes(".week-open-sold [data-empty-week]") || !folio.includes(".week-closed-occupied [data-empty-week]")) {
+  console.error("FOLIO_CSS must hide leaked empty-week chrome on empty/open/closed-occupied");
+  process.exit(1);
+}
+if (!folio.includes(".week-closed-empty .empty-issue p:not(.empty-kicker):not([data-empty-week])")) {
+  console.error("FOLIO_CSS must hide a leaked live empty stand line on closed empty");
+  process.exit(1);
+}
+if (occupied.includes("data-empty-week") || occupied.includes(".dek[data-empty-week]")) {
+  console.error("occupied CSS must not own empty-week chrome");
+  process.exit(1);
+}
+if (!folio.includes(".week-closed-empty .empty-issue .empty-kicker[data-empty-slab]")) {
+  console.error("do not restamp the closed empty last-7-days kicker out of FOLIO_CSS");
+  process.exit(1);
+}
+if (!folio.includes(".week-closed-empty .form-hint[data-empty-freeze]")) {
+  console.error("do not restamp the closed empty freeze line out of FOLIO_CSS");
+  process.exit(1);
+}
+if (!folio.includes(".week-closed-occupied .form-hint[data-frozen-issue][data-frozen-hint]")) {
+  console.error("do not restamp the occupied freeze-hint out of FOLIO_CSS");
+  process.exit(1);
+}
+if (!folio.includes(".week-closed-occupied .flag[data-frozen-flag]")) {
+  console.error("do not restamp the frozen flag out of FOLIO_CSS");
+  process.exit(1);
+}
+if (!folio.includes(".week-closed-occupied .nameplate .ear-right[data-frozen-ear]")) {
+  console.error("do not restamp the frozen ear out of FOLIO_CSS");
+  process.exit(1);
+}
+if (folio.includes(".week-open-sold .nameplate .ear-right[data-occupied-ear]")) {
+  console.error("do not restamp occupied-ear composition into FOLIO_CSS");
+  process.exit(1);
+}
+if (!occupied.includes(".week-open-sold .nameplate .ear-right[data-occupied-ear]")) {
+  console.error("occupied-ear composition must stay in OCCUPIED_CSS");
+  process.exit(1);
+}
+if (!folio.includes(".week-open-empty .nameplate .ear-right[data-empty-ear]")) {
+  console.error("empty-ear composition must stay in FOLIO_CSS");
+  process.exit(1);
+}
+' || fail "empty-issue body must be composed on the closed empty slab, not stamp-only"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "closed empty last-7-days empty-issue body UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
@@ -4045,6 +4254,8 @@ if [[ -f package.json ]]; then
     || fail "closed empty last-7-days freeze leftover test did not run"
   grep -q 'closed empty empty-issue kicker names no last-7-days cover' "$test_log" \
     || fail "closed empty last-7-days empty-issue kicker leftover test did not run"
+  grep -q 'closed empty empty-issue body names no last-7-days cover' "$test_log" \
+    || fail "closed empty last-7-days empty-issue body leftover test did not run"
   grep -Fq 'rolling last-7-days window is 7 * 24h' "$test_log" \
     || fail "week tests must cover rolling last-7-days window"
   grep -q 'Monday 00:00 UTC does not drop a bid still inside the rolling week' "$test_log" \

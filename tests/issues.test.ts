@@ -233,7 +233,7 @@ test("empty close invents no cover; archive stays an empty frozen board", async 
   assert.deepEqual(archive.listings, []);
   const html = await app.inject({ method: "GET", url: `/issue/${ISSUE}` });
   assert.equal(html.statusCode, 200);
-  assert.match(html.body, /No paid listings on this board/);
+  assert.match(html.body, /This closed week has no last-7-days cover/);
   assert.match(html.body, /no last-7-days cover sold/i);
   assert.doesNotMatch(html.body, /data-rank="1"/);
   assert.doesNotMatch(html.body, /unpaid\.example/);
