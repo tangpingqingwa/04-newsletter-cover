@@ -328,6 +328,7 @@ function renderRack(board: BoardView): string {
         <p class="empty-kicker">This issue’s cover</p>
         <p class="hed">No cover sold</p>
         <p class="dek">No paid listings on this board. This issue’s cover is still open.</p>
+        <p class="fair-window" data-fair-window="true">Live rank is rolling last 7 days from paid placement. Not Monday 00:00 UTC.</p>
         <p class="claim-after-stand"><a href="#claim" data-claim-after-stand="true">Claim this issue’s cover.</a></p>
       </section>`;
   }
@@ -740,6 +741,15 @@ button { cursor: pointer; }
   padding: 0.95rem 0 1.15rem;
 }
 .empty-stand .hed { margin-top: 0.12rem; }
+/* Empty stand names the same fair occupied-rank window. Not occupied week-window chrome. */
+.week-open-empty .empty-stand .fair-window[data-fair-window] {
+  margin: 0.45rem 0 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  color: var(--mute);
+}
 .empty-stand .claim-after-stand { margin: 0.7rem 0 0; }
 .empty-stand .claim-after-stand a {
   text-decoration: underline;
@@ -768,7 +778,13 @@ button { cursor: pointer; }
 .week-closed-empty [data-rolling-week],
 .week-closed-empty .week-window,
 .week-closed-occupied [data-rolling-week],
-.week-closed-occupied .week-window {
+.week-closed-occupied .week-window,
+.week-open-sold .fair-window,
+.week-open-sold [data-fair-window],
+.week-closed-empty .fair-window,
+.week-closed-empty [data-fair-window],
+.week-closed-occupied .fair-window,
+.week-closed-occupied [data-fair-window] {
   display: none;
 }
 .empty-issue {

@@ -360,6 +360,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 49 / PR 50
 - **Acceptance:** Occupied open `/` stamps `data-rolling-week` and names rolling last 7 days from paid placement. Empty open `/` has no rolling stamp. Closed occupied `/issue/:date` stays frozen with no rolling stamp. A Sunday paid placement still occupies Monday 00:00 UTC and leaves live rank 7 days later. `bash scripts/test.sh` stays offline.
 
+### PR 52: first-time sponsor — empty open stand names rolling last-7-days
+- **Description:** On an empty open `/`, the blank stand names the fair occupied-rank window: rolling last 7 days from paid placement, not Monday 00:00 UTC as when live rank dies. Empty stand stays empty. Occupied Cover · #1 stays the first occupied click. Occupied week-window / `data-rolling-week` chrome stays off empty. Closed issues stay closed. Do not add another named hop. Do not stamp `*-after-*-N`. Do not re-ship occupied rolling chrome. Do not recolor. Do not rebuild the folio.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 51
+- **Acceptance:** Empty open `/` has `data-fair-window="true"` and names rolling last 7 days from paid placement. Empty open has no `data-rolling-week` and no `class="week-window"`. Occupied open `/` keeps `data-rolling-week` / week-window and Cover · #1 first click. Closed empty archives stay `empty-issue`. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
