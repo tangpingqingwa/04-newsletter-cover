@@ -171,7 +171,7 @@ function renderClaim(board: BoardView): string {
   if (board.status === "closed") {
     return board.listings.length === 0
       ? `      <p class="form-hint">This issue is frozen. No cover sold.</p>`
-      : `      <p class="form-hint" data-frozen-issue="true">This issue is frozen. The cover is whoever paid the most before close. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
+      : `      <p class="form-hint" data-frozen-issue="true" data-frozen-hint="true">This issue is a frozen last-7-days rank snapshot. The cover is whoever paid the most in that window. <a href="/" data-open-cover="true">The open cover is on the stand.</a></p>`;
   }
   const empty = board.listings.length === 0;
   const top = board.listings[0]?.bidUsd ?? 0;
@@ -661,6 +661,17 @@ button { cursor: pointer; }
   color: var(--mute);
   text-decoration: underline;
   text-underline-offset: 0.15em;
+}
+/* Closed occupied after-rack hint names frozen last-7-days rank snapshot. Not a midnight close line. Not a hop. */
+.week-closed-occupied .form-hint[data-frozen-issue][data-frozen-hint] {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.week-closed-occupied .form-hint[data-frozen-issue]:not([data-frozen-hint]),
+.week-open-empty [data-frozen-hint],
+.week-open-sold [data-frozen-hint],
+.week-closed-empty [data-frozen-hint] {
+  display: none;
 }
 .week-closed-empty .form-hint[data-frozen-issue] {
   display: none;
