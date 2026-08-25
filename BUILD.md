@@ -14,7 +14,7 @@ Pay-to-rank clone of outbid.lol for one newsletter cover. Rank is money. Polar t
 | App | Node 22, TypeScript, Fastify |
 | DB | SQLite (issues, listings, checkouts) |
 | Payments | `PolarPort`. Fixture adapter in tests. Live Polar only when `POLAR_LIVE=1` and secrets exist. `POLAR_FIXTURE_ONLY=1` always wins. |
-| Time | UTC. Issue close = `issueDate 00:00:00 UTC`. Weekly default. Catch-up on boot. |
+| Time | UTC. Empty close = `issueDate 00:00:00 UTC`. Occupied live rank = rolling last 7 days from paid placement. Catch-up on boot. |
 | Tests | `node:test` + fixture Polar. No `polar.sh` network in `scripts/test.sh`. |
 
 ---
@@ -78,7 +78,7 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 | chat | `t.me/...` → `rejected_content` |
 | nsfw | adult host or blurb → `rejected_content` |
 | clicks | `GET /l/:id` 302 + clicks increment; rank unchanged |
-| close | weekly close freezes winner as #1; next issue empty |
+| close | occupied live is rolling last 7 days from paid placement; Monday 00:00 UTC does not drop #1; empty close still invents nothing; boot catch-up |
 | empty close | zero paid rows → no invented cover |
 | veto default | `EDITOR_VETO` unset → listing visible after pay |
 | fixture wins | `POLAR_FIXTURE_ONLY=1` ignores `POLAR_LIVE` |
@@ -353,6 +353,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
 - **Dependencies:** PR 48
 - **Acceptance:** Occupied open `/` has Cover · #1 / `data-cover-first` before `data-claim-cover`. The existing `#claim` hop is one `data-claim-cover` / `data-claim-after-listing` after the listing, not in the masthead flag. Empty open `/` and closed archives have no `data-claim-after-listing`. Still one `#claim` hop. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
+### PR 51: first-time reader — occupied week window is rolling last-7-days from paid placement
+- **Description:** Occupied live `/` ranks Polar-paid `createdAt` in the rolling last 7 days. Monday 00:00 UTC is not the drop. Empty stand stays empty. Occupied Cover · #1 still reads before money and stays the first occupied click. Claim stays after the listing. Unpaid stays off. Closed occupied stays frozen. Not a 24h lock on #1. Do not add another named hop. Do not stamp `claim-after-read-N`. Do not re-ship Cover-before-Claim, closed-frozen, paid-name, empty later-write, or unpaid-off. Do not recolor. Do not rebuild the folio. Stamp-only = REJECT.
+- **Files:** `src/week.ts`, `src/issues.ts`, `src/rank.ts`, `src/views/skin.ts`, `src/http/routes/board.ts`, `src/http/routes/pages.ts`, `tests/week.test.ts`, `tests/issues.test.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 49 / PR 50
+- **Acceptance:** Occupied open `/` stamps `data-rolling-week` and names rolling last 7 days from paid placement. Empty open `/` has no rolling stamp. Closed occupied `/issue/:date` stays frozen with no rolling stamp. A Sunday paid placement still occupies Monday 00:00 UTC and leaves live rank 7 days later. `bash scripts/test.sh` stays offline.
 
 ---
 

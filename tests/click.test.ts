@@ -141,7 +141,7 @@ test("GET /l/:id 302s to the cleaned sponsor URL and increments public clicks", 
 });
 
 test("clicks do not change rank when bids tie", async (t) => {
-  const app = await buildApp();
+  const app = await buildApp({ now: new Date("2026-08-06T12:00:00.000Z") });
   t.after(() => app.close());
   insertIssue(app.db, OPEN_ISSUE, "open");
   insertListing(app.db, {

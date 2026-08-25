@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { AppDb, Listing } from "./db.js";
-import { catchUpIssues, issueIsOpenForBids, loadIssue } from "./issues.js";
+import {
+  catchUpIssues,
+  issueIsOpenForBids,
+  loadIssue,
+  loadOpenIssue,
+} from "./issues.js";
 import { canonicalizeSponsorUrl, isNsfwBlurb } from "./url.js";
 
 const BLURB_MAX = 120;
@@ -51,23 +56,10 @@ function asTrimmedString(value: unknown): string | undefined {
   return value.trim();
 }
 
-function utcCalendarDate(now: Date): string {
-  return now.toISOString().slice(0, 10);
-}
-
-/** Next open issueDate strictly after now (SPEC §5). Frozen issues never stamp. */
+/** Next live open issueDate (SPEC §5). Occupied weeks stay live across Monday midnight. Frozen issues never stamp. */
 export function openIssueDate(db: AppDb, now: Date = new Date()): string | null {
   catchUpIssues(db, now);
-  const row = db
-    .prepare<[string], { issue_date: string }>(
-      `SELECT issue_date
-       FROM issues
-       WHERE status = 'open' AND issue_date > ?
-       ORDER BY issue_date ASC
-       LIMIT 1`,
-    )
-    .get(utcCalendarDate(now));
-  return row?.issue_date ?? null;
+  return loadOpenIssue(db, now)?.issueDate ?? null;
 }
 
 /** Canonical http(s) sponsor URL. Chat / NSFW → `rejected_content` (SPEC §6). */
@@ -291,7 +283,7 @@ export function applyPaidBid(
     throw new ListingError("unknown_listing", "listing not found", 404);
   }
 
-  if (!issueIsOpenForBids(loadIssue(db, listing.issueDate), now)) {
+  if (!issueIsOpenForBids(db, loadIssue(db, listing.issueDate), now)) {
     throw new ListingError(
       "issue_closed",
       "do not accept bids or raises after close",

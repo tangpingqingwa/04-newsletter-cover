@@ -313,6 +313,9 @@ function renderPitch(listing: BoardViewListing, openPrize: boolean): string {
 /** Occupied Claim the next cover is a later write after Cover · #1, not a masthead rail. */
 const OCCUPIED_CLAIM_HOP = `      <p class="claim-after-listing" data-claim-after-listing="true"><a href="#claim" data-claim-cover="true" data-claim-after-sold="true" data-claim-after-read-sold="true" data-claim-after-read-two="true" data-claim-after-read-three="true" data-claim-after-read-four="true" data-claim-after-read-five="true" data-claim-after-read-six="true">Claim the next cover.</a></p>`;
 
+/** Occupied live week is rolling last 7 days from paid placement. Not a named hop. */
+const OCCUPIED_WEEK_WINDOW = `      <p class="week-window" data-rolling-week="true">Rolling last 7 days from paid placement. Not Monday 00:00 UTC.</p>`;
+
 function renderRack(board: BoardView): string {
   if (board.listings.length === 0) {
     if (board.status === "closed") {
@@ -330,7 +333,7 @@ function renderRack(board: BoardView): string {
   }
   const readCover = board.status === "open";
   const attrs = readCover
-    ? ' aria-label="This issue’s cover" data-read-cover="true"'
+    ? ' aria-label="This issue’s cover" data-read-cover="true" data-rolling-week="true"'
     : ' aria-label="This issue’s cover" data-frozen-board="true"';
   const rack = `      <ol class="cover-rack"${attrs}>
 ${board.listings.map((listing) => renderPitch(listing, board.status === "open")).join("\n")}
@@ -339,6 +342,7 @@ ${board.listings.map((listing) => renderPitch(listing, board.status === "open"))
     return rack;
   }
   return `${rack}
+${OCCUPIED_WEEK_WINDOW}
 ${OCCUPIED_CLAIM_HOP}`;
 }
 
@@ -759,6 +763,14 @@ button { cursor: pointer; }
 .week-open-empty .empty-stand {
   display: block;
 }
+.week-open-empty[data-empty-open-stand] [data-rolling-week],
+.week-open-empty .week-window,
+.week-closed-empty [data-rolling-week],
+.week-closed-empty .week-window,
+.week-closed-occupied [data-rolling-week],
+.week-closed-occupied .week-window {
+  display: none;
+}
 .empty-issue {
   margin: 1.4rem 0 0;
   padding: 1.2rem 0.6rem 0.4rem;
@@ -878,6 +890,8 @@ export const OCCUPIED_CSS = /* css */ `
 .week-open-empty[data-empty-open-stand] [data-cover-first],
 .week-open-empty[data-empty-open-stand] [data-paid-name],
 .week-open-empty[data-empty-open-stand] [data-later-listing],
+.week-open-empty[data-empty-open-stand] [data-rolling-week],
+.week-open-empty[data-empty-open-stand] .week-window,
 .week-open-empty .cover-rack,
 .week-open-empty .cover-line,
 .week-open-empty .claim-after-listing,
@@ -1004,6 +1018,17 @@ export const OCCUPIED_CSS = /* css */ `
   color: var(--mute);
   text-decoration: underline;
   text-underline-offset: 0.15em;
+}
+/* Occupied live: rolling last-7-days window from paid placement. Not Monday midnight. */
+.week-open-sold .cover-rack[data-rolling-week] + .week-window[data-rolling-week] {
+  margin: 0.55rem 0 0;
+  font-family: var(--display);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  color: var(--ink);
+  text-transform: none;
 }
 `;
 

@@ -98,6 +98,35 @@ test("rejected and unpaid rows do not rank", () => {
   );
 });
 
+test("rankListings uses only the rolling last-7-days paidAt window", () => {
+  const now = new Date("2026-08-24T00:00:00.000Z");
+  const ranked = rankListings(
+    [
+      listing({
+        id: "hold",
+        bidUsd: 5,
+        createdAt: "2026-08-23T23:00:00.000Z",
+      }),
+      listing({
+        id: "aged",
+        bidUsd: 50,
+        createdAt: "2026-08-16T23:00:00.000Z",
+      }),
+    ],
+    { now },
+  );
+  assert.equal(ranked.length, 1);
+  assert.equal(ranked[0]?.id, "hold");
+  const frozen = rankListings([
+    listing({
+      id: "aged",
+      bidUsd: 50,
+      createdAt: "2026-08-16T23:00:00.000Z",
+    }),
+  ]);
+  assert.equal(frozen[0]?.id, "aged");
+});
+
 test("other issueDate rows are excluded when an issue is requested", () => {
   const ranked = rankListings(
     [
@@ -227,7 +256,7 @@ test("GET /issue/:date empty archive is valid HTML/JSON, not an error", async (t
 });
 
 test("public board ranks paid listings; older $5 stays #1; unpaid stays off", async (t) => {
-  const app = await buildApp();
+  const app = await buildApp({ now: new Date("2026-08-06T12:00:00.000Z") });
   t.after(() => app.close());
 
   insertIssue(app.db, ISSUE, "open");

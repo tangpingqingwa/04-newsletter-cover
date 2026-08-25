@@ -16,6 +16,7 @@ import {
 import { buildApp } from "../src/server.js";
 
 const OPEN_ISSUE = "2099-01-05";
+const LIVE_NOW = new Date("2026-08-01T18:00:00.000Z");
 
 function insertIssue(db: AppDb, issueDate: string, status: "open" | "closed"): void {
   db.prepare(
@@ -62,7 +63,7 @@ async function payListing(
   assert.ok(polarId);
   const pending = findCheckout(app.db, polarId);
   assert.ok(pending);
-  await completeCheckout(app.db, polar, polarId);
+  await completeCheckout(app.db, polar, polarId, app.now());
   return pending;
 }
 
@@ -107,7 +108,7 @@ test("quoteListingBid charges the full first bid and only the raise difference",
 
 test("same URL $5 → $8 charges $3; createdAt unchanged; rank recomputed", async (t) => {
   const polar = new FixturePolar();
-  const app = await buildApp({ polar });
+  const app = await buildApp({ polar, now: LIVE_NOW });
   t.after(() => app.close());
   insertIssue(app.db, OPEN_ISSUE, "open");
 
@@ -236,7 +237,7 @@ test("same URL $5 → $8 charges $3; createdAt unchanged; rank recomputed", asyn
 
 test("POST /listings raise of the same URL pays the difference only", async (t) => {
   const polar = new FixturePolar();
-  const app = await buildApp({ polar });
+  const app = await buildApp({ polar, now: LIVE_NOW });
   t.after(() => app.close());
   insertIssue(app.db, OPEN_ISSUE, "open");
 
@@ -272,7 +273,7 @@ test("POST /listings raise of the same URL pays the difference only", async (t) 
 
 test("non-increasing raise is rejected and leaves bid and createdAt unchanged", async (t) => {
   const polar = new FixturePolar();
-  const app = await buildApp({ polar });
+  const app = await buildApp({ polar, now: LIVE_NOW });
   t.after(() => app.close());
   insertIssue(app.db, OPEN_ISSUE, "open");
 
@@ -320,7 +321,7 @@ test("non-increasing raise is rejected and leaves bid and createdAt unchanged", 
 
 test("applyPaidBid raise updates bidUsd only", async (t) => {
   const polar = new FixturePolar();
-  const app = await buildApp({ polar });
+  const app = await buildApp({ polar, now: LIVE_NOW });
   t.after(() => app.close());
   insertIssue(app.db, OPEN_ISSUE, "open");
 
@@ -342,7 +343,7 @@ test("applyPaidBid raise updates bidUsd only", async (t) => {
   assert.equal(raised.createdAt, before.createdAt);
   assert.notEqual(raised.createdAt, "2026-08-02T00:00:00.000Z");
   assert.throws(
-    () => applyPaidBid(app.db, first.listingId, 9),
+    () => applyPaidBid(app.db, first.listingId, 9, LIVE_NOW),
     (err: unknown) => {
       assert.ok(err instanceof ListingError);
       assert.equal(err.code, "bid_not_higher");

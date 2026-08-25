@@ -193,12 +193,14 @@ grep -q '404' tests/click.test.ts || fail "tests/click.test.ts missing unknown i
 grep -q 'unknown_listing' tests/click.test.ts || fail "tests/click.test.ts missing unknown listing"
 
 echo "== weekly issue cadence =="
-for f in src/issues.ts src/close.ts tests/issues.test.ts; do
+for f in src/issues.ts src/close.ts src/week.ts tests/issues.test.ts tests/week.test.ts; do
   [[ -f "$f" ]] || fail "missing $f"
   [[ -s "$f" ]] || fail "empty $f"
 done
 grep -q 'issueDate 00:00:00 UTC' src/issues.ts || fail "src/issues.ts missing weekly UTC close instant"
 grep -q 'nextWeeklyIssueDate' src/issues.ts || fail "src/issues.ts missing nextWeeklyIssueDate"
+grep -q 'ROLLING_WEEK_MS' src/week.ts || fail "src/week.ts must export a rolling last-7-days window"
+grep -q 'bidInRollingWeek' src/week.ts || fail "src/week.ts must test paid placement against the rolling week"
 grep -q 'catchUpIssues' src/close.ts || fail "src/close.ts missing catchUpIssues"
 grep -q 'closeIssue' src/close.ts || fail "src/close.ts missing closeIssue"
 grep -q 'winner' src/close.ts || fail "src/close.ts missing winner lock"
@@ -2672,6 +2674,100 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
   fail "cover-before-claim UX must not invent subscribers, open rates, or an article list"
 fi
 
+echo "== first-time reader: occupied week window is rolling last-7-days — not Monday 00:00 UTC =="
+grep -qE '^### PR 51: first-time reader' BUILD.md || fail "BUILD.md missing ### PR 51: first-time reader"
+grep -q 'ROLLING_WEEK_MS' src/week.ts || fail "week.ts must export the rolling last-7-days window"
+grep -q 'export function rollingWeekStart' src/week.ts || fail "week.ts must export rollingWeekStart"
+grep -q 'export function bidInRollingWeek' src/week.ts || fail "week.ts must test paid placement against the rolling week"
+grep -q 'options.now' src/rank.ts || fail "rank.ts must rank occupied live against the rolling last-7-days window"
+grep -q 'issueIsDueToClose' src/issues.ts || fail "issues.ts must close occupied weeks on the rolling window"
+grep -q 'data-rolling-week="true"' src/views/skin.ts || fail "occupied board must stamp the rolling last-7-days window"
+grep -q 'Rolling last 7 days from paid placement' src/views/skin.ts \
+  || fail "occupied board must name the rolling last-7-days window, not Monday midnight"
+grep -q 'Not Monday 00:00 UTC' src/views/skin.ts \
+  || fail "occupied board must reject Monday 00:00 UTC lock"
+grep -q 'class="week-window"' src/views/skin.ts || fail "occupied board missing week-window"
+grep -F -q '.week-open-sold .cover-rack[data-rolling-week] + .week-window[data-rolling-week]' src/views/skin.ts \
+  || fail "occupied rolling week cue must be composed in occupied CSS after Cover · #1"
+grep -F -q '.week-open-empty[data-empty-open-stand] [data-rolling-week]' src/views/skin.ts \
+  || fail "empty-open shell must hide leaked rolling-week chrome"
+grep -F -q '.week-open-empty .week-window' src/views/skin.ts \
+  || fail "empty-open shell must hide leaked week-window without stamp-only"
+grep -F -q '.week-closed-occupied [data-rolling-week]' src/views/skin.ts \
+  || fail "closed occupied archive must hide leaked rolling-week chrome"
+grep -q 'Occupied live: rolling last-7-days window' src/views/skin.ts \
+  || fail "occupied CSS must document rolling last-7-days window"
+grep -q 'rolling last 7 days' SPEC.md || fail "SPEC.md missing rolling last-7-days occupied live window"
+grep -q 'rolling last 7 days' src/http/routes/pages.ts || fail "about/rules must name the rolling last-7-days window"
+grep -q 'occupied week window is rolling last-7-days' tests/product-ui.test.ts \
+  || fail "product-ui tests must cover occupied rolling last-7-days window"
+grep -Fq 'rolling last-7-days window is 7 * 24h' tests/week.test.ts \
+  || fail "week tests must cover rolling last-7-days length"
+grep -q 'Monday 00:00 UTC does not drop a bid still inside the rolling week' tests/week.test.ts \
+  || fail "week tests must cover Monday midnight is not the drop"
+grep -q 'occupied close is 7 days from paid placement' tests/issues.test.ts \
+  || fail "issues tests must cover occupied rolling last-7-days close"
+grep -q 'rankListings uses only the rolling last-7-days paidAt window' tests/rank.test.ts \
+  || fail "rank tests must cover the rolling last-7-days live board"
+grep -q 'data-cover-first="true"' src/views/skin.ts || fail "rolling-week cut must keep occupied Cover · #1 the first click"
+grep -q 'data-claim-after-listing="true"' src/views/skin.ts || fail "rolling-week cut must keep Claim after the listing"
+grep -q 'data-frozen-cover="true"' src/views/skin.ts || fail "rolling-week cut must keep closed occupied freeze"
+grep -q 'data-later-write="true"' src/views/skin.ts || fail "rolling-week cut must keep empty later-write"
+grep -q 'data-paid-name="true"' src/views/skin.ts || fail "rolling-week cut must keep paid-name"
+grep -q 'Claim #1 for' src/views/skin.ts || fail "rolling-week cut must keep Claim #1"
+grep -q 'class="amount-field"' src/views/skin.ts || fail "rolling-week cut must keep the dashed amount"
+grep -q 'data-bid-step="-1"' src/views/skin.ts || fail "rolling-week cut must keep − stepper"
+grep -q 'class="outbid"' src/views/skin.ts || fail "rolling-week cut must keep Outbid"
+grep -q 'class="empty-stand"' src/views/skin.ts || fail "rolling-week cut must keep empty stand"
+grep -q 'occupiedOpen ? ISSUE_CSS : FOLIO_CSS' src/views/skin.ts \
+  || fail "rolling-week cut must not re-ship FOLIO vs ISSUE"
+if grep -nE 'data-claim-after-read-seven|data-read-after-claim-seven|data-rolling-after|rolling-after-N' \
+  src/views/skin.ts src/http/routes/board.ts >/dev/null; then
+  fail "do not stamp another named hop; compose occupied rolling last-7-days window"
+fi
+if grep -nE '24 \* 60 \* 60 \* 1000' src/week.ts src/issues.ts src/rank.ts | grep -v '7 \*'; then
+  fail "rolling week is not a 24h lock on #1"
+fi
+if awk '/function renderUnpaid|function renderPending/' src/views/skin.ts | grep -q 'data-rolling-week'; then
+  fail "unpaid cue must not stamp the rolling week window"
+fi
+if grep -E '^\.week-window' src/views/skin.ts; then
+  fail "rolling-week CSS must not apply outside week-open-sold"
+fi
+node -e '
+const { readFileSync } = require("fs");
+const src = readFileSync("src/views/skin.ts", "utf8");
+const occupied = src.slice(src.indexOf("export const OCCUPIED_CSS"), src.indexOf("export const ISSUE_CSS"));
+const folio = src.slice(src.indexOf("export const FOLIO_CSS"), src.indexOf("export const OCCUPIED_CSS"));
+const windowRule = occupied.match(/\.week-open-sold \.cover-rack\[data-rolling-week\] \+ \.week-window\[data-rolling-week\] \{([^}]*)\}/);
+const hed = occupied.match(/\.week-open-sold \.cover-line\[data-named-prize\] \.hed \{([^}]*)\}/);
+if (!windowRule || !hed) {
+  console.error("missing occupied rolling week or Cover · #1 CSS");
+  process.exit(1);
+}
+const windowSize = windowRule[1].match(/font-size:\s*([\d.]+)rem/);
+const hedSize = hed[1].match(/font-size:\s*([\d.]+)rem/);
+if (!windowSize || !hedSize) {
+  console.error("missing font-size on rolling week or Cover · #1");
+  process.exit(1);
+}
+if (Number(windowSize[1]) >= Number(hedSize[1])) {
+  console.error("rolling week copy is not quieter than Cover · #1");
+  process.exit(1);
+}
+if (windowRule[1].includes("background:")) {
+  console.error("rolling week must name the window, not recolor the folio");
+  process.exit(1);
+}
+if (!folio.includes("[data-rolling-week]") || !folio.includes(".week-window")) {
+  console.error("FOLIO_CSS must hide leaked rolling-week chrome on empty/closed");
+  process.exit(1);
+}
+' || fail "occupied rolling last-7-days window must be composed, not stamp-only"
+if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/routes/board.ts; then
+  fail "rolling-week UX must not invent subscribers, open rates, or an article list"
+fi
+
 echo "== live-smoke stays operator-only =="
 [[ -f scripts/live-smoke.sh ]] || fail "missing scripts/live-smoke.sh"
 [[ -x scripts/live-smoke.sh ]] || fail "scripts/live-smoke.sh must be executable"
@@ -2737,6 +2833,14 @@ if [[ -f package.json ]]; then
   [[ $test_status -eq 0 ]] || fail "unit tests failed"
   grep -Eq 'tests[[:space:]]+[1-9][0-9]*' "$test_log" \
     || fail "test runner reported 0 tests"
+  grep -q 'occupied week window is rolling last-7-days' "$test_log" \
+    || fail "occupied rolling last-7-days leftover test did not run"
+  grep -Fq 'rolling last-7-days window is 7 * 24h' "$test_log" \
+    || fail "week tests must cover rolling last-7-days window"
+  grep -q 'Monday 00:00 UTC does not drop a bid still inside the rolling week' "$test_log" \
+    || fail "Monday midnight rolling-week test did not run"
+  grep -q 'occupied close is 7 days from paid placement' "$test_log" \
+    || fail "occupied rolling close test did not run"
 fi
 
 echo "OK: buildable and testable"
