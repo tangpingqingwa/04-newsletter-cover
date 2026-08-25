@@ -3301,6 +3301,8 @@ if grep -Eqi 'subscriber|open rate|article list' src/views/skin.ts src/http/rout
 fi
 
 echo "== first-time reader: closed occupied flag names frozen last-7-days snapshot, not only closed =="
+grep -qE '^### PR 57: first-time reader' BUILD.md \
+  || fail "BUILD.md missing ### PR 57: first-time reader"
 grep -q 'data-frozen-flag="true"' src/views/skin.ts \
   || fail "closed occupied flag must stamp data-frozen-flag"
 grep -q 'frozen last-7-days rank snapshot' src/views/skin.ts \

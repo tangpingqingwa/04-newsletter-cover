@@ -366,6 +366,12 @@ Live client lives in `src/billing/polar.ts` and is selected only by `createPolar
 - **Dependencies:** PR 51
 - **Acceptance:** Empty open `/` has `data-fair-window="true"` and names rolling last 7 days from paid placement. Empty open has no `data-rolling-week` and no `class="week-window"`. Occupied open `/` keeps `data-rolling-week` / week-window and Cover · #1 first click. Closed empty archives stay `empty-issue`. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
 
+### PR 57: first-time reader — closed occupied flag names frozen last-7-days rank snapshot
+- **Description:** On a closed occupied `/issue/:date`, the masthead flag names a frozen last-7-days rank snapshot (`data-frozen-flag`), not only “this issue is closed.” The archive must not read as a live close line with a frozen ear. Closed empty stays empty-issue / Weekly · UTC. Occupied open Last 7 days stays. Empty open ear last-7-days stays. Occupied Cover · #1 first click stays. Occupied week-window stays. Frozen last 7 days ear stays. Do not add another named hop. Do not stamp `*-after-*-N`. Do not restamp the frozen ear. Do not recolor. Do not rebuild the folio. Stamp-only = REJECT.
+- **Files:** `src/views/skin.ts`, `tests/product-ui.test.ts`, `scripts/test.sh`
+- **Dependencies:** PR 56
+- **Acceptance:** Closed occupied `/issue/:date` has one `data-frozen-flag="true"` flag that names frozen last-7-days rank snapshot. Closed empty keeps `This issue is closed` / Weekly · UTC / `empty-issue`. Occupied open `/` keeps Last 7 days, Cover · #1 first click, and week-window. Frozen last 7 days ear stays. Nav, palette, and masthead stay. `bash scripts/test.sh` stays offline.
+
 ---
 
 ## 7. Live Polar (after fixture, not a substitute for PR 10)
