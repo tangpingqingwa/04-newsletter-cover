@@ -3,7 +3,7 @@ import { test } from "node:test";
 import type { AppDb, Listing } from "../src/db.js";
 import { renderBoardHtml } from "../src/http/routes/board.js";
 import { buildApp } from "../src/server.js";
-import { FOLIO_CSS, OCCUPIED_CSS, spokenIssueDate } from "../src/views/skin.js";
+import { FOLIO_CSS, ISSUE_CSS, OCCUPIED_CSS, spokenIssueDate } from "../src/views/skin.js";
 
 const ISSUE = "2099-01-05";
 
@@ -5899,9 +5899,7 @@ test("empty open ear does not tax live rank as Weekly · UTC Monday", () => {
   assert.ok(windowAt < hopOccupiedAt);
   assert.match(occupiedOpen, /Cover · #1/);
   assert.match(occupiedOpen, /data-cover-first="true"/);
-  assert.match(occupiedOpen, /class="ear ear-right">Weekly · UTC</);
   assert.doesNotMatch(occupiedMarkup, /data-empty-ear=/);
-  assert.doesNotMatch(occupiedMarkup, /Last 7 days · UTC/);
   assert.match(occupiedOpen, /data-rolling-week="true"/);
   assert.match(occupiedOpen, /class="week-window"/);
   assert.doesNotMatch(occupiedMarkup, /data-fair-window=/);
@@ -5917,6 +5915,7 @@ test("empty open ear does not tax live rank as Weekly · UTC Monday", () => {
   assert.match(closedEmpty, /data-closed-empty-issue="true"/);
   assert.match(closedEmpty, /class="ear ear-right">Weekly · UTC</);
   assert.doesNotMatch(closedEmptyMarkup, /data-empty-ear=/);
+  assert.doesNotMatch(closedEmptyMarkup, /data-occupied-ear=/);
   assert.doesNotMatch(closedEmptyMarkup, /Last 7 days · UTC/);
   assert.doesNotMatch(closedEmptyMarkup, /data-fair-window=/);
   assert.doesNotMatch(closedEmptyMarkup, /data-rolling-week=/);
@@ -5926,8 +5925,168 @@ test("empty open ear does not tax live rank as Weekly · UTC Monday", () => {
   assert.match(closedOccupied, /data-frozen-cover="true"/);
   assert.match(closedOccupied, /class="ear ear-right">Weekly · UTC</);
   assert.doesNotMatch(closedOccupiedMarkup, /data-empty-ear=/);
+  assert.doesNotMatch(closedOccupiedMarkup, /data-occupied-ear=/);
   assert.doesNotMatch(closedOccupiedMarkup, /data-fair-window=/);
   assert.doesNotMatch(closedOccupiedMarkup, /data-rolling-week=/);
+  assert.doesNotMatch(closedOccupied, /id="claim"/);
+  assert.doesNotMatch(closedOccupied, /Claim the next cover/);
+});
+
+test("occupied open ear does not tax live rank as Weekly · UTC Monday", () => {
+  const emptyOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const occupiedOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_cover",
+        sponsorUrl: "https://sponsor.example/pitch",
+        blurb: "Widgets for the next issue",
+        bidUsd: 12,
+        clicks: 3,
+      },
+    ],
+  });
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [],
+  });
+  const closedOccupied = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_won",
+        sponsorUrl: "https://won.example/cover",
+        blurb: "Frozen winner",
+        bidUsd: 20,
+        clicks: 1,
+      },
+    ],
+  });
+
+  const emptyCss = emptyOpen.slice(emptyOpen.indexOf("<style>"), emptyOpen.indexOf("</style>"));
+  const occupiedCss = occupiedOpen.slice(
+    occupiedOpen.indexOf("<style>"),
+    occupiedOpen.indexOf("</style>"),
+  );
+  const emptyMarkup = emptyOpen.slice(emptyOpen.indexOf("</style>"));
+  const occupiedMarkup = occupiedOpen.slice(occupiedOpen.indexOf("</style>"));
+  const closedEmptyMarkup = closedEmpty.slice(closedEmpty.indexOf("</style>"));
+  const closedOccupiedMarkup = closedOccupied.slice(closedOccupied.indexOf("</style>"));
+
+  const earAt = occupiedOpen.indexOf('data-occupied-ear="true"');
+  const coverFirstAt = occupiedOpen.indexOf('data-cover-first="true"');
+  const windowAt = occupiedOpen.indexOf('class="week-window" data-rolling-week="true"');
+  const hopOccupiedAt = occupiedOpen.indexOf('data-claim-cover="true"');
+  const claimAt = occupiedOpen.indexOf('id="claim"');
+  assert.notEqual(earAt, -1);
+  assert.notEqual(coverFirstAt, -1);
+  assert.notEqual(windowAt, -1);
+  assert.notEqual(hopOccupiedAt, -1);
+  assert.notEqual(claimAt, -1);
+  assert.ok(earAt < coverFirstAt);
+  assert.ok(coverFirstAt < windowAt);
+  assert.ok(windowAt < hopOccupiedAt);
+  assert.ok(hopOccupiedAt < claimAt);
+  assert.equal((occupiedOpen.match(/data-occupied-ear="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/data-cover-first="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
+  assert.match(
+    occupiedOpen,
+    /class="ear ear-right" data-occupied-ear="true">Last 7 days · UTC</,
+  );
+  assert.doesNotMatch(occupiedMarkup, /Weekly · UTC/);
+  assert.doesNotMatch(occupiedMarkup, /data-empty-ear=/);
+  assert.match(occupiedOpen, /Cover · #1/);
+  assert.match(occupiedOpen, /data-cover-first="true"/);
+  assert.match(occupiedOpen, /class="week-window" data-rolling-week="true"/);
+  assert.match(occupiedOpen, /Rolling last 7 days from paid placement\. Not Monday 00:00 UTC\./);
+  assert.match(occupiedOpen, /Claim #1 for/);
+  assert.match(occupiedOpen, /class="amount-field"/);
+  assert.match(occupiedOpen, /data-bid-step="-1"/);
+  assert.match(occupiedOpen, /class="outbid"/);
+  assert.match(occupiedOpen, /data-claim-after-listing="true"/);
+  assert.doesNotMatch(occupiedMarkup, /data-fair-window=/);
+  assert.doesNotMatch(occupiedMarkup, /class="empty-stand"/);
+  assert.doesNotMatch(occupiedOpen, /24h lock/);
+  assert.doesNotMatch(occupiedOpen, /data-claim-after-read-seven/);
+  assert.doesNotMatch(occupiedOpen, /subscriber/i);
+  assert.doesNotMatch(occupiedOpen, /article list/i);
+
+  assert.equal(occupiedCss, `<style>${ISSUE_CSS}`);
+  assert.match(
+    occupiedCss,
+    /\.week-open-sold \.nameplate \.ear-right\[data-occupied-ear\]/,
+  );
+  const occupiedEarRule = occupiedCss.match(
+    /\.week-open-sold \.nameplate \.ear-right\[data-occupied-ear\] \{([^}]*)\}/,
+  );
+  assert.ok(occupiedEarRule);
+  const occupiedEarSize = occupiedEarRule[1].match(/font-size:\s*([\d.]+)rem/);
+  const occupiedNameplateHed = occupiedCss.match(/\.nameplate h1 \{([^}]*)\}/);
+  assert.ok(occupiedEarSize);
+  assert.ok(occupiedNameplateHed);
+  assert.match(occupiedNameplateHed[1], /font-size:\s*clamp/);
+  assert.ok(
+    Number(occupiedEarSize[1]) < 2.6,
+    "occupied ear must stay quieter than The Cover nameplate",
+  );
+  assert.match(occupiedEarRule[1], /color:\s*var\(--mute\)/);
+  assert.doesNotMatch(occupiedEarRule[1], /background:/);
+  assert.doesNotMatch(occupiedEarRule[1], /href/);
+  assert.match(occupiedCss, /\.week-open-empty \[data-occupied-ear\]/);
+  assert.match(occupiedCss, /\.week-closed-empty \[data-occupied-ear\]/);
+  assert.match(occupiedCss, /\.week-closed-occupied \[data-occupied-ear\]/);
+  assert.match(occupiedCss, /\.week-open-sold \.nameplate \.ear-right:not\(\[data-occupied-ear\]\)/);
+  assert.match(
+    occupiedCss,
+    /\.week-open-sold \.cover-rack\[data-rolling-week\] \+ \.week-window\[data-rolling-week\]/,
+  );
+  assert.doesNotMatch(occupiedCss, /\.week-open-sold \.nameplate \.ear-right\[data-empty-ear\]/);
+
+  const emptyEarAt = emptyOpen.indexOf('data-empty-ear="true"');
+  const standAt = emptyOpen.indexOf('class="empty-stand"');
+  const fairAt = emptyOpen.indexOf('data-fair-window="true"');
+  assert.notEqual(emptyEarAt, -1);
+  assert.notEqual(standAt, -1);
+  assert.notEqual(fairAt, -1);
+  assert.ok(emptyEarAt < standAt);
+  assert.equal((emptyOpen.match(/data-empty-ear="true"/g) ?? []).length, 1);
+  assert.match(
+    emptyOpen,
+    /class="ear ear-right" data-empty-ear="true">Last 7 days · UTC</,
+  );
+  assert.doesNotMatch(emptyMarkup, /Weekly · UTC/);
+  assert.doesNotMatch(emptyMarkup, /data-occupied-ear=/);
+  assert.doesNotMatch(emptyMarkup, /data-rolling-week=/);
+  assert.doesNotMatch(emptyMarkup, /class="week-window"/);
+  assert.match(emptyOpen, /data-fair-window="true"/);
+  assert.match(emptyCss, /\.week-open-empty \.nameplate \.ear-right\[data-empty-ear\]/);
+  assert.doesNotMatch(emptyCss, /\.week-open-sold \.nameplate \.ear-right\[data-occupied-ear\]/);
+  assert.match(emptyCss, /\.week-open-empty \[data-occupied-ear\]/);
+
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.match(closedEmpty, /data-closed-empty-issue="true"/);
+  assert.match(closedEmpty, /class="ear ear-right">Weekly · UTC</);
+  assert.doesNotMatch(closedEmptyMarkup, /data-empty-ear=/);
+  assert.doesNotMatch(closedEmptyMarkup, /data-occupied-ear=/);
+  assert.doesNotMatch(closedEmptyMarkup, /Last 7 days · UTC/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
+
+  assert.match(closedOccupied, /Cover · #1/);
+  assert.match(closedOccupied, /data-frozen-cover="true"/);
+  assert.match(closedOccupied, /class="ear ear-right">Weekly · UTC</);
+  assert.doesNotMatch(closedOccupiedMarkup, /data-empty-ear=/);
+  assert.doesNotMatch(closedOccupiedMarkup, /data-occupied-ear=/);
+  assert.doesNotMatch(closedOccupiedMarkup, /Last 7 days · UTC/);
   assert.doesNotMatch(closedOccupied, /id="claim"/);
   assert.doesNotMatch(closedOccupied, /Claim the next cover/);
 });

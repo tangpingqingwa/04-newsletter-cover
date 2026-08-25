@@ -128,9 +128,12 @@ function issueState(status: BoardView["status"]): { label: string; attr: string 
 function renderMasthead(board: BoardView): string {
   const state = issueState(board.status);
   const emptyOpen = board.status === "open" && board.listings.length === 0;
+  const occupiedOpen = board.status === "open" && board.listings.length > 0;
   const rightEar = emptyOpen
     ? `<p class="ear ear-right" data-empty-ear="true">Last 7 days · UTC</p>`
-    : `<p class="ear ear-right">Weekly · UTC</p>`;
+    : occupiedOpen
+      ? `<p class="ear ear-right" data-occupied-ear="true">Last 7 days · UTC</p>`
+      : `<p class="ear ear-right">Weekly · UTC</p>`;
   const dateBlock = board.issueDate
     ? `<time datetime="${escapeHtml(board.issueDate)}" data-issue-date="${escapeHtml(board.issueDate)}">${escapeHtml(spokenIssueDate(board.issueDate))}</time>`
     : `<span data-issue-date="">No issue on the stand</span>`;
@@ -527,9 +530,13 @@ button { cursor: pointer; }
   text-align: right;
 }
 .week-open-empty .nameplate .ear-right:not([data-empty-ear]),
+.week-open-sold .nameplate .ear-right:not([data-occupied-ear]),
 .week-open-sold [data-empty-ear],
+.week-open-empty [data-occupied-ear],
 .week-closed-empty [data-empty-ear],
-.week-closed-occupied [data-empty-ear] {
+.week-closed-empty [data-occupied-ear],
+.week-closed-occupied [data-empty-ear],
+.week-closed-occupied [data-occupied-ear] {
   display: none;
 }
 .nameplate h1 {
@@ -865,6 +872,15 @@ button { cursor: pointer; }
 `;
 
 export const OCCUPIED_CSS = /* css */ `
+/* Occupied open ear names the fair live-rank window. Not Monday UTC. Not a hop. */
+.week-open-sold .nameplate .ear-right[data-occupied-ear] {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute);
+  text-align: right;
+}
 .week-open-sold .flag [data-read-after-claim-sold] {
   display: block;
   font-weight: 700;
@@ -925,6 +941,7 @@ export const OCCUPIED_CSS = /* css */ `
 .week-open-empty[data-empty-open-stand] [data-cover-first],
 .week-open-empty[data-empty-open-stand] [data-paid-name],
 .week-open-empty[data-empty-open-stand] [data-later-listing],
+.week-open-empty[data-empty-open-stand] [data-occupied-ear],
 .week-open-empty[data-empty-open-stand] [data-rolling-week],
 .week-open-empty[data-empty-open-stand] .week-window,
 .week-open-empty .cover-rack,
