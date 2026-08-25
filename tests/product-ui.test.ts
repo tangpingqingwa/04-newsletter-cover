@@ -868,7 +868,7 @@ test("occupied open / names the sold cover before Claim the next cover", () => {
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -990,7 +990,7 @@ test("occupied open / concentrates Claim the next cover after the sold cover", (
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -1124,7 +1124,7 @@ test("occupied open / concentrates the sold-cover read after Claim the next cove
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -1268,7 +1268,7 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -1422,7 +1422,7 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -1587,7 +1587,7 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -1763,7 +1763,7 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -1951,7 +1951,7 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -2151,7 +2151,7 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -2364,7 +2364,7 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -2590,7 +2590,7 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -2830,7 +2830,7 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -3084,7 +3084,7 @@ test("occupied open / concentrates the sold-cover read after Claim is re-concent
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -3353,7 +3353,7 @@ test("occupied open / concentrates Claim the next cover after the sold-cover rea
   assert.doesNotMatch(emptyOpen, /Claim the next cover/);
   assert.doesNotMatch(emptyOpen, /data-read-cover/);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /Cover · #1/);
   assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
@@ -3753,7 +3753,7 @@ test("closed archive stays empty-issue — the open cover is on the stand", () =
   assert.doesNotMatch(closedEmpty, /subscriber/i);
   assert.doesNotMatch(closedEmpty, /article list/i);
 
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /The open cover is on the stand/);
   assert.match(closedOccupied, /Cover · #1/);
@@ -5179,7 +5179,7 @@ test("closed occupied / keeps frozen Cover · #1 — live claim cannot steal the
   assert.match(closedOccupied, /class="form-hint" data-frozen-issue="true"/);
   assert.match(closedOccupied, /data-open-cover="true"/);
   assert.match(closedOccupied, /The open cover is on the stand/);
-  assert.match(closedOccupied, /This issue is closed/);
+  assert.match(closedOccupied, /frozen last-7-days rank snapshot/);
   assert.match(closedOccupied, /not the next issue/);
   assert.doesNotMatch(closedOccupied, /Claim the next cover/);
   assert.doesNotMatch(closedOccupied, /data-claim-cover="true"/);
@@ -6497,6 +6497,212 @@ test("closed occupied ear names frozen last-7-days, not live Last 7 days", () =>
   assert.doesNotMatch(closedEmptyMarkup, /Frozen last 7 days/);
   assert.doesNotMatch(closedEmpty, /id="claim"/);
   assert.equal(closedEmptyCss, `<style>${FOLIO_CSS}`);
+  assert.match(closedEmptyCss, /\.week-closed-empty \[data-frozen-ear\]/);
+});
+
+test("closed occupied flag names frozen last-7-days snapshot, not only closed", () => {
+  const emptyOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [],
+  });
+  const occupiedOpen = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "open",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_cover",
+        sponsorUrl: "https://sponsor.example/pitch",
+        blurb: "Widgets for the next issue",
+        bidUsd: 12,
+        clicks: 3,
+      },
+    ],
+  });
+  const closedEmpty = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [],
+  });
+  const closedOccupied = renderBoardHtml({
+    issueDate: ISSUE,
+    status: "closed",
+    listings: [
+      {
+        rank: 1,
+        id: "lst_won",
+        sponsorUrl: "https://won.example/cover",
+        blurb: "Frozen winner",
+        bidUsd: 20,
+        clicks: 1,
+      },
+    ],
+  });
+
+  const emptyCss = emptyOpen.slice(emptyOpen.indexOf("<style>"), emptyOpen.indexOf("</style>"));
+  const occupiedCss = occupiedOpen.slice(
+    occupiedOpen.indexOf("<style>"),
+    occupiedOpen.indexOf("</style>"),
+  );
+  const closedEmptyCss = closedEmpty.slice(
+    closedEmpty.indexOf("<style>"),
+    closedEmpty.indexOf("</style>"),
+  );
+  const closedOccupiedCss = closedOccupied.slice(
+    closedOccupied.indexOf("<style>"),
+    closedOccupied.indexOf("</style>"),
+  );
+  const emptyMarkup = emptyOpen.slice(emptyOpen.indexOf("</style>"));
+  const occupiedMarkup = occupiedOpen.slice(occupiedOpen.indexOf("</style>"));
+  const closedEmptyMarkup = closedEmpty.slice(closedEmpty.indexOf("</style>"));
+  const closedOccupiedMarkup = closedOccupied.slice(closedOccupied.indexOf("</style>"));
+
+  const flagAt = closedOccupied.indexOf('data-frozen-flag="true"');
+  const earAt = closedOccupied.indexOf('data-frozen-ear="true"');
+  const coverAt = closedOccupied.indexOf('data-frozen-cover="true"');
+  const openCoverAt = closedOccupied.indexOf('data-open-cover="true"');
+  assert.notEqual(flagAt, -1);
+  assert.notEqual(earAt, -1);
+  assert.notEqual(coverAt, -1);
+  assert.notEqual(openCoverAt, -1);
+  assert.ok(earAt < flagAt);
+  assert.ok(flagAt < coverAt);
+  assert.ok(coverAt < openCoverAt);
+  assert.equal((closedOccupied.match(/data-frozen-flag="true"/g) ?? []).length, 1);
+  assert.equal((closedOccupied.match(/data-frozen-ear="true"/g) ?? []).length, 1);
+  assert.equal((closedOccupied.match(/href="#claim"/g) ?? []).length, 0);
+  assert.match(
+    closedOccupied,
+    /class="flag" data-frozen-flag="true">This issue is a frozen last-7-days rank snapshot\. It is not the next issue/,
+  );
+  assert.doesNotMatch(closedOccupiedMarkup, /class="flag">This issue is closed/);
+  assert.doesNotMatch(closedOccupiedMarkup, /data-frozen-flag="true">This issue is closed/);
+  assert.match(
+    closedOccupied,
+    /class="ear ear-right" data-frozen-ear="true">Frozen last 7 days · UTC</,
+  );
+  assert.doesNotMatch(closedOccupiedMarkup, /data-frozen-ear="true">Last 7 days · UTC</);
+  assert.doesNotMatch(closedOccupiedMarkup, />Last 7 days · UTC</);
+  assert.doesNotMatch(closedOccupiedMarkup, /Weekly · UTC/);
+  assert.doesNotMatch(closedOccupiedMarkup, /data-empty-ear=/);
+  assert.doesNotMatch(closedOccupiedMarkup, /data-occupied-ear=/);
+  assert.match(closedOccupied, /Cover · #1/);
+  assert.match(closedOccupied, /data-frozen-cover="true"/);
+  assert.match(closedOccupied, /data-frozen-board="true"/);
+  assert.doesNotMatch(closedOccupiedMarkup, /data-rolling-week=/);
+  assert.doesNotMatch(closedOccupiedMarkup, /class="week-window"/);
+  assert.doesNotMatch(closedOccupiedMarkup, /data-fair-window=/);
+  assert.doesNotMatch(closedOccupied, /id="claim"/);
+  assert.doesNotMatch(closedOccupied, /Claim the next cover/);
+  assert.doesNotMatch(closedOccupied, /data-sold-cover="true"/);
+  assert.doesNotMatch(closedOccupied, /data-cover-first="true"/);
+  assert.doesNotMatch(closedOccupied, /24h lock/);
+  assert.doesNotMatch(closedOccupied, /data-claim-after-read-seven/);
+  assert.doesNotMatch(closedOccupied, /subscriber/i);
+  assert.doesNotMatch(closedOccupied, /article list/i);
+
+  assert.equal(closedOccupiedCss, `<style>${FOLIO_CSS}`);
+  assert.match(closedOccupiedCss, /\.week-closed-occupied \.flag\[data-frozen-flag\]/);
+  const frozenFlagRule = closedOccupiedCss.match(
+    /\.week-closed-occupied \.flag\[data-frozen-flag\] \{([^}]*)\}/,
+  );
+  assert.ok(frozenFlagRule);
+  assert.match(frozenFlagRule[1], /font-weight:\s*600/);
+  assert.doesNotMatch(frozenFlagRule[1], /background:/);
+  assert.doesNotMatch(frozenFlagRule[1], /href/);
+  assert.match(closedOccupiedCss, /\.week-open-empty \[data-frozen-flag\]/);
+  assert.match(closedOccupiedCss, /\.week-open-sold \[data-frozen-flag\]/);
+  assert.match(closedOccupiedCss, /\.week-closed-empty \[data-frozen-flag\]/);
+  assert.match(closedOccupiedCss, /\.week-closed-occupied \.flag:not\(\[data-frozen-flag\]\)/);
+  assert.match(
+    closedOccupiedCss,
+    /\.week-closed-occupied \.nameplate \.ear-right\[data-frozen-ear\]/,
+  );
+  assert.doesNotMatch(
+    FOLIO_CSS,
+    /\.week-open-sold \.nameplate \.ear-right\[data-occupied-ear\]/,
+  );
+  assert.doesNotMatch(OCCUPIED_CSS, /\.week-closed-occupied \.flag\[data-frozen-flag\]/);
+  assert.doesNotMatch(OCCUPIED_CSS, /data-frozen-flag/);
+
+  const occupiedEarAt = occupiedOpen.indexOf('data-occupied-ear="true"');
+  const coverFirstAt = occupiedOpen.indexOf('data-cover-first="true"');
+  const windowAt = occupiedOpen.indexOf('class="week-window" data-rolling-week="true"');
+  const hopOccupiedAt = occupiedOpen.indexOf('data-claim-cover="true"');
+  assert.notEqual(occupiedEarAt, -1);
+  assert.notEqual(coverFirstAt, -1);
+  assert.notEqual(windowAt, -1);
+  assert.notEqual(hopOccupiedAt, -1);
+  assert.ok(occupiedEarAt < coverFirstAt);
+  assert.ok(coverFirstAt < windowAt);
+  assert.equal((occupiedOpen.match(/data-occupied-ear="true"/g) ?? []).length, 1);
+  assert.equal((occupiedOpen.match(/href="#claim"/g) ?? []).length, 1);
+  assert.match(
+    occupiedOpen,
+    /class="ear ear-right" data-occupied-ear="true">Last 7 days · UTC</,
+  );
+  assert.match(occupiedOpen, /This issue’s cover is sold/);
+  assert.doesNotMatch(occupiedMarkup, /data-frozen-flag=/);
+  assert.doesNotMatch(occupiedMarkup, /frozen last-7-days rank snapshot/);
+  assert.doesNotMatch(occupiedMarkup, /Frozen last 7 days/);
+  assert.doesNotMatch(occupiedMarkup, /Weekly · UTC/);
+  assert.doesNotMatch(occupiedMarkup, /data-frozen-ear=/);
+  assert.doesNotMatch(occupiedMarkup, /data-empty-ear=/);
+  assert.match(occupiedOpen, /Cover · #1/);
+  assert.match(occupiedOpen, /data-cover-first="true"/);
+  assert.match(occupiedOpen, /class="week-window" data-rolling-week="true"/);
+  assert.match(occupiedOpen, /Rolling last 7 days from paid placement\. Not Monday 00:00 UTC\./);
+  assert.match(occupiedOpen, /Claim #1 for/);
+  assert.match(occupiedOpen, /class="amount-field"/);
+  assert.match(occupiedOpen, /data-bid-step="-1"/);
+  assert.match(occupiedOpen, /class="outbid"/);
+  assert.match(
+    occupiedCss,
+    /\.week-open-sold \.nameplate \.ear-right\[data-occupied-ear\]/,
+  );
+  assert.match(occupiedCss, /\.week-open-sold \[data-frozen-flag\]/);
+  assert.match(occupiedCss, /\.week-open-sold \[data-frozen-ear\]/);
+
+  const emptyEarAt = emptyOpen.indexOf('data-empty-ear="true"');
+  const standAt = emptyOpen.indexOf('class="empty-stand"');
+  assert.notEqual(emptyEarAt, -1);
+  assert.notEqual(standAt, -1);
+  assert.ok(emptyEarAt < standAt);
+  assert.equal((emptyOpen.match(/data-empty-ear="true"/g) ?? []).length, 1);
+  assert.match(
+    emptyOpen,
+    /class="ear ear-right" data-empty-ear="true">Last 7 days · UTC</,
+  );
+  assert.match(emptyOpen, /The next issue’s cover goes to whoever pays the most/);
+  assert.doesNotMatch(emptyMarkup, /data-frozen-flag=/);
+  assert.doesNotMatch(emptyMarkup, /frozen last-7-days rank snapshot/);
+  assert.doesNotMatch(emptyMarkup, /Frozen last 7 days/);
+  assert.doesNotMatch(emptyMarkup, /Weekly · UTC/);
+  assert.doesNotMatch(emptyMarkup, /data-frozen-ear=/);
+  assert.doesNotMatch(emptyMarkup, /data-occupied-ear=/);
+  assert.doesNotMatch(emptyMarkup, /data-rolling-week=/);
+  assert.match(emptyOpen, /data-fair-window="true"/);
+  assert.match(emptyOpen, /Claim #1 for/);
+  assert.match(emptyCss, /\.week-open-empty \.nameplate \.ear-right\[data-empty-ear\]/);
+  assert.match(emptyCss, /\.week-open-empty \[data-frozen-flag\]/);
+  assert.match(emptyCss, /\.week-open-empty \[data-frozen-ear\]/);
+  assert.doesNotMatch(emptyCss, /\.week-open-sold \.nameplate \.ear-right\[data-occupied-ear\]/);
+
+  assert.match(closedEmpty, /class="empty-issue"/);
+  assert.match(closedEmpty, /data-closed-empty-issue="true"/);
+  assert.match(closedEmpty, /class="ear ear-right">Weekly · UTC</);
+  assert.match(closedEmpty, /class="flag">This issue is closed\. It is not the next issue/);
+  assert.doesNotMatch(closedEmptyMarkup, /data-frozen-flag=/);
+  assert.doesNotMatch(closedEmptyMarkup, /frozen last-7-days rank snapshot/);
+  assert.doesNotMatch(closedEmptyMarkup, /data-empty-ear=/);
+  assert.doesNotMatch(closedEmptyMarkup, /data-occupied-ear=/);
+  assert.doesNotMatch(closedEmptyMarkup, /data-frozen-ear=/);
+  assert.doesNotMatch(closedEmptyMarkup, /Last 7 days · UTC/);
+  assert.doesNotMatch(closedEmptyMarkup, /Frozen last 7 days/);
+  assert.doesNotMatch(closedEmpty, /id="claim"/);
+  assert.equal(closedEmptyCss, `<style>${FOLIO_CSS}`);
+  assert.match(closedEmptyCss, /\.week-closed-empty \[data-frozen-flag\]/);
   assert.match(closedEmptyCss, /\.week-closed-empty \[data-frozen-ear\]/);
 });
 
