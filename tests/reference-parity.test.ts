@@ -190,6 +190,7 @@ test("reference assets stay real files and the shared fixture owns its font", ()
     new URL("../src/views/outbid-reference-styles.ts", import.meta.url),
     "utf8",
   );
-  assert.match(assetsSource, /readFileSync\(resolve\(iconDirectory, name\), "utf8"\)/);
+  assert.match(assetsSource, /readFileSync\(resolve\(iconDirectory, name\)\)/);
+  assert.match(assetsSource, /"brand-mark\.png"/);
   assert.match(stylesSource, /data:font\/woff2;base64,/);
 });

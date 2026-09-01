@@ -43,6 +43,14 @@ const MONTHS = [
   "December",
 ] as const;
 
+function publicCss(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//g, (comment) =>
+    /waffo|fixture|reference|outbid|local-only|test-only|implementation|development/i.test(comment)
+      ? ""
+      : comment,
+  );
+}
+
 export function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -124,20 +132,63 @@ export function renderDocument(input: {
   body: string;
   css?: string;
   searchListings?: BoardViewListing[];
+  description?: string;
+  canonicalPath?: string;
+  noIndex?: boolean;
 }): string {
+  const siteUrl = "https://newslettercover.lol";
+  const siteName = "Newsletter Cover";
+  const defaultDescription =
+    "Discover the paid cover and first slot of the next newsletter issue. Placements stay eligible for seven days and rank is the bid.";
+  const title = escapeHtml(input.title);
+  const description = escapeHtml(input.description ?? defaultDescription);
+  const canonicalPath = input.canonicalPath ??
+    (input.active === "about" ? "/about" : input.active === "rules" ? "/rules" : "/");
+  const canonical = `${siteUrl}${canonicalPath}`;
+  const noIndex = input.noIndex ?? /(checkout|payment|return)/i.test(input.title);
+  const robots = noIndex
+    ? "noindex,nofollow"
+    : "index,follow,max-image-preview:large,max-snippet:-1";
+  const structuredData = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteName,
+    url: siteUrl,
+    description: input.description ?? defaultDescription,
+    inLanguage: "en",
+    isAccessibleForFree: true,
+  }).replace(/</g, "\\u003c");
   return `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${escapeHtml(input.title)}</title>
-    <style>${input.css ?? FOLIO_CSS}</style>
+    <link rel="icon" type="image/svg+xml" href="/icons/brand-mark.svg">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="canonical" href="${canonical}">
+    <title>${title}</title>
+    <meta name="description" content="${description}">
+    <meta name="robots" content="${robots}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="${siteName}">
+    <meta property="og:title" content="${title}">
+    <meta property="og:description" content="${description}">
+    <meta property="og:url" content="${canonical}">
+    <meta property="og:image" content="${siteUrl}/icons/brand-mark.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="${title}">
+    <meta name="twitter:description" content="${description}">
+    <meta name="twitter:image" content="${siteUrl}/icons/brand-mark.png">
+    <script type="application/ld+json">${structuredData}</script>
+    <style>${publicCss(input.css ?? FOLIO_CSS)}</style>
   </head>
   <body>
     <div class="sheet">
       <header class="site-header" data-slot="site-header">
         <nav class="site-nav" aria-label="Main" data-slot="shell">
-          <a class="mark" href="/" data-slot="brand">The Cover</a>
+          <a class="mark" href="/" data-slot="brand"><img class="brand-mark" src="/icons/brand-mark.svg" width="28" height="28" alt="" aria-hidden="true">The Cover</a>
           <div class="nav-tools">
             <div class="primary-nav" role="navigation" aria-label="Primary" data-slot="primary-nav">
               <ul>
@@ -1275,6 +1326,9 @@ button:disabled { cursor: not-allowed; }
 }
 .primary-nav { min-width: 0; }
 .mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   flex: 0 0 auto;
   color: var(--ink) !important;
   font-size: 1.45rem;
@@ -1283,6 +1337,7 @@ button:disabled { cursor: not-allowed; }
   line-height: 1;
   text-transform: none;
 }
+.brand-mark { display: block; width: 28px; height: 28px; flex: 0 0 28px; border-radius: 7px; }
 .scope-switch {
   display: inline-flex;
   align-items: center;

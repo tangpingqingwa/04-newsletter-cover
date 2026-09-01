@@ -111,7 +111,10 @@ test("masthead navigation keeps the three exact destinations and the three-part 
   const sheetAt = html.indexOf('<div class="sheet">');
   const headerAt = html.indexOf('<header class="site-header"');
   assert.ok(sheetAt < headerAt, "the masthead belongs to the printed sheet");
-  assert.match(html, /<a class="mark" href="\/"[^>]*>The Cover<\/a>/);
+  assert.match(
+    html,
+    /<a class="mark" href="\/"[^>]*><img class="brand-mark" src="\/icons\/brand-mark\.svg"[^>]*>The Cover<\/a>/,
+  );
   assert.match(html, /<a href="\/" aria-current="page">Leaderboard<\/a>/);
   assert.match(html, /<a href="\/about">About<\/a>/);
   assert.match(html, /<a href="\/rules">Rules<\/a>/);

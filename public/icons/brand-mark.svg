@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Newsletter Cover folio</title>
+  <rect x="2" y="2" width="60" height="60" rx="9" fill="#121212"/>
+  <path d="M15 11h27l8 8v34H15V11Z" fill="#ece7dc"/>
+  <path d="M42 11v10h8" fill="#b7b19f"/>
+  <path d="M20 19h17" stroke="#9d1c14" stroke-width="5"/>
+  <path d="M20 30h24M20 38h24M20 46h15" stroke="#121212" stroke-width="3"/>
+</svg>

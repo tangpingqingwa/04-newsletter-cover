@@ -36,7 +36,7 @@ for (const name of readdirSync(sourceMigrations).filter((entry) => entry.endsWit
 }
 
 mkdirSync(runtimeIcons, { recursive: true });
-for (const name of readdirSync(sourceIcons).filter((entry) => entry.endsWith(".svg"))) {
+for (const name of readdirSync(sourceIcons).filter((entry) => /\.(?:svg|png)$/.test(entry))) {
   const source = resolve(sourceIcons, name);
   const target = resolve(runtimeIcons, name);
   copyFileSync(source, target);
