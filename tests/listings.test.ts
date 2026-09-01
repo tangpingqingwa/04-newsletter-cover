@@ -164,7 +164,7 @@ test("unpaid create does not appear on the public board", async (t) => {
     url: "/listings",
     payload: {
       sponsorUrl: "https://unpaid.example",
-      blurb: "Waiting on Polar",
+      blurb: "Waiting on Waffo",
       bidUsd: 5,
     },
   });

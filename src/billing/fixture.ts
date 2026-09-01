@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { CreateCheckoutInput, PolarCheckout, PolarPort } from "./port.js";
+import type { CreateCheckoutInput, WaffoCheckout, WaffoPort } from "./port.js";
 
 export type FixtureCheckoutRecord = {
   checkoutId: string;
@@ -15,12 +15,12 @@ export function fixtureCheckoutUrl(checkoutId: string): string {
   return `/checkout/complete?checkoutId=${encodeURIComponent(checkoutId)}`;
 }
 
-/** In-process Polar. No network. Tests call `complete` to mark a session paid. */
-export class FixturePolar implements PolarPort {
+/** In-process Waffo fixture. No network. Tests call `complete` to mark a session paid. */
+export class FixtureWaffo implements WaffoPort {
   readonly kind = "fixture" as const;
   private readonly sessions = new Map<string, FixtureCheckoutRecord>();
 
-  async createCheckout(input: CreateCheckoutInput): Promise<PolarCheckout> {
+  async createCheckout(input: CreateCheckoutInput): Promise<WaffoCheckout> {
     const checkoutId = `fix_${randomUUID()}`;
     const url = fixtureCheckoutUrl(checkoutId);
     this.sessions.set(checkoutId, {
@@ -49,3 +49,7 @@ export class FixturePolar implements PolarPort {
     return { ...session };
   }
 }
+
+/** Deprecated source-compatibility alias; it is the same local Waffo fixture. */
+export type FixturePolar = FixtureWaffo;
+export const FixturePolar = FixtureWaffo;

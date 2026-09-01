@@ -26,7 +26,7 @@ export function occupancyExpiresAt(paidAt: string): Date {
 }
 
 /**
- * Polar-paid placement still occupies live `/` if `createdAt` is in `[now − 7d, now]`.
+ * Waffo-paid placement still occupies live `/` if `createdAt` is in `[now − 7d, now]`.
  * Monday 00:00 UTC is not the drop. Not a 24h lock on #1.
  */
 export function bidInRollingWeek(

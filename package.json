@@ -8,11 +8,13 @@
   },
   "scripts": {
     "dev": "node --import tsx src/server.ts",
-    "start": "node --import tsx src/server.ts",
+    "start": "node dist/server.js",
+    "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test --test-reporter spec 'tests/**/*.test.ts'"
+    "test": "WAFFO_MODE=fixture NODE_ENV=test tsx --test --test-reporter spec 'tests/**/*.test.ts'"
   },
   "dependencies": {
+    "@waffo/pancake-ts": "0.19.1",
     "better-sqlite3": "^13.0.3",
     "fastify": "^5.6.1"
   },

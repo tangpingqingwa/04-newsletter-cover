@@ -78,7 +78,14 @@ export function migrate(db: AppDb): void {
     if (applied.has(file)) {
       continue;
     }
-    db.exec(readFileSync(join(MIGRATIONS_DIR, file), "utf8"));
-    insert.run(file, new Date().toISOString());
+    // A migration and its marker are one unit. In particular, this keeps a
+    // rebuild migration from leaving a renamed/half-created table behind when
+    // its copy or later marker insert fails; the next process can retry the
+    // same migration from the pre-migration schema.
+    const applyMigration = db.transaction(() => {
+      db.exec(readFileSync(join(MIGRATIONS_DIR, file), "utf8"));
+      insert.run(file, new Date().toISOString());
+    });
+    applyMigration();
   }
 }

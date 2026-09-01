@@ -5,7 +5,7 @@ import { escapeHtml } from "../../views/skin.js";
 
 export const LISTINGS_PATH = "/listings" as const;
 
-function polarGateError(err: unknown): { status: number; error: string } | null {
+function providerGateError(err: unknown): { status: number; error: string } | null {
   if (!(err instanceof Error)) {
     return null;
   }
@@ -14,12 +14,11 @@ function polarGateError(err: unknown): { status: number; error: string } | null 
     return { status: 503, error: message };
   }
   if (
-    message === "polar checkout failed closed" ||
-    message === "LivePolar createCheckout is env-gated" ||
-    message === "LivePolar requires POLAR_LIVE=1" ||
-    message === "LivePolar is disabled when POLAR_FIXTURE_ONLY=1"
+    message.startsWith("BLOCKED-CONFIG:") ||
+    message.startsWith("Waffo checkout") ||
+    message.startsWith("Waffo checkout rejected:")
   ) {
-    return { status: 503, error: "polar_unavailable" };
+    return { status: 503, error: "waffo_unavailable" };
   }
   return null;
 }
@@ -64,7 +63,7 @@ export function registerListingRoutes(app: FastifyInstance): void {
         }
         return reply.code(err.statusCode).send({ error: err.code });
       }
-      const gated = polarGateError(err);
+      const gated = providerGateError(err);
       if (gated) {
         if (wantsHtml(request)) {
           return reply.code(gated.status).type("text/html; charset=utf-8").send(

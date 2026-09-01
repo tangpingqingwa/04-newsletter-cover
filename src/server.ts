@@ -1,19 +1,26 @@
 import { pathToFileURL } from "node:url";
 import Fastify, { type FastifyInstance } from "fastify";
-import { createPolar } from "./billing/create.js";
-import type { PolarPort } from "./billing/port.js";
+import {
+  assertWaffoRuntimeConfig,
+  createWaffo,
+  isEphemeralDatabasePath,
+  waffoMode,
+} from "./billing/create.js";
+import type { WaffoPort } from "./billing/port.js";
 import { catchUpIssues, ensureOpenIssue } from "./close.js";
 import { openDatabase, type AppDb } from "./db.js";
+import { registerAssetRoutes } from "./http/routes/assets.js";
 import { registerBoardRoutes } from "./http/routes/board.js";
 import { registerClickRoutes } from "./http/routes/click.js";
 import { registerListingRoutes } from "./http/routes/listings.js";
 import { registerPageRoutes } from "./http/routes/pages.js";
-import { registerPolarWebhookRoutes } from "./http/routes/polar-webhook.js";
+import { registerWaffoWebhookRoutes } from "./http/routes/waffo-webhook.js";
 
 declare module "fastify" {
   interface FastifyInstance {
     db: AppDb;
-    polar: PolarPort;
+    /** Compatibility property name; the value is always a Waffo port. */
+    polar: WaffoPort;
     now: () => Date;
   }
 }
@@ -22,7 +29,8 @@ export type BuildAppOptions = {
   logger?: boolean;
   db?: AppDb;
   databasePath?: string;
-  polar?: PolarPort;
+  /** Deprecated option spelling retained for interrupted tests. */
+  polar?: WaffoPort;
   /** Frozen clock for boot catch-up. Production uses wall UTC. */
   now?: Date;
 };
@@ -36,10 +44,44 @@ export type HealthzOk = {
 export async function buildApp(
   options: BuildAppOptions = {},
 ): Promise<FastifyInstance> {
+  const configuredMode = waffoMode(process.env);
+  const production = process.env.NODE_ENV === "production";
+  const productionLike = production || configuredMode === "waffo-prod";
+  const configuredDatabasePath = options.databasePath ?? process.env.DATABASE_PATH;
+  if (productionLike) {
+    // A production composition must use the real Waffo adapter and a durable
+    // path selected by the process environment. Injected fixture/db objects
+    // are deliberately test-only escape hatches.
+    if (options.polar) {
+      throw new Error("BLOCKED-CONFIG: injected provider is not allowed in production");
+    }
+    if (options.db) {
+      throw new Error("BLOCKED-CONFIG: injected database is not allowed in production");
+    }
+    if (isEphemeralDatabasePath(configuredDatabasePath)) {
+      throw new Error("BLOCKED-CONFIG: DATABASE_PATH must be durable");
+    }
+    const productionEnv = {
+      ...process.env,
+      ...(configuredDatabasePath ? { DATABASE_PATH: configuredDatabasePath } : {}),
+    };
+    assertWaffoRuntimeConfig(productionEnv);
+  }
   const app = Fastify({ logger: options.logger ?? false });
   const ownsDb = options.db === undefined;
-  const db = options.db ?? openDatabase(options.databasePath ?? ":memory:");
-  const polar = options.polar ?? createPolar();
+  // createWaffo validates explicit production/test configuration before the
+  // database is opened. An injected port is the only non-production test
+  // escape hatch.
+  const runtimeEnv = productionLike
+    ? {
+        ...process.env,
+        ...(configuredDatabasePath ? { DATABASE_PATH: configuredDatabasePath } : {}),
+      }
+    : process.env;
+  const polar = options.polar ?? createWaffo(runtimeEnv);
+  const db = options.db ?? openDatabase(options.databasePath ?? (productionLike
+    ? configuredDatabasePath as string
+    : ":memory:"));
   const clock = (): Date => options.now ?? new Date();
   catchUpIssues(db, clock());
   app.decorate("db", db);
@@ -54,11 +96,12 @@ export async function buildApp(
     catchUpIssues(db, clock());
   });
   app.get(HEALTHZ_PATH, async (): Promise<HealthzOk> => ({ ok: true }));
+  registerAssetRoutes(app);
   registerBoardRoutes(app);
   registerListingRoutes(app);
   registerClickRoutes(app);
   registerPageRoutes(app);
-  registerPolarWebhookRoutes(app);
+  registerWaffoWebhookRoutes(app);
   return app;
 }
 
@@ -75,8 +118,14 @@ if (isExecutedDirectly()) {
   if (!Number.isInteger(parsedPort) || parsedPort <= 0) {
     throw new Error(`invalid PORT: ${process.env.PORT ?? ""}`);
   }
-  const databasePath = process.env.DATABASE_PATH ?? "data/newsletter-cover.sqlite";
+  const databasePath =
+    process.env.DATABASE_PATH ??
+    (process.env.NODE_ENV === "production"
+      ? (() => {
+          throw new Error("BLOCKED-CONFIG: DATABASE_PATH");
+        })()
+      : "data/newsletter-cover.sqlite");
   const app = await buildApp({ logger: true, databasePath });
   ensureOpenIssue(app.db);
-  await app.listen({ host: "0.0.0.0", port: parsedPort });
+  await app.listen({ host: "127.0.0.1", port: parsedPort });
 }

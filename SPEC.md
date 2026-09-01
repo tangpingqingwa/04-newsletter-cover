@@ -5,7 +5,7 @@
 **Repo:** https://github.com/tangpingqingwa/04-newsletter-cover  
 **Market:** global English  
 **Clone of:** [outbid.lol](https://outbid.lol) pay-to-rank mechanics  
-**Payments:** Polar (live, env-gated) + fixture adapter  
+**Payments:** Waffo Pancake (live, env-gated) + fixture adapter
 
 Public auction for the next issue’s cover / first slot of one vertical newsletter. Readers watch the bidding. When the issue closes, the highest bid is issue **#1**. Rank is the bid — nothing else.
 
@@ -32,7 +32,7 @@ v1 is **one** English-language vertical newsletter (one board). Architecture may
 - The same canonical sponsor URL on the same issue can **raise**; the sponsor pays only the **difference**.
 - Strip tracking / click-id query strings before store, display, or redirect.
 - Reject chat-app links and NSFW. No on-site chat.
-- Polar checkout for money in. Tests use a fixture Polar port. No ads, no API keys for readers, no revenue share.
+- Waffo Pancake checkout for money in. Tests use an explicit fixture Waffo port. No ads, no API keys for readers, no revenue share.
 - `/about` and `/rules` exist and match this SPEC.
 - Clicks on the sponsor URL are public (count + redirect).
 - Cadence is **per issue**. Default close is **weekly**. Occupied live rank is rolling last 7 days from paid placement, not Monday 00:00 UTC.
@@ -78,7 +78,7 @@ Currency is **USD**. Amounts are **integers** (whole dollars). Reject cents and 
 | Ties | Older `created_at` wins the higher rank. Never break ties with blurb, URL, or clicks. |
 | Below #1 | Still listed. Rank is whatever that bid occupies. |
 | Raise | Same canonical URL + same issue. `new_bid > current_bid`. Charge `new_bid - current_bid` only. `created_at` does **not** change. |
-| Unpaid | A Polar checkout that is not paid must not change bid or rank. |
+| Unpaid | A Waffo checkout that is not paid must not change bid or rank. |
 | Withdraw | Not in v1. Paid bids stay until the issue closes. |
 | #1 | At close, rank 1 is the issue cover / first slot. Readers may still see the full frozen board. |
 
@@ -136,12 +136,12 @@ There is no silent human re-ranking while veto is off. Rank is money.
 
 ---
 
-## 8. Payments (Polar)
+## 8. Payments (Waffo Pancake)
 
-Money in is **Polar**. Readers never see an API key.
+Money in is **Waffo Pancake**. Readers never see an API key.
 
 ```ts
-type PolarPort = {
+type WaffoPort = {
   createCheckout(input: {
     amountUsd: number        // integer dollars to charge now (full bid or raise difference)
     listingId: string
@@ -151,11 +151,11 @@ type PolarPort = {
 }
 ```
 
-- Tests and `scripts/test.sh` use a **fixture** Polar adapter. They must not call `polar.sh` / Polar HTTP.
-- Live Polar is env-gated: `POLAR_LIVE=1` plus the documented secrets. `POLAR_FIXTURE_ONLY=1` always wins (fixture, even if live is set).
-- CI and `scripts/test.sh` must not set `POLAR_LIVE=1` or Polar secrets.
-- Apply the bid only after a paid checkout (fixture `complete` in tests; Polar webhook / confirmed checkout live).
-- Polar’s processing fee is theirs. This product does not revenue-share the bid with a third marketplace.
+- Tests and `scripts/test.sh` use an explicit **fixture** Waffo adapter. They must not call Waffo HTTP.
+- Live Waffo is explicit: `WAFFO_MODE=waffo-test` or `WAFFO_MODE=waffo-prod`, with all documented credentials and a durable database. Production accepts only `waffo-prod` and the official HTTPS API origin.
+- CI and `scripts/test.sh` must stay in `WAFFO_MODE=fixture` and must not contain provider secrets.
+- Apply the bid only after a signed `order.completed` event (fixture `complete` in tests); the browser return route is read-only.
+- Waffo’s processing fee is theirs. This product does not revenue-share the bid with a third marketplace.
 
 No Stripe, no crypto, no invoice-net-30 in v1.
 
@@ -177,14 +177,15 @@ The sponsor URL on the board is a **public** click-through, not a raw outbound `
 ```
 GET  /                     public board for the open issue
 GET  /issue/:date          board for that issueDate (open or frozen archive)
-POST /listings             start a listing or raise (returns Polar checkout URL)
+POST /listings             start a listing or raise (returns Waffo checkout URL)
 GET  /l/:listingId         public click → 302 cleaned sponsor URL
+GET  /checkout/complete    read-only durable checkout state (never settles)
 GET  /about                what this is
 GET  /rules                auction rules (this SPEC, human-readable)
 GET  /healthz              liveness
 ```
 
-No account required to read the board, about, or rules. Creating/raising a listing collects whatever Polar needs to take payment; v1 does not add a separate member area.
+No account required to read the board, about, or rules. Creating/raising a listing collects whatever Waffo needs to take payment; v1 does not add a separate member area.
 
 `/about` states: public auction, rank is the bid, weekly issue, winner is cover #1, no ads, no chat.
 
@@ -217,7 +218,7 @@ type Checkout = {
   listingId: string
   amountUsd: number          // charged now (first bid or difference)
   targetBidUsd: number
-  polarCheckoutId: string
+  waffoCheckoutId: string
   status: "pending" | "paid" | "failed"
 }
 ```
@@ -239,7 +240,7 @@ type Checkout = {
 | 7 | Paste URL with `?utm_source=x&fbclid=y` | Stored and redirected without those keys |
 | 8 | Telegram / WhatsApp / Discord invite URL | `rejected_content`, no row |
 | 9 | NSFW URL or blurb | `rejected_content`, no row |
-| 10 | Unpaid Polar checkout | Board unchanged |
+| 10 | Unpaid Waffo checkout | Board unchanged |
 | 11 | `GET /l/:id` | 302 to cleaned URL; `clicks` +1; public count updates |
 | 12 | Occupied issue at Monday 00:00 UTC after a Sunday paid placement | Still live; expires 7 days after paid placement. Not a 24h lock. |
 | 13 | Issue close with no paid listings | Empty archive; no invented cover |
@@ -291,4 +292,4 @@ Full process: [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 Implementation plan (stack, modules, PR DAG): [BUILD.md](./BUILD.md).
 
-Until there is an application binary, `scripts/test.sh` still has to pass: contract files exist, SPEC/CONTRIBUTING agree, no tracked secrets. Adding a server means **extending** that script with unit/contract tests. Live Polar calls are optional and must not be required for `main` to stay green.
+Until there is an application binary, `scripts/test.sh` still has to pass: contract files exist, SPEC/CONTRIBUTING agree, no tracked secrets. Adding a server means **extending** that script with unit/contract tests. Live Waffo calls are optional and must not be required for `main` to stay green.
