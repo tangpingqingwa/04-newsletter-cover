@@ -87,6 +87,31 @@ test("POST /listings stamps the open issue and ignores a client issueDate", asyn
   assert.equal(stored.bidUsd, 0);
 });
 
+test("POST /listings accepts a bare sponsor domain and stores HTTPS canonical form", async (t) => {
+  const app = await buildApp();
+  t.after(() => app.close());
+  insertIssue(app.db, OPEN_ISSUE, "open");
+
+  const created = await app.inject({
+    method: "POST",
+    url: "/listings",
+    payload: {
+      sponsorUrl: "  Bare.Example/cover  ",
+      blurb: "A bare domain is a valid sponsor destination",
+      bidUsd: 5,
+    },
+  });
+
+  assert.equal(created.statusCode, 200);
+  const stored = findListingByUrlAndIssue(
+    app.db,
+    "https://bare.example/cover",
+    OPEN_ISSUE,
+  );
+  assert.ok(stored);
+  assert.equal(stored.sponsorUrl, "https://bare.example/cover");
+});
+
 test("same sponsor URL on the same issue is unique — not a second row", async (t) => {
   const app = await buildApp();
   t.after(() => app.close());

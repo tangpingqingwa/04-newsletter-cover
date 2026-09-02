@@ -57,6 +57,28 @@ test("canonicalizeSponsorUrl strips tracking keys, fragment, and default ports",
   assert.equal(isTrackingQueryKey("keep"), false);
 });
 
+test("bare sponsor domains are safely normalized to HTTPS", () => {
+  assert.equal(
+    mustCanonical("  Sponsor.Example/cover?utm_source=ad&keep=yes#frag  "),
+    "https://sponsor.example/cover?keep=yes",
+  );
+  assert.equal(mustCanonical("sponsor.example:8443/cover"), "https://sponsor.example:8443/cover");
+  assert.equal(mustCanonical("//Sponsor.Example/cover"), "https://sponsor.example/cover");
+  assert.equal(mustCanonical("[2001:db8::1]/cover"), "https://[2001:db8::1]/cover");
+  for (const raw of [
+    "javascript:alert(1)",
+    "data:text/html,hi",
+    "mailto:hi@example.com",
+    "ftp://sponsor.example/cover",
+    "sponsor.example:port/cover",
+  ]) {
+    assert.deepEqual(canonicalizeSponsorUrl(raw), {
+      ok: false,
+      error: "invalid_url",
+    }, raw);
+  }
+});
+
 test("redirect target is the stored canonical URL, never the raw paste", () => {
   const raw = "https://Deck.Example/cover?utm_source=x&fbclid=1#top";
   const canonical = mustCanonical(raw);

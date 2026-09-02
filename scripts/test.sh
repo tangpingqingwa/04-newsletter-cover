@@ -342,14 +342,14 @@ const fields = [
   'name="sponsorUrl"',
   'name="blurb"',
   'name="bidUsd"',
-  '>Outbid</button>',
+  '>Claim rank</button>',
 ];
 if (fields.some((field) => claim.indexOf(field) < 0)) {
   console.error("canonical claim form fields are incomplete");
   process.exit(1);
 }
-if (!(claim.indexOf('name="sponsorUrl"') < claim.indexOf('name="blurb"') && claim.indexOf('name="blurb"') < claim.indexOf('>Outbid</button>'))) {
-  console.error("identity fields must precede the single Outbid submit");
+if (!(claim.indexOf('name="sponsorUrl"') < claim.indexOf('name="blurb"') && claim.indexOf('name="blurb"') < claim.indexOf('>Claim rank</button>'))) {
+  console.error("identity fields must precede the single Claim rank submit");
   process.exit(1);
 }
 const linkStart = src.indexOf("const OCCUPIED_NEXT_COVER_LINK = ");

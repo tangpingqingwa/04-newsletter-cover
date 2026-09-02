@@ -424,12 +424,12 @@ function renderClaim(board: BoardView): string {
   const claimHedAttrs = ' class="claim-hed" data-slot="claim-heading"';
   const identityFields = `<div class="cover-identity" data-cover-identity="true">
             <label class="sr-only" for="sponsor-url">Sponsor URL</label>
-            <input id="sponsor-url" name="sponsorUrl" type="url" required placeholder="Sponsor URL" autocomplete="url" aria-describedby="claim-note"/>
+            <input id="sponsor-url" name="sponsorUrl" type="text" inputmode="url" required placeholder="Sponsor URL" autocomplete="url" autocapitalize="none" spellcheck="false" aria-describedby="claim-note"/>
             <label class="sr-only" for="cover-pitch">One-line cover pitch</label>
             <input id="cover-pitch" class="blurb-field" name="blurb" type="text" required maxlength="120" placeholder="One-line cover pitch" aria-describedby="claim-note"/>
           </div>`;
   const formFields = `${identityFields}
-          <button type="submit" class="outbid" data-claim-submit="true" data-ready="false" aria-disabled="true" disabled>Outbid</button>`;
+          <button type="submit" class="outbid" data-claim-submit="true" data-ready="false" aria-label="Claim rank" aria-disabled="true" disabled>Claim rank</button>`;
   return `      <section${claimAttrs}>
         <h2${claimHedAttrs}>
           <span>Claim #1 for</span>
@@ -3385,23 +3385,63 @@ const PRINT_FOLIO_OCCUPIED_CSS = /* css */ `
 `;
 
 const CLAIM_CONTROL_ALIGNMENT_CSS = /* css */ `
-/* Keep the primary submit action on the same desktop control line as the
- * amount stepper. The form fields retain their own row below the claim note. */
-@media (min-width: 720px) {
-  .sheet .week-open-empty .claim {
-    position: relative;
+/* Keep the claim copy and amount stepper together; the submit stays in the
+ * same grid row as the identity fields at every viewport width. */
+.sheet .claim-hed {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+}
+.sheet .claim-hed > span:first-child {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+.sheet .amount-stepper {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+  white-space: nowrap;
+}
+.sheet .amount-field {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  white-space: nowrap;
+}
+.sheet .amount-field input {
+  width: 4.5ch;
+  min-width: 0;
+  line-height: 1;
+  text-align: center;
+}
+.sheet #bid-form {
+  align-items: stretch;
+}
+.sheet #bid-form > .outbid {
+  align-self: stretch;
+  margin: 0;
+}
+@media (max-width: 719px) {
+  .sheet .claim-hed {
+    gap: 0.3rem;
+    font-size: clamp(1.15rem, 7.2vw, 2.25rem);
   }
-
-  .sheet .week-open-empty #bid-form {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  .sheet .amount-stepper { gap: clamp(0.2rem, 1.2vw, 0.35rem); }
+  .sheet .step {
+    width: clamp(1.75rem, 8.5vw, 2.2rem);
+    height: clamp(1.75rem, 8.5vw, 2.2rem);
+    flex-basis: clamp(1.75rem, 8.5vw, 2.2rem);
   }
-
-  .sheet .week-open-empty #claim .outbid {
-    position: absolute;
-    top: 1.25rem;
-    right: 0;
-    margin: 0;
-  }
+  .sheet .amount-field input { width: clamp(3ch, 8vw, 4ch); }
 }
 `;
 

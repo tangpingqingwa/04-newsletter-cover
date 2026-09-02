@@ -165,14 +165,15 @@ test("open empty cover is a print masthead with an honest cover stand and one Cl
   assert.match(html, />\+</);
   assert.match(form, /name="sponsorUrl"/);
   assert.match(form, /name="blurb"/);
-  assert.match(form, />Outbid<\/button>/);
+  assert.match(form, /name="sponsorUrl" type="text" inputmode="url"/);
+  assert.match(form, /<button[^>]*aria-label="Claim rank"[^>]*>Claim rank<\/button>/);
   assert.ok(form.indexOf('name="sponsorUrl"') < form.indexOf('name="blurb"'));
-  assert.ok(form.indexOf('name="blurb"') < form.indexOf(">Outbid</button>"));
+  assert.ok(form.indexOf('name="blurb"') < form.indexOf(">Claim rank</button>"));
   assert.equal((form.match(/class="outbid"/g) ?? []).length, 1);
   assert.equal((html.match(/data-folio-index="true"/g) ?? []).length, 1);
   assert.doesNotMatch(html, /data-rank="1"|Cover · #1|data-sold-cover="true"/);
   assert.doesNotMatch(html, /data-today-ranking|data-latest-activity|category-picker|\/category\//);
-  assert.doesNotMatch(bodyMarkup(html), /Claim rank/);
+  assert.match(bodyMarkup(html), /Claim rank/);
 });
 
 test("occupied open cover leads with one Cover prize, later paid ranks stay quiet, and a claim follows", () => {
@@ -280,6 +281,16 @@ test("claim form gives identity fields names and a visible bid focus cue", () =>
   assert.ok(form.indexOf('for="cover-pitch"') < form.indexOf('id="cover-pitch"'));
   assert.match(html, /\.amount-field input:focus-visible\s*\{/);
   assert.match(html, /outline: 2px solid var\(--flag\)/);
+});
+
+test("claim controls stay centered in one stepper row and form controls share a level", () => {
+  assert.match(ISSUE_CSS, /\.sheet \.claim-hed \{[\s\S]*flex-wrap: nowrap[\s\S]*justify-content: center/);
+  assert.match(ISSUE_CSS, /\.sheet \.amount-stepper \{[\s\S]*align-items: center/);
+  assert.match(ISSUE_CSS, /\.sheet \.amount-field \{[\s\S]*display: inline-flex[\s\S]*white-space: nowrap/);
+  assert.match(ISSUE_CSS, /\.sheet #bid-form \{[\s\S]*align-items: stretch/);
+  assert.match(ISSUE_CSS, /\.sheet #bid-form > \.outbid \{[\s\S]*align-self: stretch/);
+  assert.match(ISSUE_CSS, /@media \(max-width: 719px\)[\s\S]*\.sheet \.claim-hed \{[\s\S]*font-size: clamp\(1\.15rem/);
+  assert.doesNotMatch(ISSUE_CSS, /\.week-open-empty #claim \.outbid \{[^}]*position: absolute/);
 });
 
 test("form POST /listings starts one fixture checkout and does not select Polar", async (t) => {

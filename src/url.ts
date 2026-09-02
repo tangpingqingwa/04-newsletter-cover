@@ -148,6 +148,55 @@ function isNsfwUrl(parsed: URL): boolean {
   return isNsfwHost(hostnameOf(parsed)) || isNsfwPath(parsed.pathname);
 }
 
+/**
+ * A missing scheme is only inferred for a host-shaped value. In particular,
+ * values such as `javascript:...` must not become an HTTPS URL merely because
+ * they failed the first URL parse. A numeric port is allowed in the bare-host
+ * form, including bracketed IPv6 hosts.
+ */
+function looksLikeBareHost(value: string): boolean {
+  if (/^[a-z][a-z\d+.-]*\/\//i.test(value)) {
+    return false;
+  }
+  return /^(?:\[[^\]]+\]|[^/?#\s:]+)(?::\d+)?(?:[/?#].*)?$/i.test(value);
+}
+
+function parseSponsorUrl(text: string): URL | null {
+  let parsed: URL | null = null;
+  try {
+    parsed = new URL(text);
+  } catch {
+    // A host without a scheme is the supported shorthand. Parse it below as
+    // HTTPS after the host-shaped guard has run.
+  }
+
+  if (parsed) {
+    const protocol = parsed.protocol.toLowerCase();
+    if (protocol === "http:" || protocol === "https:") {
+      return parsed;
+    }
+    // URL treats `example.com:8443` as a custom scheme. Re-parse that safe
+    // host:port shorthand, while leaving real schemes rejected below.
+    if (!looksLikeBareHost(text)) {
+      return null;
+    }
+  } else if (text.startsWith("//")) {
+    try {
+      return new URL(`https:${text}`);
+    } catch {
+      return null;
+    }
+  } else if (!looksLikeBareHost(text)) {
+    return null;
+  }
+
+  try {
+    return new URL(`https://${text}`);
+  } catch {
+    return null;
+  }
+}
+
 function toCanonical(parsed: URL): string {
   const protocol = parsed.protocol.toLowerCase();
   const host = hostnameOf(parsed);
@@ -155,7 +204,7 @@ function toCanonical(parsed: URL): string {
     (protocol === "http:" && parsed.port === "80") ||
     (protocol === "https:" && parsed.port === "443");
   const port = parsed.port && !defaultPort ? `:${parsed.port}` : "";
-  const hostForUrl = host.includes(":") ? `[${host}]` : host;
+  const hostForUrl = host.includes(":") && !host.startsWith("[") ? `[${host}]` : host;
   const path = parsed.pathname === "/" ? "" : parsed.pathname;
   const kept = new URLSearchParams();
   for (const [key, value] of parsed.searchParams.entries()) {
@@ -181,10 +230,8 @@ export function canonicalizeSponsorUrl(raw: unknown): CanonicalSponsorUrl {
     return { ok: false, error: "invalid_url" };
   }
 
-  let parsed: URL;
-  try {
-    parsed = new URL(text);
-  } catch {
+  const parsed = parseSponsorUrl(text);
+  if (!parsed) {
     return { ok: false, error: "invalid_url" };
   }
 
