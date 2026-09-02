@@ -14,6 +14,70 @@ import {
 
 const OPEN_ISSUE = "2099-01-05";
 
+const MALFORMED_URLS = [
+  "/path",
+  "///example.com",
+  "////example.com",
+  "/////example.com",
+  "//\\example.com",
+  "//\\\\example.com",
+  "//\\evil.com",
+  "//evil.com\\path",
+  "example.com\\path",
+  "http\n://example.com/path",
+  "https\n://example.com/path",
+  "http:\\\\example.com/path",
+  "https://example.com\\path",
+  "https:\\\\example.com/path",
+  "https:/\\example.com/path",
+  "javascript\n://",
+  "data\t://",
+  "ftp\r://",
+  "javascript\\:123",
+] as const;
+
+const UNSAFE_DESTINATION_URLS = [
+  "localhost:3000/path",
+  "127.0.0.1:8080/path",
+  "10.0.0.1",
+  "192.168.1.1",
+  "172.16.0.1",
+  "169.254.169.254/latest/meta-data",
+  "0.0.0.0",
+  "192.0.2.1",
+  "198.18.0.1",
+  "198.51.100.1",
+  "203.0.113.1",
+  "224.0.0.1",
+  "255.255.255.255",
+  "[::]",
+  "[::1]",
+  "[fc00::1]",
+  "[fd00::1]",
+  "[fe80::1]",
+  "[fec0::1]",
+  "[ff02::1]",
+  "[2001:db8::1]",
+  "[::ffff:127.0.0.1]",
+  "[::ffff:10.0.0.1]",
+  "[::ffff:169.254.169.254]",
+  "[::ffff:c000:0201]",
+  "intranet.local",
+  "service.internal",
+] as const;
+
+const TRAILING_DOT_POLICY_URLS = [
+  "t.me../x",
+  "//t.me../x",
+  "https://t.me../x",
+  "chat.whatsapp.com../x",
+  "//chat.whatsapp.com../x",
+  "https://chat.whatsapp.com../x",
+  "pornhub.com.../x",
+  "//pornhub.com.../x",
+  "https://pornhub.com.../x",
+] as const;
+
 function insertIssue(db: AppDb, issueDate: string, status: "open" | "closed"): void {
   db.prepare(
     "INSERT INTO issues (issue_date, status, closed_at) VALUES (?, ?, ?)",
@@ -63,10 +127,16 @@ test("bare sponsor domains are safely normalized to HTTPS", () => {
     "https://sponsor.example/cover?keep=yes",
   );
   assert.equal(mustCanonical("sponsor.example:8443/cover"), "https://sponsor.example:8443/cover");
-  assert.equal(mustCanonical("localhost:8080/cover"), "https://localhost:8080/cover");
-  assert.equal(mustCanonical("127.0.0.1:8080/cover"), "https://127.0.0.1:8080/cover");
+  assert.equal(mustCanonical("8.8.8.8:8080/cover"), "https://8.8.8.8:8080/cover");
   assert.equal(mustCanonical("//Sponsor.Example/cover"), "https://sponsor.example/cover");
-  assert.equal(mustCanonical("[2001:db8::1]/cover"), "https://[2001:db8::1]/cover");
+  assert.equal(
+    mustCanonical("[2606:4700:4700::1111]/cover"),
+    "https://[2606:4700:4700::1111]/cover",
+  );
+  assert.equal(
+    mustCanonical("[::ffff:8.8.8.8]/cover"),
+    "https://[::ffff:808:808]/cover",
+  );
   for (const raw of [
     "javascript:alert(1)",
     "javascript:123",
@@ -85,6 +155,62 @@ test("bare sponsor domains are safely normalized to HTTPS", () => {
       error: "invalid_url",
     }, raw);
   }
+});
+
+test("malformed, control-separated, and backslash-obfuscated URL spellings are invalid_url", () => {
+  for (const raw of MALFORMED_URLS) {
+    assert.deepEqual(canonicalizeSponsorUrl(raw), {
+      ok: false,
+      error: "invalid_url",
+    }, raw);
+  }
+  assert.equal(mustCanonical("//public.example/path"), "https://public.example/path");
+});
+
+test("private, local, reserved, and mapped-local destinations are rejected_content", () => {
+  for (const raw of UNSAFE_DESTINATION_URLS) {
+    assert.deepEqual(canonicalizeSponsorUrl(raw), {
+      ok: false,
+      error: "rejected_content",
+    }, raw);
+  }
+});
+
+test("trailing-dot host variants are normalized before chat and NSFW policy", () => {
+  for (const raw of TRAILING_DOT_POLICY_URLS) {
+    assert.deepEqual(canonicalizeSponsorUrl(raw), {
+      ok: false,
+      error: "rejected_content",
+    }, raw);
+  }
+  assert.equal(
+    mustCanonical("public.example../cover"),
+    "https://public.example/cover",
+  );
+});
+
+test("POST /listings rejects every malformed or unsafe URL before checkout", async (t) => {
+  const app = await buildApp();
+  t.after(() => app.close());
+  insertIssue(app.db, OPEN_ISSUE, "open");
+
+  const cases: readonly { sponsorUrl: string; error: "invalid_url" | "rejected_content" }[] = [
+    ...MALFORMED_URLS.map((sponsorUrl) => ({ sponsorUrl, error: "invalid_url" as const })),
+    ...UNSAFE_DESTINATION_URLS.map((sponsorUrl) => ({ sponsorUrl, error: "rejected_content" as const })),
+    ...TRAILING_DOT_POLICY_URLS.map((sponsorUrl) => ({ sponsorUrl, error: "rejected_content" as const })),
+  ];
+
+  for (const { sponsorUrl, error } of cases) {
+    const response = await app.inject({
+      method: "POST",
+      url: "/listings",
+      payload: { sponsorUrl, blurb: "Unsafe destination must stay rejected", bidUsd: 5 },
+    });
+    assert.equal(response.statusCode, 400, sponsorUrl);
+    assert.deepEqual(response.json(), { error }, sponsorUrl);
+  }
+
+  assert.equal(listingCount(app.db), 0);
 });
 
 test("redirect target is the stored canonical URL, never the raw paste", () => {
