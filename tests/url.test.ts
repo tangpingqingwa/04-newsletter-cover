@@ -63,13 +63,21 @@ test("bare sponsor domains are safely normalized to HTTPS", () => {
     "https://sponsor.example/cover?keep=yes",
   );
   assert.equal(mustCanonical("sponsor.example:8443/cover"), "https://sponsor.example:8443/cover");
+  assert.equal(mustCanonical("localhost:8080/cover"), "https://localhost:8080/cover");
+  assert.equal(mustCanonical("127.0.0.1:8080/cover"), "https://127.0.0.1:8080/cover");
   assert.equal(mustCanonical("//Sponsor.Example/cover"), "https://sponsor.example/cover");
   assert.equal(mustCanonical("[2001:db8::1]/cover"), "https://[2001:db8::1]/cover");
   for (const raw of [
     "javascript:alert(1)",
+    "javascript:123",
     "data:text/html,hi",
+    "data:123",
     "mailto:hi@example.com",
+    "mailto:123",
     "ftp://sponsor.example/cover",
+    "ftp:123",
+    "single-label:123/cover",
+    "sponsor.example:65536/cover",
     "sponsor.example:port/cover",
   ]) {
     assert.deepEqual(canonicalizeSponsorUrl(raw), {

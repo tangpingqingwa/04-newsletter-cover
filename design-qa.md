@@ -8,7 +8,7 @@
 - Mobile implementation: `/Users/yann/outbid-verticals/04-newsletter-cover/artifacts/design-qa/claim-line-after-mobile-390x844.png`
 - Full comparison, source left and implementation right: `/Users/yann/outbid-verticals/04-newsletter-cover/artifacts/design-qa/claim-line-comparison-full.png`
 - Focused claim comparison, source left and implementation right: `/Users/yann/outbid-verticals/04-newsletter-cover/artifacts/design-qa/claim-line-comparison-focused.png`
-- State: open, honest empty cover; disabled Outbid action; light print theme.
+- State: open, honest empty cover; disabled Claim rank action; light print theme.
 - Desktop viewport: `1200 x 745` CSS px at density `1`. The `2400 x 1664` source included `174px` of browser chrome; its `2400 x 1490` page region was cropped and downsampled to `1200 x 745` before comparison.
 - Mobile viewport: `390 x 844` CSS px at density `1`; implementation screenshot is `390 x 844` pixels.
 
@@ -16,20 +16,20 @@
 
 - No actionable P0, P1, or P2 findings remain.
 - Fonts and typography: the display face, uppercase hierarchy, optical weight, line height, and bid underline are unchanged; the label now centers on the square controls instead of sharing their baseline.
-- Spacing and layout rhythm: the label-to-minus gap is `4px` instead of `8.796875px`; their center-line delta is `0px` instead of `9px`. The amount stepper and desktop Outbid action remain aligned within `0.046875px`.
+- Spacing and layout rhythm: the label-to-minus gap is `4px` instead of `8.796875px`; their center-line delta is `0px` instead of `9px`. The amount stepper and desktop Claim rank action remain aligned within `0.046875px`.
 - Colors and visual tokens: unchanged; the paper, ink, flag red, hairline, and muted disabled tokens remain intact.
 - Image quality and assets: no image, logo, illustration, icon, or generated asset was added or replaced.
 - Copy and content: unchanged; the fixture still shows the valid `$5` product minimum and honest empty-cover state.
-- Responsiveness: at `390 x 844`, the label and stepper use the same centered flex row, keep a `4px` gap, retain a `0.00390625px` center delta, and produce `0px` horizontal overflow. Outbid correctly returns to its own mobile row.
+- Responsiveness: at `390 x 844`, the label and stepper use the same centered flex row, keep a `4px` gap, retain a `0.00390625px` center delta, and produce `0px` horizontal overflow. Claim rank correctly returns to its own mobile row.
 - Interaction: increase and decrease were exercised from `$5 → $6 → $5`; state restored correctly. Browser console errors: none.
 
 ## Comparison History
 
-1. Earlier P2 — the amount stepper and desktop Outbid action were separated by `103.7421875px` between centers.
-2. Earlier fix — scoped Outbid to the desktop claim-control line and retained the two identity fields below it; the resulting center delta was `0.0390625px`.
+1. Earlier P2 — the amount stepper and desktop Claim rank action were separated by `103.7421875px` between centers.
+2. Earlier fix — scoped Claim rank to the desktop claim-control line and retained the two identity fields below it; the resulting center delta was `0.0390625px`.
 3. Current P2 — baseline alignment left the label center `9px` above the minus box and retained an `8.796875px` gap.
-4. Current fix — changed the claim heading to center alignment, reduced its gap to `0.25rem`, preserved that flex treatment on mobile, and retuned the desktop Outbid offset to `1.25rem`.
-5. Post-fix evidence — the focused comparison shows label, minus, amount, plus, and Outbid on the intended control line; desktop label/control delta is `0px`, Outbid/stepper delta is `0.046875px`, and mobile remains overflow-free.
+4. Current fix — changed the claim heading to center alignment, reduced its gap to `0.25rem`, preserved that flex treatment on mobile, and retuned the desktop Claim rank offset to `1.25rem`.
+5. Post-fix evidence — the focused comparison shows label, minus, amount, plus, and Claim rank on the intended control line; desktop label/control delta is `0px`, Claim rank/stepper delta is `0.046875px`, and mobile remains overflow-free.
 
 ## Open Questions
 
@@ -47,7 +47,7 @@
 
 - [x] Align `Claim #1 for` with the square controls.
 - [x] Tighten the label-to-minus gap.
-- [x] Keep desktop Outbid on the same control line.
+- [x] Keep desktop Claim rank on the same control line.
 - [x] Preserve normal mobile flow and both identity fields.
 
 ## Follow-up Polish

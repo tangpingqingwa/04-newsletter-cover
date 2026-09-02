@@ -320,6 +320,24 @@ test("sponsor URL must be http or https", async (t) => {
   assert.equal(mailto.json().error, "invalid_url");
 });
 
+test("POST /listings rejects numeric custom-scheme payloads before checkout", async (t) => {
+  const app = await buildApp();
+  t.after(() => app.close());
+  insertIssue(app.db, OPEN_ISSUE, "open");
+
+  for (const sponsorUrl of ["javascript:123", "data:123", "mailto:123", "ftp:123"]) {
+    const response = await app.inject({
+      method: "POST",
+      url: "/listings",
+      payload: { sponsorUrl, blurb: "Unsafe scheme must stay rejected", bidUsd: 5 },
+    });
+    assert.equal(response.statusCode, 400, sponsorUrl);
+    assert.deepEqual(response.json(), { error: "invalid_url" }, sponsorUrl);
+  }
+
+  assert.equal(listingCount(app.db), 0);
+});
+
 test("createListing throws ListingError when the body is not an object", () => {
   assert.throws(
     () => createListing({} as AppDb, null),

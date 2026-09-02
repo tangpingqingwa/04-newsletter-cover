@@ -3398,7 +3398,7 @@ const CLAIM_CONTROL_ALIGNMENT_CSS = /* css */ `
   text-align: center;
 }
 .sheet .claim-hed > span:first-child {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
   white-space: nowrap;
 }
@@ -3434,14 +3434,36 @@ const CLAIM_CONTROL_ALIGNMENT_CSS = /* css */ `
   .sheet .claim-hed {
     gap: 0.3rem;
     font-size: clamp(1.15rem, 7.2vw, 2.25rem);
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
   }
+  .sheet .claim-hed::-webkit-scrollbar { display: none; }
   .sheet .amount-stepper { gap: clamp(0.2rem, 1.2vw, 0.35rem); }
   .sheet .step {
-    width: clamp(1.75rem, 8.5vw, 2.2rem);
-    height: clamp(1.75rem, 8.5vw, 2.2rem);
-    flex-basis: clamp(1.75rem, 8.5vw, 2.2rem);
+    width: 2.75rem;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    min-height: 2.75rem;
+    flex: 0 0 2.75rem;
   }
   .sheet .amount-field input { width: clamp(3ch, 8vw, 4ch); }
+}
+@media (max-width: 359px) {
+  .sheet .claim-hed {
+    gap: 0.2rem;
+    font-size: clamp(0.9rem, 6.8vw, 1.35rem);
+  }
+  .sheet .amount-stepper { gap: 0.1rem; }
+  .sheet .amount-field input { width: 3ch; }
+}
+@media (max-width: 259px) {
+  .sheet .claim-hed {
+    gap: 0.15rem;
+    font-size: 0.8rem;
+  }
+  .sheet .amount-field input { width: 2.75ch; }
 }
 `;
 

@@ -289,7 +289,9 @@ test("claim controls stay centered in one stepper row and form controls share a 
   assert.match(ISSUE_CSS, /\.sheet \.amount-field \{[\s\S]*display: inline-flex[\s\S]*white-space: nowrap/);
   assert.match(ISSUE_CSS, /\.sheet #bid-form \{[\s\S]*align-items: stretch/);
   assert.match(ISSUE_CSS, /\.sheet #bid-form > \.outbid \{[\s\S]*align-self: stretch/);
-  assert.match(ISSUE_CSS, /@media \(max-width: 719px\)[\s\S]*\.sheet \.claim-hed \{[\s\S]*font-size: clamp\(1\.15rem/);
+  assert.match(ISSUE_CSS, /@media \(max-width: 719px\)[\s\S]*\.sheet \.claim-hed \{[\s\S]*font-size: clamp\(1\.15rem[\s\S]*overflow-x: auto/);
+  assert.match(ISSUE_CSS, /@media \(max-width: 719px\)[\s\S]*\.sheet \.step \{[\s\S]*min-width: 2\.75rem[\s\S]*min-height: 2\.75rem[\s\S]*flex: 0 0 2\.75rem/);
+  assert.match(ISSUE_CSS, /@media \(max-width: 359px\)[\s\S]*\.sheet \.claim-hed \{[\s\S]*font-size: clamp\(0\.9rem/);
   assert.doesNotMatch(ISSUE_CSS, /\.week-open-empty #claim \.outbid \{[^}]*position: absolute/);
 });
 

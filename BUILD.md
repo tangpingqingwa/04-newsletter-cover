@@ -145,7 +145,7 @@ Live client lives in `src/billing/waffo.ts` and is selected only by `createWaffo
 - **Acceptance:** operator script starts a local process with explicit Waffo fixture mode; checks the empty board, below-minimum error, unpaid checkout, read-only browser return, unsigned webhook rejection, about/rules, and no provider host; production configuration is a separate fail-closed preflight with exact `BLOCKED-SECRET`/`BLOCKED-CONFIG`; **not** called from `scripts/test.sh` or Actions; CI remains fixture-only
 
 ### PR 14: product UI — next issue’s cover auction
-- **Description:** Print masthead for the next issue’s one cover. Issue date + OPEN/CLOSED is editorial chrome. A listing is a cover pitch (sponsor URL + one-line blurb). Empty issue is “no cover sold,” never a placeholder sponsor. Outbid DNA stays: Claim #1, dashed $amount, ±, Outbid, $bid + clicks. Not a parchment recolor of a web form. One prize: the cover.
+- **Description:** Print masthead for the next issue’s one cover. Issue date + OPEN/CLOSED is editorial chrome. A listing is a cover pitch (sponsor URL + one-line blurb). Empty issue is “no cover sold,” never a placeholder sponsor. Auction DNA stays: Claim #1, dashed $amount, ±, Claim rank, $bid + clicks. Not a parchment recolor of a web form. One prize: the cover.
 - **Files:** `src/views/skin.ts`, `src/http/routes/board.ts`, `src/http/routes/pages.ts`, `src/http/routes/listings.ts`, `tests/product-ui.test.ts`, `tests/rank.test.ts`, `tests/issues.test.ts`, `scripts/test.sh`, `scripts/live-smoke.sh`
 - **Dependencies:** launch-path already shipped (PRs 1–10 / Waffo smoke)
 - **Acceptance:** Empty issue says no cover sold and keeps `No paid listings on this board.` Issue chrome is the date + OPEN/CLOSED. Paid rows are cover lines, not cards in a cream form. No article list or subscriber count. `bash scripts/test.sh` stays offline.
@@ -217,7 +217,7 @@ requirements, must not be restored, and must not be used as a gate.
 
 PR 46's staged empty identity experiment (the first-click marker, later-write
 marker, and “Then the cover URL” copy) is retired. The current empty form
-requires Sponsor URL and one-line cover pitch before one Outbid submit; the
+requires Sponsor URL and one-line cover pitch before one Claim rank submit; the
 retired ordering and markers are historical evidence only, not acceptance
 criteria or a gate.
 
@@ -247,7 +247,7 @@ criteria or a gate.
 - **Description:** The print folio has one truthful first action per state. Empty
   open `/` keeps the stand and honest no-cover copy, then one claim form whose
   required fields are Sponsor URL and one-line cover pitch, followed by one
-  Outbid submit. Occupied open `/` leads with the paid Cover · #1, then offers at
+  Claim rank submit. Occupied open `/` leads with the paid Cover · #1, then offers at
   most one quiet Claim the next cover route and the same direct raise/list form.
   No generated read/claim generations or staged later-write ordering is part of
   the product.
@@ -258,7 +258,7 @@ criteria or a gate.
   navigation at `/`, `/about`, and `/rules`. Empty open output preserves
   `data-read-stand`, Claim #1, dashed `$amount`, ±, cover-prize copy,
   rolling-last-7-days truth, and the form order Sponsor URL → one-line cover
-  pitch → one Outbid. It has no staged identity/later-write markers or
+  pitch → one Claim rank. It has no staged identity/later-write markers or
   redundant empty-cover claim link. Occupied open output renders the paid
   Cover · #1 prize before price/click facts, keeps later ranks quiet, and has at
   most one `data-claim-cover` route marked `data-claim-after-listing` to the

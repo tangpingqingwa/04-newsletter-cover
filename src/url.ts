@@ -149,16 +149,46 @@ function isNsfwUrl(parsed: URL): boolean {
 }
 
 /**
- * A missing scheme is only inferred for a host-shaped value. In particular,
- * values such as `javascript:...` must not become an HTTPS URL merely because
- * they failed the first URL parse. A numeric port is allowed in the bare-host
- * form, including bracketed IPv6 hosts.
+ * A missing scheme is only inferred for a plausible host-shaped value. In
+ * particular, values such as `javascript:123` must not become an HTTPS URL
+ * merely because the URL parser treats the suffix as a numeric port. The
+ * shorthand grammar accepts dotted hostnames/IPs, localhost, and bracketed
+ * IPv6 hosts, with a valid numeric port.
  */
 function looksLikeBareHost(value: string): boolean {
   if (/^[a-z][a-z\d+.-]*\/\//i.test(value)) {
     return false;
   }
-  return /^(?:\[[^\]]+\]|[^/?#\s:]+)(?::\d+)?(?:[/?#].*)?$/i.test(value);
+  const match = /^(\[[^\]]+\]|[^/?#\s:]+)(?::(\d+))?(?:[/?#].*)?$/u.exec(value);
+  if (!match) {
+    return false;
+  }
+
+  const host = match[1] ?? "";
+  const port = match[2];
+  if (port !== undefined) {
+    const numericPort = Number(port);
+    if (!Number.isSafeInteger(numericPort) || numericPort < 0 || numericPort > 65535) {
+      return false;
+    }
+  }
+
+  if (host.startsWith("[") && host.endsWith("]")) {
+    // Let URL validate the actual IPv6 syntax after this host-shape check.
+    return host.includes(":");
+  }
+
+  const hostname = host.toLowerCase().replace(/\.$/, "");
+  if (hostname === "localhost") {
+    return true;
+  }
+
+  const labels = hostname.split(".");
+  if (labels.length < 2) {
+    return false;
+  }
+  const validLabel = /^[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?$/u;
+  return labels.every((label) => validLabel.test(label));
 }
 
 function parseSponsorUrl(text: string): URL | null {
